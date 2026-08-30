@@ -1,13 +1,16 @@
 # ✈️ WindLog — Tactile VFR Flight Planning & Navigation Log Engine
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?style=flat-square&logo=github)](https://supermarketpropaganda.github.io/windlog/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Build & Test](https://img.shields.io/badge/tests-62%20passed-success?style=flat-square)](https://github.com)
+[![Build & Test](https://img.shields.io/badge/tests-62%20passed-success?style=flat-square)](https://github.com/SupermarketPropaganda/windlog/actions)
 [![Magnetic Model](https://img.shields.io/badge/magnetic%20model-WMM2025%20(NOAA)-blue?style=flat-square)](https://www.ngdc.noaa.gov/geomag/WMM/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb?style=flat-square&logo=react)](https://reactjs.org/)
-[![PWA Ready](https://img.shields.io/badge/PWA-Offline%20Cockpit%20Ready-emerald?style=flat-square)](https://github.com)
+[![PWA Ready](https://img.shields.io/badge/PWA-Offline%20Cockpit%20Ready-emerald?style=flat-square)](https://github.com/SupermarketPropaganda/windlog)
 
 **WindLog** is an open-source, tactile VFR flight planning scratchpad and navigation log generator built for general aviation pilots, flight instructors, and aviation enthusiasts. It combines natural language route parsing, live altitude-dependent winds aloft, real-time magnetic declination calculations via **WMM2025**, an interactive tactical map with satellite and terrain views, a 2D vertical flight cross-section profile, and aircraft fuel management.
+
+🌐 **Live Application:** [https://supermarketpropaganda.github.io/windlog/](https://supermarketpropaganda.github.io/windlog/)
 
 ---
 
@@ -63,7 +66,7 @@
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<your-username>/windlog.git
+git clone https://github.com/SupermarketPropaganda/windlog.git
 cd windlog
 
 # 2. Install dependencies
@@ -107,10 +110,10 @@ npm run preview
 
 The repository includes a pre-configured **GitHub Actions CI/CD pipeline** in `.github/workflows/deploy.yml`.
 
-1. In your GitHub repository, go to **Settings** ➔ **Pages**.
+1. In your GitHub repository at [SupermarketPropaganda/windlog](https://github.com/SupermarketPropaganda/windlog), go to **Settings** ➔ **Pages**.
 2. Under **Build and deployment** ➔ **Source**, select **GitHub Actions**.
-3. Push to `main` — GitHub Actions will automatically run all 62 tests, build the bundle, and deploy live to:
-   `https://<your-username>.github.io/windlog/`
+3. Every push to `main` automatically runs all 62 tests, builds the bundle, and deploys live to:
+   `https://supermarketpropaganda.github.io/windlog/`
 
 ---
 
