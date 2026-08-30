@@ -1,36 +1,37 @@
 # ✈️ WindLog — Tactile VFR Flight Planning & Navigation Log Engine
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Build & Test](https://img.shields.io/badge/tests-62%20passed-success?style=flat-square)](https://github.com)
 [![Magnetic Model](https://img.shields.io/badge/magnetic%20model-WMM2025%20(NOAA)-blue?style=flat-square)](https://www.ngdc.noaa.gov/geomag/WMM/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb?style=flat-square&logo=react)](https://reactjs.org/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Offline%20Cockpit%20Ready-emerald?style=flat-square)](https://github.com)
 
-**WindLog** is a modern, responsive VFR flight planning scratchpad and navigation log generator built for general aviation pilots, flight instructors, and aviation enthusiasts. It combines instant natural language route parsing, live altitude-dependent winds aloft, real-time magnetic declination calculations via **WMM2025**, an interactive tactical map with satellite/terrain views, a 2D vertical flight cross-section profile, and comprehensive aircraft fuel management.
+**WindLog** is an open-source, tactile VFR flight planning scratchpad and navigation log generator built for general aviation pilots, flight instructors, and aviation enthusiasts. It combines natural language route parsing, live altitude-dependent winds aloft, real-time magnetic declination calculations via **WMM2025**, an interactive tactical map with satellite and terrain views, a 2D vertical flight cross-section profile, and aircraft fuel management.
 
 ---
 
 ## 🌟 Key Features
 
-* **Instant Natural-Language Scratchpad:**
+* **⚡ Instant Natural-Language Scratchpad:**
   Type route strings freely in real time (e.g. `LPCS/4500 COIMB/3500 LPCS` or `LPEV ARRAI LPSO LPCS LPEV`). Supports standard flight levels (`FL045`), thousands (`4.5K`), explicit altitudes (`4500FT`), and `@` / `/` delimiters.
-* **84,000+ Global Waypoints SQLite Engine:**
+* **🌍 84,000+ Global Waypoints SQLite Engine:**
   Bundled client-side SQLite database running via WebAssembly (WASM) for instant (<1ms) offline lookups of international ICAO airports, VORs, NDBs, and NAV Portugal VFR reporting points.
-* **Live Altitude-Specific Winds Aloft:**
-  Automatic real-time wind interpolation (Open-Meteo ECMWF / NOAA AWC) evaluated at your specific cruise altitude and leg midpoint, with instant manual override (`270/15`).
-* **NOAA WMM2025 Magnetic Declination Model:**
+* **💨 Live Altitude-Specific Winds Aloft:**
+  Automatic real-time wind interpolation (Open-Meteo ECMWF / NOAA AWC) evaluated at your cruise altitude and leg midpoint, with instant manual override (`270/15`).
+* **🧭 NOAA WMM2025 Magnetic Declination Model:**
   Computes continuous UTC decimal-year magnetic variation directly in the browser with full spherical harmonic expansion matching NOAA ground truth.
-* **ICAO Semicircular Cruising Level Guidance:**
+* **📐 ICAO Semicircular Cruising Level Guidance:**
   Recommends legal VFR cruising altitudes based on magnetic track ($000^\circ - 179^\circ$: Odd thousands $+ 500\text{ ft}$; $180^\circ - 359^\circ$: Even thousands $+ 500\text{ ft}$).
-* **Tactical Interactive Map (Leaflet):**
+* **🗺️ Tactical Interactive Map (Leaflet):**
   Aviation markers (Airports ✈, VRPs ◆, Custom waypoints ★), dashed flight paths with active leg highlights, midpoint wind vector pills (`↘ 8kt`), and 1-click layer switching (**Dark Tactical**, **Satellite Imagery**, **Terrain / Topo**, and **Street**).
-* **2D Vertical Altitude Profile:**
+* **📈 2D Vertical Altitude Profile:**
   Interactive side-view cross-section displaying step climbs, step descents, MSL gridlines, and cumulative nautical mile waypoints.
-* **Aircraft Presets & Fuel Calculations:**
+* **⛽ Aircraft Presets & Fuel Calculations:**
   Built-in performance models for **Cessna 172**, **Piper PA-28**, **Diamond DA40**, and **Rotax 912 (ULM/LSA)** with `GPH` $\leftrightarrow$ `L/h` unit switching and trip fuel burn.
-* **Zero-Backend URL Route Sharing:**
+* **🔗 Zero-Backend URL Route Sharing:**
   Encodes complete route waypoints, altitudes, aircraft presets, and fuel flow into a shareable URL hash for instant 1-click flight plan distribution.
-* **Responsive iPad / Desktop Dashboard:**
+* **📱 Responsive iPad / Desktop Dashboard:**
   Side-by-side cockpit layout on desktop/tablet (NavLog on left, Map & Profile on right) and clean vertical stacking on mobile devices.
 
 ---
@@ -102,17 +103,23 @@ npm run preview
 
 ---
 
-## 🌐 Deploying to GitHub Pages
+## 🌐 GitHub Pages Deployment
 
 The repository includes a pre-configured **GitHub Actions CI/CD pipeline** in `.github/workflows/deploy.yml`.
 
-1. Push your repository to GitHub.
-2. In your GitHub repository, go to **Settings** ➔ **Pages**.
-3. Under **Build and deployment** ➔ **Source**, select **GitHub Actions**.
-4. Every push to the `main` branch will automatically run tests, build the bundle, and deploy live!
+1. In your GitHub repository, go to **Settings** ➔ **Pages**.
+2. Under **Build and deployment** ➔ **Source**, select **GitHub Actions**.
+3. Push to `main` — GitHub Actions will automatically run all 62 tests, build the bundle, and deploy live to:
+   `https://<your-username>.github.io/windlog/`
+
+---
+
+## 🤝 Contributing
+
+Contributions are warmly welcomed! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on code style, mathematical validation, and pull request workflows.
 
 ---
 
 ## 📄 License
 
-Proprietary / Closed Source. All rights reserved.
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
