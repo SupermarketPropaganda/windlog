@@ -2,18 +2,29 @@
   "name": "WindLog — VFR Flight Planning",
   "short_name": "WindLog",
   "description": "Tactile wind-corrected VFR nav log generator and flight planning engine",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/windlog/",
+  "scope": "/windlog/",
   "display": "standalone",
   "background_color": "#0a0a0f",
   "theme_color": "#0a0a0f",
   "orientation": "any",
   "icons": [
     {
-      "src": "favicon.svg",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
     }
   ]
 }
