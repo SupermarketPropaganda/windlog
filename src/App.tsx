@@ -10,6 +10,7 @@ import {
 } from './types';
 import { ScratchpadView } from './components/ScratchpadView';
 import { DisclaimerModal } from './components/DisclaimerModal';
+import { KneeboardModal } from './components/KneeboardModal';
 import { WaypointDB, initWaypointDatabase } from './data/waypoint-db';
 import { searchOsmReportingPoint } from './data/osm-vrp';
 import { fetchWindsAloft, parseManualWind } from './data/winds-aloft';
@@ -106,6 +107,7 @@ export default function App() {
       return true;
     }
   });
+  const [isKneeboardOpen, setIsKneeboardOpen] = useState<boolean>(false);
   const [tokens, setTokens] = useState<RouteToken[]>([]);
   const [resolvedWaypoints, setResolvedWaypoints] = useState<Waypoint[]>([]);
   const [activeLegIndex, setActiveLegIndex] = useState<number | null>(null);
@@ -438,6 +440,7 @@ export default function App() {
         onReverseRoute={handleReverseRoute}
         onClearRoute={handleClearRoute}
         onShareRoute={handleShareRoute}
+        onOpenKneeboard={() => setIsKneeboardOpen(true)}
         onTokenClick={handleTokenClick}
         onLegAltitudeChange={handleLegAltitudeChange}
         toastMessage={toastMessage}
@@ -445,6 +448,14 @@ export default function App() {
         onCoordConfirm={handleCoordConfirm}
         onCoordCancel={handleCoordCancel}
       />
+
+      {isKneeboardOpen && (
+        <KneeboardModal
+          navLog={navLog}
+          profile={profile}
+          onClose={() => setIsKneeboardOpen(false)}
+        />
+      )}
 
       {showDisclaimer && (
         <DisclaimerModal onAccept={handleAcceptDisclaimer} />

@@ -1280,3 +1280,355 @@ body, html {
   transform: translateY(-1px);
 }
 
+/* ==========================================================================
+   KNEEBOARD MODAL & SOP FORM 002 PRINTABLE LAYOUT
+   ========================================================================== */
+.kneeboard-modal-overlay {
+  align-items: flex-start;
+  padding: 1.5rem 1rem;
+  overflow-y: auto;
+}
+
+.kneeboard-container {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.kneeboard-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.toolbar-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.toolbar-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.toolbar-sub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+.toolbar-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.toolbar-inputs label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.toolbar-inputs input {
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.25rem 0.4rem;
+  outline: none;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Printable Physical Sheet (A4 Landscape Form 002) */
+.kneeboard-sheet {
+  background-color: #ffffff;
+  color: #000000;
+  padding: 12px;
+  border-radius: 4px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.sop-table-wrapper {
+  border: 1.5px solid #000000;
+}
+
+.sop-table-main-header {
+  background-color: #1e40af;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 11px;
+  text-align: center;
+  padding: 3px 0;
+  letter-spacing: 0.08em;
+  border-bottom: 1.5px solid #000000;
+}
+
+.sop-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 9px;
+  color: #000000;
+}
+
+.sop-table th,
+.sop-table td {
+  border: 1px solid #000000;
+  text-align: center;
+  padding: 2px 1px;
+  height: 18px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.sop-subhead-row th {
+  background-color: #3b82f6;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 8.5px;
+  padding: 2px 1px;
+  letter-spacing: 0.02em;
+}
+
+.sop-row td {
+  font-size: 9px;
+}
+
+.blank-row td {
+  height: 18px;
+}
+
+.cell-bold {
+  font-weight: 800;
+}
+
+.cell-from, .cell-to {
+  color: #000000;
+}
+
+.cell-mono {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9px;
+}
+
+.cell-time {
+  font-weight: 700;
+  background-color: #f1f5f9;
+}
+
+.cell-write {
+  background-color: #ffffff;
+}
+
+.col-rta {
+  background-color: #dbeafe !important;
+}
+
+/* Middle Section: Alternate Table + Fuel Required */
+.sop-middle-grid {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 6px;
+}
+
+.sop-alternate-box {
+  border: 1.5px solid #000000;
+}
+
+.sop-alternate-header-bar {
+  background-color: #1e40af;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 6px;
+  font-weight: 800;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  border-bottom: 1.5px solid #000000;
+}
+
+.alt-totals-wrapper {
+  display: flex;
+  gap: 20px;
+  font-size: 9px;
+}
+
+.alternate-table th, .alternate-table td {
+  height: 18px;
+}
+
+.sop-fuel-required-box {
+  border: 1.5px solid #000000;
+}
+
+.fuel-required-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5px;
+}
+
+.fuel-required-table td {
+  border: 1px solid #000000;
+  padding: 2.5px 5px;
+  height: 18px;
+}
+
+.fuel-label-cell {
+  background-color: #1e40af;
+  color: #ffffff;
+  font-weight: 700;
+  text-align: left;
+  width: 60%;
+}
+
+.fuel-val-cell {
+  background-color: #ffffff;
+  color: #000000;
+  font-weight: 700;
+  text-align: right;
+  width: 40%;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.fuel-total-header {
+  background-color: #172554;
+  font-weight: 900;
+  font-size: 9px;
+}
+
+.fuel-total-val {
+  background-color: #eff6ff;
+  font-weight: 900;
+  font-size: 10px;
+  color: #1e3a8a;
+}
+
+/* Bottom Grid: Remarks & Flight Fuel Management */
+.sop-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.sop-remarks-box,
+.sop-fuel-mgmt-box {
+  border: 1.5px solid #000000;
+  display: flex;
+  flex-direction: column;
+}
+
+.sop-section-header {
+  background-color: #1e40af;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 10px;
+  text-align: center;
+  padding: 3px 0;
+  letter-spacing: 0.05em;
+  border-bottom: 1.5px solid #000000;
+}
+
+.sop-remarks-textarea {
+  width: 100%;
+  height: 100px;
+  border: none;
+  padding: 6px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9px;
+  color: #000000;
+  background-color: #ffffff;
+  resize: none;
+  outline: none;
+  line-height: 1.4;
+}
+
+.fuel-mgmt-table th {
+  background-color: #3b82f6;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 8px;
+  height: 16px;
+}
+
+.fuel-mgmt-table td {
+  height: 15px;
+}
+
+.sop-footer-line {
+  text-align: right;
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #000000;
+  letter-spacing: 0.02em;
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   PRINT MEDIA RULES (Exact A4 Landscape Sheet Print)
+   ========================================================================== */
+@media print {
+  @page {
+    size: landscape;
+    margin: 5mm;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #kneeboard-print-area, #kneeboard-print-area * {
+    visibility: visible;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #kneeboard-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .no-print,
+  .modal-overlay:not(.kneeboard-modal-overlay),
+  .app-header,
+  .route-section,
+  .flight-dashboard-grid {
+    display: none !important;
+  }
+}
+
+

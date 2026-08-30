@@ -171,4 +171,26 @@ describe('New Flight Features & Fuel Planning Tests', () => {
       expect(decoded?.profile?.fuelFlow).toBe(0);
     });
   });
+
+  describe('4. SOP Form 002 Kneeboard Fuel Management Calculations', () => {
+    it('computes exact contingency, taxi, holding and total SOP fuel requirements', () => {
+      const tripFuel = 20.0; // 20 liters/gallons trip fuel
+      const fuelFlow = 16.0; // 16 L/h
+      const taxiFuel = 4.0;  // 4 L taxi
+      const altDist = 30.0;  // 30 NM alternate
+      const tas = 90.0;      // 90 kt TAS (0.333h)
+
+      const contingency = tripFuel * 0.05; // 1.0 L (5%)
+      const holding = 0.75 * fuelFlow;     // 12.0 L (45 min)
+      const altEteHours = altDist / tas;   // 0.3333h
+      const altFuel = altEteHours * fuelFlow; // 5.333 L
+
+      const totalRequired = tripFuel + altFuel + taxiFuel + contingency + holding;
+
+      expect(contingency).toBeCloseTo(1.0);
+      expect(holding).toBeCloseTo(12.0);
+      expect(altFuel).toBeCloseTo(5.33, 1);
+      expect(totalRequired).toBeCloseTo(42.33, 1);
+    });
+  });
 });

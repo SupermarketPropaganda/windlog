@@ -45,6 +45,7 @@ export interface ScratchpadViewProps {
   onReverseRoute: () => void;
   onClearRoute: () => void;
   onShareRoute: () => void;
+  onOpenKneeboard: () => void;
   onTokenClick: (token: RouteToken) => void;
   onLegAltitudeChange: (legIndex: number, newAltitude: number) => void;
 
@@ -125,6 +126,17 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                 >
                   🔗 Share
                 </button>
+                {props.navLog && props.navLog.legs.length > 0 && (
+                  <button
+                    type="button"
+                    className="route-action-btn"
+                    title="Open Printable SOP Form 002 Kneeboard / PDF"
+                    onClick={props.onOpenKneeboard}
+                    style={{ borderColor: '#3b82f6', color: '#60a5fa' }}
+                  >
+                    📄 PDF Kneeboard
+                  </button>
+                )}
                 <button
                   type="button"
                   className="route-action-btn"
