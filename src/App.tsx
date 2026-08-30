@@ -9,6 +9,7 @@ import {
   Waypoint,
 } from './types';
 import { ScratchpadView } from './components/ScratchpadView';
+import { DisclaimerModal } from './components/DisclaimerModal';
 import { WaypointDB, initWaypointDatabase } from './data/waypoint-db';
 import { searchOsmReportingPoint } from './data/osm-vrp';
 import { fetchWindsAloft, parseManualWind } from './data/winds-aloft';
@@ -98,6 +99,13 @@ export default function App() {
 
   const [profile, setProfile] = useState<AircraftProfile>(loadProfile);
   const [routeInput, setRouteInput] = useState(loadRouteInput);
+  const [showDisclaimer, setShowDisclaimer] = useState<boolean>(() => {
+    try {
+      return !localStorage.getItem('windlog_disclaimer_accepted');
+    } catch {
+      return true;
+    }
+  });
   const [tokens, setTokens] = useState<RouteToken[]>([]);
   const [resolvedWaypoints, setResolvedWaypoints] = useState<Waypoint[]>([]);
   const [activeLegIndex, setActiveLegIndex] = useState<number | null>(null);
@@ -392,6 +400,13 @@ export default function App() {
     setCoordPrompt(null);
   }, []);
 
+  const handleAcceptDisclaimer = useCallback(() => {
+    try {
+      localStorage.setItem('windlog_disclaimer_accepted', 'true');
+    } catch { /* ignore */ }
+    setShowDisclaimer(false);
+  }, []);
+
   // ─── Loading state ───
   if (!dbReady) {
     return (
@@ -405,29 +420,35 @@ export default function App() {
   }
 
   return (
-    <ScratchpadView
-      profile={profile}
-      onProfileChange={handleProfileChange}
-      windState={windState}
-      onWindChange={handleWindChange}
-      onWindModeChange={handleWindModeChange}
-      isWindLoading={isWindLoading}
-      routeInput={routeInput}
-      onRouteInputChange={handleRouteInputChange}
-      tokens={tokens}
-      resolvedWaypoints={resolvedWaypoints}
-      navLog={navLog}
-      activeLegIndex={activeLegIndex}
-      onSelectLeg={(idx) => setActiveLegIndex(activeLegIndex === idx ? null : idx)}
-      onReverseRoute={handleReverseRoute}
-      onClearRoute={handleClearRoute}
-      onShareRoute={handleShareRoute}
-      onTokenClick={handleTokenClick}
-      onLegAltitudeChange={handleLegAltitudeChange}
-      toastMessage={toastMessage}
-      coordPrompt={coordPrompt}
-      onCoordConfirm={handleCoordConfirm}
-      onCoordCancel={handleCoordCancel}
-    />
+    <>
+      <ScratchpadView
+        profile={profile}
+        onProfileChange={handleProfileChange}
+        windState={windState}
+        onWindChange={handleWindChange}
+        onWindModeChange={handleWindModeChange}
+        isWindLoading={isWindLoading}
+        routeInput={routeInput}
+        onRouteInputChange={handleRouteInputChange}
+        tokens={tokens}
+        resolvedWaypoints={resolvedWaypoints}
+        navLog={navLog}
+        activeLegIndex={activeLegIndex}
+        onSelectLeg={(idx) => setActiveLegIndex(activeLegIndex === idx ? null : idx)}
+        onReverseRoute={handleReverseRoute}
+        onClearRoute={handleClearRoute}
+        onShareRoute={handleShareRoute}
+        onTokenClick={handleTokenClick}
+        onLegAltitudeChange={handleLegAltitudeChange}
+        toastMessage={toastMessage}
+        coordPrompt={coordPrompt}
+        onCoordConfirm={handleCoordConfirm}
+        onCoordCancel={handleCoordCancel}
+      />
+
+      {showDisclaimer && (
+        <DisclaimerModal onAccept={handleAcceptDisclaimer} />
+      )}
+    </>
   );
 }
