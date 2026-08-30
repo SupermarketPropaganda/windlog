@@ -31,7 +31,7 @@
 * **📈 2D Vertical Altitude Profile:**
   Interactive side-view cross-section displaying step climbs, step descents, MSL gridlines, and cumulative nautical mile waypoints.
 * **⛽ Aircraft Presets & Fuel Calculations:**
-  Built-in performance models for **Cessna 172**, **Piper PA-28**, **Diamond DA40**, and **Rotax 912 (ULM/LSA)** with `GPH` $\leftrightarrow$ `L/h` unit switching and trip fuel burn.
+  Built-in performance models for **Cessna 172**, **Piper PA-28**, **Diamond DA40**, **Tecnam P2002-JF**, and **Rotax 912 (ULM/LSA)** with `GPH` $\leftrightarrow$ `L/h` unit switching and trip fuel burn.
 * **🔗 Zero-Backend URL Route Sharing:**
   Encodes complete route waypoints, altitudes, aircraft presets, and fuel flow into a shareable URL hash for instant 1-click flight plan distribution.
 * **📱 Responsive iPad / Desktop Dashboard:**

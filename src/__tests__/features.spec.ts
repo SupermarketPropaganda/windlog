@@ -120,6 +120,12 @@ describe('New Flight Features & Fuel Planning Tests', () => {
       expect(rotax).toBeDefined();
       expect(rotax?.tas).toBe(90);
       expect(rotax?.fuelFlow).toBe(15.0);
+
+      const p2002 = AIRCRAFT_PRESETS.find((p) => p.id === 'p2002');
+      expect(p2002).toBeDefined();
+      expect(p2002?.tas).toBe(90);
+      expect(p2002?.fuelFlow).toBe(16.0);
+      expect(p2002?.fuelUnit).toBe('lph');
     });
   });
 

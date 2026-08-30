@@ -43,6 +43,14 @@ export const AIRCRAFT_PRESETS: AircraftPreset[] = [
     cruiseAltitude: 5500,
   },
   {
+    id: 'p2002',
+    name: 'Tecnam P2002-JF Sierra',
+    tas: 90,
+    fuelFlow: 16.0,
+    fuelUnit: 'lph',
+    cruiseAltitude: 3500,
+  },
+  {
     id: 'rotax',
     name: 'Rotax 912 (ULM / LSA)',
     tas: 90,
