@@ -121,18 +121,21 @@ export class WaypointDB {
  */
 export async function initWaypointDatabase(): Promise<WaypointDB> {
   try {
+    const rawBase = import.meta.env.BASE_URL || './';
+    const baseUrl = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
+
     const initFn = typeof (window as any).initSqlJs === 'function'
       ? (window as any).initSqlJs
       : (await import('sql.js')).default;
 
     const SQL = await initFn({
-      locateFile: () => '/sql-wasm.wasm'
+      locateFile: (file: string) => `${baseUrl}${file}`
     });
 
     try {
-      const response = await fetch('/waypoints.sqlite');
+      const response = await fetch(`${baseUrl}waypoints.sqlite`);
       if (!response.ok) {
-        throw new Error(`Failed to fetch database: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to fetch database from ${baseUrl}waypoints.sqlite: ${response.status} ${response.statusText}`);
       }
       const buffer = await response.arrayBuffer();
       const db = new SQL.Database(new Uint8Array(buffer));
