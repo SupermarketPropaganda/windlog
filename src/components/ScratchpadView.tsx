@@ -46,6 +46,7 @@ export interface ScratchpadViewProps {
   onClearRoute: () => void;
   onShareRoute: () => void;
   onOpenKneeboard: () => void;
+  onOpenSideMenu: () => void;
   onTokenClick: (token: RouteToken) => void;
   onLegAltitudeChange: (legIndex: number, newAltitude: number) => void;
 
@@ -116,6 +117,15 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
           />
 
           <div className="route-actions">
+            <button
+              type="button"
+              className="route-action-btn menu-trigger-btn"
+              title="Open Navigation Menu & Tools"
+              onClick={props.onOpenSideMenu}
+              style={{ backgroundColor: '#1e293b', borderColor: '#3b82f6', color: '#60a5fa' }}
+            >
+              ☰ Menu
+            </button>
             {props.routeInput.trim().length > 0 && (
               <>
                 <button

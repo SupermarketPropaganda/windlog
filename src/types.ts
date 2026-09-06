@@ -1,3 +1,7 @@
+// ─── Navigation Views ───
+
+export type ActiveView = 'navlog' | 'mass-balance' | 'runway-wind';
+
 // ─── Waypoint Types ───
 
 export type WaypointType =
@@ -95,4 +99,100 @@ export interface NavLogSummary {
   minFuelRequiredDay: number;    // Trip Fuel + 30m reserve
   minFuelRequiredNight: number;  // Trip Fuel + 45m reserve
   legs: Leg[];
+}
+
+// ─── Mass & Balance (Weight & Balance) Types ───
+
+export type WeightUnit = 'kg' | 'lbs';
+export type ArmUnit = 'in' | 'm' | 'cm' | 'mm';
+export type FuelType = 'avgas' | 'mogas' | 'jetA';
+
+export interface CGEnvelopePoint {
+  arm: number;
+  weight: number;
+}
+
+export interface StationConfig {
+  id: string;
+  name: string;
+  arm: number;
+  weight: number;
+  maxWeight?: number;
+}
+
+export interface FuelStationConfig {
+  name: string;
+  arm: number;
+  fuelType: FuelType;
+  capacityGallons?: number;
+  capacityLiters?: number;
+  takeoffFuelVolume: number; // in gallons or liters depending on display or profile
+  fuelUnit: 'gal' | 'l';
+}
+
+export interface MassBalanceProfile {
+  id: string;
+  name: string;
+  isCustom?: boolean;
+  weightUnit: WeightUnit;
+  armUnit: ArmUnit;
+  emptyWeight: number;
+  emptyArm: number;
+  maxTakeoffWeight: number;
+  maxLandingWeight?: number;
+  stations: StationConfig[];
+  fuelStation: FuelStationConfig;
+  envelope: {
+    normal: CGEnvelopePoint[];
+    utility?: CGEnvelopePoint[];
+  };
+}
+
+export interface MassBalanceResult {
+  zeroFuelWeight: number;
+  zeroFuelMoment: number;
+  zeroFuelCG: number;
+  
+  takeoffWeight: number;
+  takeoffMoment: number;
+  takeoffCG: number;
+  
+  tripFuelWeight: number;
+  landingWeight: number;
+  landingMoment: number;
+  landingCG: number;
+  
+  isZFWInEnvelope: boolean;
+  isTOWInEnvelope: boolean;
+  isLWInEnvelope: boolean;
+  
+  isOverweightTOW: boolean;
+  isOverweightLW: boolean;
+  
+  weightMargin: number; // MTOW - TakeoffWeight (+ margin, - over)
+  warnings: string[];
+}
+
+// ─── Runway Wind Calculator Types ───
+
+export interface RunwayWindResult {
+  runwayHeading: number;         // degrees magnetic (0-360)
+  windDirection: number;         // degrees magnetic (0-360)
+  windSpeed: number;             // knots
+  gustSpeed?: number;            // knots
+  
+  headwind: number;              // knots (> 0 headwind, < 0 tailwind)
+  crosswind: number;             // knots (absolute value)
+  crosswindSide: 'left' | 'right' | 'direct';
+  
+  gustHeadwind?: number;         // knots
+  gustCrosswind?: number;        // knots
+  
+  reciprocalHeading: number;     // degrees magnetic
+  reciprocalHeadwind: number;    // knots
+  reciprocalCrosswind: number;   // knots
+  
+  maxDemonstratedCrosswind?: number;
+  crosswindStatus: 'safe' | 'caution' | 'exceeded'; // safe <= 70%, caution 70-100%, exceeded > 100%
+  angleDifference: number;       // relative angle between runway and wind (-180 to +180)
 }

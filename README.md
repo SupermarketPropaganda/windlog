@@ -2,13 +2,13 @@
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?style=flat-square&logo=github)](https://supermarketpropaganda.github.io/windlog/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Build & Test](https://img.shields.io/badge/tests-62%20passed-success?style=flat-square)](https://github.com/SupermarketPropaganda/windlog/actions)
+[![Build & Test](https://img.shields.io/badge/tests-81%20passed-success?style=flat-square)](https://github.com/SupermarketPropaganda/windlog/actions)
 [![Magnetic Model](https://img.shields.io/badge/magnetic%20model-WMM2025%20(NOAA)-blue?style=flat-square)](https://www.ngdc.noaa.gov/geomag/WMM/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb?style=flat-square&logo=react)](https://reactjs.org/)
 [![PWA Ready](https://img.shields.io/badge/PWA-Offline%20Cockpit%20Ready-emerald?style=flat-square)](https://github.com/SupermarketPropaganda/windlog)
 
-**WindLog** is an open-source, tactile VFR flight planning scratchpad and navigation log generator built for general aviation pilots, flight instructors, and aviation enthusiasts. It combines natural language route parsing, live altitude-dependent winds aloft, real-time magnetic declination calculations via **WMM2025**, an interactive tactical map with satellite and terrain views, a 2D vertical flight cross-section profile, and aircraft fuel management.
+**WindLog** is an open-source, tactile VFR flight planning scratchpad, navigation log generator, and weight-and-balance cockpit suite built for general aviation pilots, flight instructors, and aviation enthusiasts. It combines natural language route parsing, live altitude-dependent winds aloft, real-time magnetic declination calculations via **WMM2025**, an interactive tactical map with satellite and terrain views, a 2D vertical flight cross-section profile, a full **Mass & Balance (Weight & Balance)** calculator with CG envelopes, a dedicated **Runway Wind & Crosswind** tool, and printable **Aviation SOP Form 002 Kneeboard (PDF)** export.
 
 🌐 **Live Application:** [https://supermarketpropaganda.github.io/windlog/](https://supermarketpropaganda.github.io/windlog/)
 
@@ -18,6 +18,21 @@
 
 * **⚡ Instant Natural-Language Scratchpad:**
   Type route strings freely in real time (e.g. `LPCS/4500 COIMB/3500 LPCS` or `LPEV ARRAI LPSO LPCS LPEV`). Supports standard flight levels (`FL045`), thousands (`4.5K`), explicit altitudes (`4500FT`), and `@` / `/` delimiters.
+* **📂 Responsive Cockpit Navigation Drawer (Side Menu):**
+  One-tap side navigation drawer providing instant access between **Flight Planner**, **Mass & Balance**, **Runway Wind Calculator**, and **SOP Form 002 Kneeboard**.
+* **⚖️ Mass & Balance (Weight & Balance) Engine:**
+  * Interactive station loading sliders for Pilot, Passengers, Baggage, and Fuel.
+  * Factory POH/AFM presets for **Cessna 172S**, **Piper PA-28 Archer III**, **Diamond DA40 Star**, **Tecnam P2002-JF Sierra**, and **Rotax 912 ULM / LSA**.
+  * Custom aircraft profile creator with persistent local storage saving.
+  * Interactive **2D SVG Center of Gravity (CG) Envelope Graph** plotting Zero Fuel Weight (ZFW), Takeoff Weight (TOW), and Landing Weight (LW) with real-time envelope containment checks and MTOW margin warnings.
+  * One-click fuel sync with your active NavLog flight plan.
+* **🛫 Runway Wind Components & Crosswind Calculator:**
+  * Real-time Headwind, Tailwind, and Crosswind component calculations with crosswind side indicators ($\leftarrow$ Left / $\rightarrow$ Right).
+  * Interactive **Visual Runway Compass Rose** displaying runway alignment, centerline markings, aircraft heading, and wind vectors.
+  * Maximum Demonstrated Crosswind safety limits with green/amber/red warning thresholds.
+  * Reciprocal runway analysis recommending the best runway for takeoff and landing.
+* **📄 Printable Pilot Kneeboard / PDF Mode (SOP Form 002):**
+  Pre-populates an official flight school standard operating procedure navigation log and fuel management kneeboard sheet formatted for **A4 Landscape** printing and iPad saving.
 * **🌍 84,000+ Global Waypoints SQLite Engine:**
   Bundled client-side SQLite database running via WebAssembly (WASM) for instant (<1ms) offline lookups of international ICAO airports, VORs, NDBs, and NAV Portugal VFR reporting points.
 * **💨 Live Altitude-Specific Winds Aloft:**
@@ -30,12 +45,10 @@
   Aviation markers (Airports ✈, VRPs ◆, Custom waypoints ★), dashed flight paths with active leg highlights, midpoint wind vector pills (`↘ 8kt`), and 1-click layer switching (**Dark Tactical**, **Satellite Imagery**, **Terrain / Topo**, and **Street**).
 * **📈 2D Vertical Altitude Profile:**
   Interactive side-view cross-section displaying step climbs, step descents, MSL gridlines, and cumulative nautical mile waypoints.
-* **⛽ Aircraft Presets & Fuel Calculations:**
-  Built-in performance models for **Cessna 172**, **Piper PA-28**, **Diamond DA40**, **Tecnam P2002-JF**, and **Rotax 912 (ULM/LSA)** with `GPH` $\leftrightarrow$ `L/h` unit switching and trip fuel burn.
 * **🔗 Zero-Backend URL Route Sharing:**
   Encodes complete route waypoints, altitudes, aircraft presets, and fuel flow into a shareable URL hash for instant 1-click flight plan distribution.
 * **📱 Responsive iPad / Desktop Dashboard:**
-  Side-by-side cockpit layout on desktop/tablet (NavLog on left, Map & Profile on right) and clean vertical stacking on mobile devices.
+  Side-by-side cockpit layout on desktop/tablet and full-screen standalone Progressive Web App (PWA) on iPad.
 
 ---
 
@@ -47,12 +60,14 @@
    $$\text{True Heading (TH)} = \text{TC} + \text{WCA}$$
    $$\text{Magnetic Heading (MH)} = \text{TH} - \text{Var}$$
 
-2. **Great Circle Distance & Initial Bearing (Haversine & Spherical Trigonometry):**
-   $$d = 2R \cdot \arcsin\left(\sqrt{\sin^2\left(\frac{\Delta \phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta \lambda}{2}\right)}\right)$$
-   $$\theta = \text{atan2}\left(\sin(\Delta \lambda)\cos(\phi_2), \; \cos(\phi_1)\sin(\phi_2) - \sin(\phi_1)\cos(\phi_2)\cos(\Delta \lambda)\right)$$
+2. **Runway Wind Components:**
+   $$\Delta \theta = (\theta_{\text{wind}} - \theta_{\text{runway}}) \pmod{360}$$
+   $$V_{\text{head}} = V_{\text{wind}} \cdot \cos(\Delta \theta)$$
+   $$V_{\text{cross}} = |V_{\text{wind}} \cdot \sin(\Delta \theta)|$$
 
-3. **Continuous Magnetic Variation (WMM2025):**
-   $$T = 2025.0 + \frac{\text{DayOfYear} + \frac{\text{Hour}}{24}}{365.25}$$
+3. **Center of Gravity (CG) Moment Equation:**
+   $$\text{Moment}_{\text{total}} = \text{BEW} \cdot \text{Arm}_{\text{empty}} + \sum (\text{Weight}_i \cdot \text{Arm}_i)$$
+   $$\text{CG} = \frac{\text{Moment}_{\text{total}}}{\text{Weight}_{\text{total}}}$$
 
 ---
 
@@ -85,7 +100,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 WindLog includes a comprehensive unit, integration, and mathematical stress-testing suite powered by Vitest:
 
 ```bash
-# Run all 62 test suites
+# Run all 81 test suites
 npm test
 
 # Run tests in watch mode
@@ -103,23 +118,6 @@ npm run build
 # Preview production bundle locally
 npm run preview
 ```
-
----
-
-## 🌐 GitHub Pages Deployment
-
-The repository includes a pre-configured **GitHub Actions CI/CD pipeline** in `.github/workflows/deploy.yml`.
-
-1. In your GitHub repository at [SupermarketPropaganda/windlog](https://github.com/SupermarketPropaganda/windlog), go to **Settings** ➔ **Pages**.
-2. Under **Build and deployment** ➔ **Source**, select **GitHub Actions**.
-3. Every push to `main` automatically runs all 62 tests, builds the bundle, and deploys live to:
-   `https://supermarketpropaganda.github.io/windlog/`
-
----
-
-## 🤝 Contributing
-
-Contributions are warmly welcomed! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details on code style, mathematical validation, and pull request workflows.
 
 ---
 

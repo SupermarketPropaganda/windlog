@@ -7,10 +7,15 @@ import {
   RouteToken,
   NavLogSummary,
   Waypoint,
+  ActiveView,
+  RunwayWindResult,
 } from './types';
 import { ScratchpadView } from './components/ScratchpadView';
 import { DisclaimerModal } from './components/DisclaimerModal';
 import { KneeboardModal } from './components/KneeboardModal';
+import { SideMenu } from './components/SideMenu';
+import { MassBalanceView } from './components/MassBalanceView';
+import { RunwayWindView } from './components/RunwayWindView';
 import { WaypointDB, initWaypointDatabase } from './data/waypoint-db';
 import { searchOsmReportingPoint } from './data/osm-vrp';
 import { fetchWindsAloft, parseManualWind } from './data/winds-aloft';
@@ -107,6 +112,9 @@ export default function App() {
       return true;
     }
   });
+  const [activeView, setActiveView] = useState<ActiveView>('navlog');
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(false);
+  const [runwayWindResult, setRunwayWindResult] = useState<RunwayWindResult | null>(null);
   const [isKneeboardOpen, setIsKneeboardOpen] = useState<boolean>(false);
   const [tokens, setTokens] = useState<RouteToken[]>([]);
   const [resolvedWaypoints, setResolvedWaypoints] = useState<Waypoint[]>([]);
@@ -423,30 +431,59 @@ export default function App() {
 
   return (
     <>
-      <ScratchpadView
-        profile={profile}
-        onProfileChange={handleProfileChange}
-        windState={windState}
-        onWindChange={handleWindChange}
-        onWindModeChange={handleWindModeChange}
-        isWindLoading={isWindLoading}
-        routeInput={routeInput}
-        onRouteInputChange={handleRouteInputChange}
-        tokens={tokens}
-        resolvedWaypoints={resolvedWaypoints}
-        navLog={navLog}
-        activeLegIndex={activeLegIndex}
-        onSelectLeg={(idx) => setActiveLegIndex(activeLegIndex === idx ? null : idx)}
-        onReverseRoute={handleReverseRoute}
-        onClearRoute={handleClearRoute}
-        onShareRoute={handleShareRoute}
+      {activeView === 'navlog' && (
+        <ScratchpadView
+          profile={profile}
+          onProfileChange={handleProfileChange}
+          windState={windState}
+          onWindChange={handleWindChange}
+          onWindModeChange={handleWindModeChange}
+          isWindLoading={isWindLoading}
+          routeInput={routeInput}
+          onRouteInputChange={handleRouteInputChange}
+          tokens={tokens}
+          resolvedWaypoints={resolvedWaypoints}
+          navLog={navLog}
+          activeLegIndex={activeLegIndex}
+          onSelectLeg={(idx) => setActiveLegIndex(activeLegIndex === idx ? null : idx)}
+          onReverseRoute={handleReverseRoute}
+          onClearRoute={handleClearRoute}
+          onShareRoute={handleShareRoute}
+          onOpenKneeboard={() => setIsKneeboardOpen(true)}
+          onOpenSideMenu={() => setIsSideMenuOpen(true)}
+          onTokenClick={handleTokenClick}
+          onLegAltitudeChange={handleLegAltitudeChange}
+          toastMessage={toastMessage}
+          coordPrompt={coordPrompt}
+          onCoordConfirm={handleCoordConfirm}
+          onCoordCancel={handleCoordCancel}
+        />
+      )}
+
+      {activeView === 'mass-balance' && (
+        <MassBalanceView
+          navLogSummary={navLog}
+          onBackToNavLog={() => setActiveView('navlog')}
+        />
+      )}
+
+      {activeView === 'runway-wind' && (
+        <RunwayWindView
+          navLogSummary={navLog}
+          onBackToNavLog={() => setActiveView('navlog')}
+          onResultChange={setRunwayWindResult}
+        />
+      )}
+
+      {/* Side Navigation Menu Drawer */}
+      <SideMenu
+        activeView={activeView}
+        onChangeView={setActiveView}
+        isOpen={isSideMenuOpen}
+        onClose={() => setIsSideMenuOpen(false)}
         onOpenKneeboard={() => setIsKneeboardOpen(true)}
-        onTokenClick={handleTokenClick}
-        onLegAltitudeChange={handleLegAltitudeChange}
-        toastMessage={toastMessage}
-        coordPrompt={coordPrompt}
-        onCoordConfirm={handleCoordConfirm}
-        onCoordCancel={handleCoordCancel}
+        navLogSummary={navLog}
+        runwayWindResult={runwayWindResult}
       />
 
       {isKneeboardOpen && (
