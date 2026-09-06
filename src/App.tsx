@@ -499,6 +499,7 @@ export default function App() {
 
         {activeView === 'runway-wind' && (
           <RunwayWindView
+            routeWaypoints={resolvedWaypoints}
             navLogSummary={navLog}
             onBackToNavLog={() => setActiveView('navlog')}
             onResultChange={setRunwayWindResult}

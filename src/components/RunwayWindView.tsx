@@ -1,34 +1,164 @@
-import React, { useState, useMemo } from 'react';
-import { NavLogSummary, RunwayWindResult } from '../types';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { NavLogSummary, RunwayWindResult, Waypoint, SurfaceWeatherReport, RunwayDefinition } from '../types';
 import { computeRunwayWindComponents } from '../engine/runway-wind';
+import { findAirportRunways, generateGenericRunways, scoreRunwaysForWind } from '../data/airport-runways';
+import { fetchAirportSurfaceWeather } from '../engine/surface-weather';
 
 export interface RunwayWindViewProps {
+  routeWaypoints?: Waypoint[];
   navLogSummary: NavLogSummary | null;
   onBackToNavLog: () => void;
   onResultChange?: (res: RunwayWindResult) => void;
 }
 
 export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
+  routeWaypoints = [],
   navLogSummary,
   onBackToNavLog,
   onResultChange,
 }) => {
-  // Runway input (default 270 / RWY 27)
-  const [runwayInput, setRunwayInput] = useState<string>('270');
+  // ─── Extract Route Airports ───
+  const routeAirports = useMemo(() => {
+    const list: { role: 'Departure' | 'Destination' | 'En-route' | 'Default'; waypoint: Waypoint }[] = [];
+    if (routeWaypoints && routeWaypoints.length > 0) {
+      const dep = routeWaypoints[0];
+      const dest = routeWaypoints.length > 1 ? routeWaypoints[routeWaypoints.length - 1] : null;
+
+      list.push({ role: 'Departure', waypoint: dep });
+      if (dest && dest.identifier !== dep.identifier) {
+        list.push({ role: 'Destination', waypoint: dest });
+      }
+
+      // Add other airport waypoints along route
+      routeWaypoints.slice(1, -1).forEach((wp) => {
+        if (wp.type === 'airport' && !list.some((item) => item.waypoint.identifier === wp.identifier)) {
+          list.push({ role: 'En-route', waypoint: wp });
+        }
+      });
+    }
+
+    if (list.length === 0) {
+      // Default to Cascais (LPCS) if route is empty
+      list.push({
+        role: 'Default',
+        waypoint: {
+          id: 0,
+          identifier: 'LPCS',
+          name: 'Cascais Airport',
+          type: 'airport',
+          latitude: 38.725,
+          longitude: -9.355,
+          elevation: 325,
+          country: 'PT',
+        },
+      });
+    }
+    return list;
+  }, [routeWaypoints]);
+
+  // Selected airport from route or presets
+  const [selectedAirportIndex, setSelectedAirportIndex] = useState<number>(0);
+  const activeAirport = routeAirports[selectedAirportIndex]?.waypoint || routeAirports[0].waypoint;
+  const activeAirportRole = routeAirports[selectedAirportIndex]?.role || 'Airport';
+
+  // ─── Runways for Active Airport ───
+  const airportRunwayInfo = useMemo(() => {
+    return findAirportRunways(activeAirport.identifier);
+  }, [activeAirport.identifier]);
+
+  // All available runway definitions
+  const availableRunways: RunwayDefinition[] = useMemo(() => {
+    if (airportRunwayInfo && airportRunwayInfo.runways.length > 0) {
+      return airportRunwayInfo.runways;
+    }
+    // Fallback: If route leg 1 has track, use that heading, else 270
+    const legHeading = navLogSummary?.legs[0]?.magneticHeading || 270;
+    return generateGenericRunways(legHeading);
+  }, [airportRunwayInfo, navLogSummary]);
+
+  // ─── Weather State & Auto Wind ───
+  const [isAutoWind, setIsAutoWind] = useState<boolean>(true);
+  const [weatherReport, setWeatherReport] = useState<SurfaceWeatherReport | null>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState<boolean>(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
+
+  // Runway input (default to first runway or 270)
+  const [runwayInput, setRunwayInput] = useState<string>(
+    availableRunways[0]?.heading ? availableRunways[0].heading.toString() : '270'
+  );
   
-  // Wind inputs (default 310 / 15G22)
+  // Wind inputs
   const [windDirInput, setWindDirInput] = useState<string>('310');
   const [windSpeedInput, setWindSpeedInput] = useState<string>('15');
-  const [gustSpeedInput, setGustSpeedInput] = useState<string>('22');
+  const [gustSpeedInput, setGustSpeedInput] = useState<string>('');
   const [maxDemoXwind, setMaxDemoXwind] = useState<string>('15');
 
+  // Load weather for active airport
+  const loadWeather = useCallback(
+    async (airport: Waypoint, force: boolean = false) => {
+      setIsLoadingWeather(true);
+      setWeatherError(null);
+      try {
+        const report = await fetchAirportSurfaceWeather(
+          airport.identifier,
+          airport.latitude,
+          airport.longitude,
+          force
+        );
+
+        if (report) {
+          setWeatherReport(report);
+          setWindDirInput(report.windDirection.toString());
+          setWindSpeedInput(report.windSpeed.toString());
+          setGustSpeedInput(report.gustSpeed ? report.gustSpeed.toString() : '');
+
+          // Automatically select best runway if available
+          if (availableRunways.length > 0 && report.windSpeed > 0) {
+            const scored = scoreRunwaysForWind(
+              availableRunways,
+              report.windDirection,
+              report.windSpeed
+            );
+            const best = scored.find((s) => s.isBest);
+            if (best) {
+              setRunwayInput(best.runway.heading.toString());
+            }
+          }
+        } else {
+          setWeatherError('Live surface wind currently unavailable for this station.');
+        }
+      } catch (err) {
+        console.error('Failed to load surface weather:', err);
+        setWeatherError('Failed to fetch surface weather.');
+      } finally {
+        setIsLoadingWeather(false);
+      }
+    },
+    [availableRunways]
+  );
+
+  // Trigger weather load when airport changes or when Auto is toggled ON
+  useEffect(() => {
+    if (isAutoWind && activeAirport) {
+      loadWeather(activeAirport, false);
+    }
+  }, [activeAirport, isAutoWind, loadWeather]);
+
+  // When airport changes, also update default runway if not auto-selected
+  useEffect(() => {
+    if (availableRunways.length > 0) {
+      setRunwayInput(availableRunways[0].heading.toString());
+    }
+  }, [activeAirport.identifier, availableRunways]);
+
+  // Numerical values
   const rwyHeading = parseFloat(runwayInput) || 270;
   const windDir = parseFloat(windDirInput) || 0;
   const windSpeed = parseFloat(windSpeedInput) || 0;
   const gustSpeed = gustSpeedInput ? parseFloat(gustSpeedInput) : undefined;
   const maxXwind = parseFloat(maxDemoXwind) || 15;
 
-  // Compute components
+  // Compute Runway Wind Components
   const result: RunwayWindResult = useMemo(() => {
     const res = computeRunwayWindComponents(
       rwyHeading,
@@ -41,50 +171,59 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
     return res;
   }, [rwyHeading, windDir, windSpeed, gustSpeed, maxXwind, onResultChange]);
 
-  // Quick runway buttons (e.g. 09, 18, 27, 36, or first route leg track)
-  const handleQuickRwy = (deg: number) => {
+  // Scored runways for the current wind conditions
+  const scoredRunways = useMemo(() => {
+    return scoreRunwaysForWind(availableRunways, windDir, windSpeed);
+  }, [availableRunways, windDir, windSpeed]);
+
+  // Handle manual input tweaks (turns Auto Mode off)
+  const handleManualWindDirChange = (val: string) => {
+    setWindDirInput(val);
+    setIsAutoWind(false);
+  };
+
+  const handleManualWindSpeedChange = (val: string) => {
+    setWindSpeedInput(val);
+    setIsAutoWind(false);
+  };
+
+  const handleManualGustChange = (val: string) => {
+    setGustSpeedInput(val);
+    setIsAutoWind(false);
+  };
+
+  const handleManualRwyChange = (deg: number) => {
     setRunwayInput(deg.toString());
   };
 
-  // Flip to reciprocal runway
   const handleSwitchToReciprocal = () => {
     setRunwayInput(result.reciprocalHeading.toString());
   };
 
-  // Sync departure airport / leg wind if available
-  const handleSyncRouteWind = () => {
-    if (navLogSummary && navLogSummary.legs.length > 0) {
-      const leg = navLogSummary.legs[0];
-      if (leg.wind) {
-        setWindDirInput(leg.wind.direction.toString());
-        setWindSpeedInput(leg.wind.speed.toString());
-      }
-      setRunwayInput(Math.round(leg.magneticHeading).toString());
+  const handleRefreshWeather = () => {
+    setIsAutoWind(true);
+    if (activeAirport) {
+      loadWeather(activeAirport, true);
     }
   };
 
-  // ─── Visual Compass Rose SVG Geometry ───
-  // Center is (150, 150), radius is 110
+  // ─── Visual Compass Rose Geometry ───
   const cx = 150;
   const cy = 150;
   const radius = 105;
 
-  // Runway line endpoints
   const rwyRad = ((result.runwayHeading - 90) * Math.PI) / 180;
   const rwyX1 = cx - Math.cos(rwyRad) * (radius - 10);
   const rwyY1 = cy - Math.sin(rwyRad) * (radius - 10);
   const rwyX2 = cx + Math.cos(rwyRad) * (radius - 10);
   const rwyY2 = cy + Math.sin(rwyRad) * (radius - 10);
 
-  // Wind vector arrow
-  // Wind comes FROM windDir, so arrow points towards center from perimeter
   const windRad = ((result.windDirection - 90) * Math.PI) / 180;
   const windStartX = cx + Math.cos(windRad) * (radius + 5);
   const windStartY = cy + Math.sin(windRad) * (radius + 5);
   const windEndX = cx - Math.cos(windRad) * 35;
   const windEndY = cy - Math.sin(windRad) * 35;
 
-  // Runway designator label numbers
   const rwyNum = Math.round(result.runwayHeading / 10).toString().padStart(2, '0');
   const recipNum = Math.round(result.reciprocalHeading / 10).toString().padStart(2, '0');
 
@@ -106,37 +245,179 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
           <div>
             <h1 className="rw-title">🛫 Runway Wind &amp; Crosswind Calculator</h1>
             <div className="rw-subtitle">
-              Interactive Runway Heading, Crosswind Limits &amp; Reciprocal Analysis
+              Auto Route Runway Extraction, Live METAR &amp; Surface Wind Analysis
             </div>
           </div>
         </div>
 
-        {navLogSummary && navLogSummary.legs.length > 0 && (
+        <div className="rw-header-actions">
           <button
             type="button"
-            className="btn btn-cancel"
-            onClick={handleSyncRouteWind}
-            title="Sync departure runway and wind from active flight plan"
+            className={`btn ${isAutoWind ? 'btn-primary' : 'btn-cancel'} rw-auto-toggle-btn`}
+            onClick={() => {
+              const next = !isAutoWind;
+              setIsAutoWind(next);
+              if (next && activeAirport) loadWeather(activeAirport, true);
+            }}
+            title="Toggle automatic live weather fetching from NOAA METAR / Open-Meteo"
           >
-            🔄 Sync Route Leg 1 ({navLogSummary.legs[0].from.identifier})
+            {isLoadingWeather ? '⏳ Loading...' : isAutoWind ? '⚡ Auto Weather: ON' : '⚙️ Manual Weather'}
           </button>
-        )}
+          <button
+            type="button"
+            className="btn btn-cancel rw-refresh-btn"
+            onClick={handleRefreshWeather}
+            disabled={isLoadingWeather}
+            title="Refresh latest METAR and surface observations"
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
+
+      {/* ─── Route Airport Selector Bar ─── */}
+      <div className="mb-card rw-airport-bar-card">
+        <div className="rw-airport-bar-header">
+          <div className="rw-airport-bar-title">
+            <span className="rw-route-icon">🗺️</span>
+            <strong>Flight Plan Airports &amp; Aerodromes:</strong>
+          </div>
+          <div className="rw-airport-bar-meta">
+            {activeAirport.elevation != null && (
+              <span className="rw-elev-badge">Elev: {activeAirport.elevation} ft MSL</span>
+            )}
+            <span className="rw-active-badge">Active: {activeAirport.identifier} ({activeAirportRole})</span>
+          </div>
+        </div>
+
+        <div className="rw-airport-pills-wrap">
+          {routeAirports.map((item, idx) => {
+            const isSelected = idx === selectedAirportIndex;
+            return (
+              <button
+                key={`${item.role}_${item.waypoint.identifier}_${idx}`}
+                type="button"
+                className={`rw-airport-pill ${isSelected ? 'active' : ''}`}
+                onClick={() => setSelectedAirportIndex(idx)}
+              >
+                <span className="pill-role">
+                  {item.role === 'Departure'
+                    ? '🛫 Departure'
+                    : item.role === 'Destination'
+                    ? '🛬 Destination'
+                    : item.role === 'En-route'
+                    ? '📍 En-route'
+                    : '🏢 Aerodrome'}
+                </span>
+                <span className="pill-ident">{item.waypoint.identifier}</span>
+                <span className="pill-name">{item.waypoint.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── Live METAR / Surface Weather Banner ─── */}
+      {weatherReport && (
+        <div className="rw-metar-banner">
+          <div className="metar-banner-top">
+            <div className="metar-source-tag">
+              <span className="pulse-dot"></span>
+              <strong>{weatherReport.source}</strong>
+              <span className="metar-station">{weatherReport.stationId}</span>
+              {weatherReport.flightCategory && (
+                <span className={`flight-cat-badge cat-${weatherReport.flightCategory.toLowerCase()}`}>
+                  {weatherReport.flightCategory}
+                </span>
+              )}
+            </div>
+            <div className="metar-quick-stats">
+              <span>
+                Wind: <strong>{weatherReport.windDirection}° / {weatherReport.windSpeed} kt</strong>
+                {weatherReport.gustSpeed ? ` (Gusts ${weatherReport.gustSpeed} kt)` : ''}
+              </span>
+              {weatherReport.temperature != null && (
+                <span>Temp: <strong>{weatherReport.temperature}°C</strong></span>
+              )}
+              {weatherReport.altimeterQnh != null && (
+                <span>QNH: <strong>{weatherReport.altimeterQnh} hPa</strong></span>
+              )}
+              <span className="obs-time">
+                Observed: {weatherReport.observedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+          {weatherReport.rawMetar && (
+            <div className="metar-raw-code">
+              <code>{weatherReport.rawMetar}</code>
+            </div>
+          )}
+        </div>
+      )}
+
+      {weatherError && !weatherReport && (
+        <div className="rw-weather-warn">
+          ⚠️ {weatherError} You can enter wind values manually below.
+        </div>
+      )}
 
       {/* Main Grid */}
       <div className="rw-grid-layout">
-        {/* Left Column: Inputs */}
+        {/* Left Column: Inputs & Runways */}
         <div className="rw-inputs-col">
-          {/* Runway Heading Card */}
+          {/* Runway Selection Card */}
           <div className="mb-card">
             <div className="mb-card-header">
-              <span className="mb-card-title">1. Runway Alignment</span>
-              <span className="mb-badge">Magnetic Heading</span>
+              <span className="mb-card-title">1. Runway Selection ({activeAirport.identifier})</span>
+              <span className="mb-badge">
+                {airportRunwayInfo ? 'Official AIP Runways' : 'Generic Runways'}
+              </span>
             </div>
 
-            <div className="rw-field-group">
+            {/* Scored Runway Option Cards */}
+            <div className="rw-runway-cards-grid">
+              {scoredRunways.map((item) => {
+                const isSelected = Math.round(rwyHeading) === item.runway.heading;
+                const isRwyHeadwind = item.headwind >= 0;
+                return (
+                  <div
+                    key={item.runway.designator}
+                    className={`rw-runway-choice-card ${isSelected ? 'selected' : ''} ${
+                      item.isBest ? 'is-best' : ''
+                    }`}
+                    onClick={() => handleManualRwyChange(item.runway.heading)}
+                  >
+                    <div className="rwy-choice-top">
+                      <span className="rwy-choice-num">RWY {item.runway.designator}</span>
+                      <span className="rwy-choice-heading">{item.runway.heading}°M</span>
+                      {item.isBest && (
+                        <span className="rwy-best-badge">🟢 Recommended</span>
+                      )}
+                    </div>
+
+                    <div className="rwy-choice-stats">
+                      <span className={`stat-hw ${isRwyHeadwind ? 'pos' : 'neg'}`}>
+                        {isRwyHeadwind ? '+' : ''}{item.headwind} kt {isRwyHeadwind ? 'Headwind' : 'Tailwind'}
+                      </span>
+                      <span className="stat-xw">
+                        {item.crosswind} kt X-Wind
+                      </span>
+                    </div>
+
+                    {item.runway.lengthMeters && (
+                      <div className="rwy-choice-dim">
+                        {item.runway.lengthMeters}m ({Math.round(item.runway.lengthMeters * 3.28084)} ft) • {item.runway.surface || 'Asphalt'}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Custom Heading Slider/Input */}
+            <div className="rw-field-group rw-custom-heading-wrap">
               <div className="rw-input-wrap">
-                <label>Runway Heading (°M)</label>
+                <label>Custom Runway Heading (°M)</label>
                 <div className="rw-input-unit-box">
                   <input
                     type="number"
@@ -149,30 +430,6 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                   <span className="rw-unit-text">°</span>
                 </div>
               </div>
-
-              {/* Quick Runway Numbers */}
-              <div className="rw-quick-pills">
-                <span className="rw-pills-label">Presets:</span>
-                {[
-                  { label: 'RWY 03', deg: 30 },
-                  { label: 'RWY 09', deg: 90 },
-                  { label: 'RWY 18', deg: 180 },
-                  { label: 'RWY 21', deg: 210 },
-                  { label: 'RWY 27', deg: 270 },
-                  { label: 'RWY 36', deg: 360 },
-                ].map((item) => (
-                  <button
-                    key={item.deg}
-                    type="button"
-                    className={`rw-pill-btn ${
-                      Math.round(rwyHeading) === item.deg ? 'active' : ''
-                    }`}
-                    onClick={() => handleQuickRwy(item.deg)}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -180,7 +437,9 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
           <div className="mb-card">
             <div className="mb-card-header">
               <span className="mb-card-title">2. Surface Wind &amp; Gusts</span>
-              <span className="mb-badge">METAR / ATIS / Tower</span>
+              <span className={`mb-badge ${isAutoWind ? 'badge-live' : 'badge-manual'}`}>
+                {isAutoWind ? '⚡ Live Weather Synced' : '⚙️ Manual Override'}
+              </span>
             </div>
 
             <div className="rw-field-grid">
@@ -192,7 +451,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                     min="0"
                     max="360"
                     value={windDirInput}
-                    onChange={(e) => setWindDirInput(e.target.value)}
+                    onChange={(e) => handleManualWindDirChange(e.target.value)}
                     className="rw-main-input"
                   />
                   <span className="rw-unit-text">°</span>
@@ -207,7 +466,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                     min="0"
                     max="100"
                     value={windSpeedInput}
-                    onChange={(e) => setWindSpeedInput(e.target.value)}
+                    onChange={(e) => handleManualWindSpeedChange(e.target.value)}
                     className="rw-main-input"
                   />
                   <span className="rw-unit-text">kt</span>
@@ -223,7 +482,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                     max="100"
                     placeholder="None"
                     value={gustSpeedInput}
-                    onChange={(e) => setGustSpeedInput(e.target.value)}
+                    onChange={(e) => handleManualGustChange(e.target.value)}
                     className="rw-main-input"
                   />
                   <span className="rw-unit-text">kt</span>
@@ -370,7 +629,9 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
           {/* Visual Interactive Compass Rose SVG */}
           <div className="mb-card rw-compass-card">
             <div className="mb-card-header">
-              <span className="mb-card-title">Runway &amp; Wind Compass Rose</span>
+              <span className="mb-card-title">
+                {activeAirport.identifier} RWY {rwyNum} Compass Rose
+              </span>
               <span className="mb-badge">
                 Angle Diff: {Math.abs(result.angleDifference)}°
               </span>
@@ -526,7 +787,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                   {recipNum}
                 </text>
 
-                {/* Wind Vector Vector Arrow */}
+                {/* Wind Vector Arrow */}
                 {windSpeed > 0 && (
                   <g>
                     <line

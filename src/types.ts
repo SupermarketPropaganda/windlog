@@ -196,3 +196,38 @@ export interface RunwayWindResult {
   crosswindStatus: 'safe' | 'caution' | 'exceeded'; // safe <= 70%, caution 70-100%, exceeded > 100%
   angleDifference: number;       // relative angle between runway and wind (-180 to +180)
 }
+
+// ─── Airport & Runway Definitions ───
+
+export interface RunwayDefinition {
+  designator: string;            // e.g. "17", "35", "02L", "20R"
+  heading: number;               // degrees magnetic (e.g. 167)
+  lengthMeters?: number;         // runway length in meters
+  surface?: string;              // 'ASPHALT' | 'CONCRETE' | 'GRASS' | 'DIRT' | string
+  reciprocalDesignator?: string; // e.g. "35"
+}
+
+export interface AirportRunwayInfo {
+  icao: string;                  // e.g. "LPCS"
+  name: string;                  // e.g. "Cascais Airport"
+  elevation?: number;            // feet MSL
+  runways: RunwayDefinition[];
+}
+
+// ─── Surface Weather & METAR ───
+
+export interface SurfaceWeatherReport {
+  stationId: string;             // ICAO identifier or coordinate string
+  windDirection: number;         // degrees magnetic/true (where wind is coming from)
+  windSpeed: number;             // knots
+  gustSpeed?: number;            // knots
+  temperature?: number;          // °C
+  dewpoint?: number;             // °C
+  altimeterQnh?: number;         // hPa / inHg
+  rawMetar?: string;             // Raw METAR string if available (e.g. "METAR LPCS 062000Z 36016KT...")
+  flightCategory?: 'VFR' | 'MVFR' | 'IFR' | 'LIFR';
+  source: 'METAR (NOAA AWC)' | 'Open-Meteo Surface (10m)' | 'Manual';
+  observedAt: Date;
+  isStale?: boolean;
+}
+

@@ -2402,6 +2402,372 @@ body, html {
 /* ==========================================================================
    RUNWAY WIND & CROSSWIND VIEW
    ========================================================================== */
+.rw-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rw-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rw-auto-toggle-btn {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rw-refresh-btn {
+  font-weight: 600;
+}
+
+/* Route Airport Bar */
+.rw-airport-bar-card {
+  padding: 0.85rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  background-color: #0e131f;
+}
+
+.rw-airport-bar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rw-airport-bar-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #e2e8f0;
+}
+
+.rw-airport-bar-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rw-elev-badge {
+  font-size: 0.725rem;
+  background-color: #1e293b;
+  color: #94a3b8;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+}
+
+.rw-active-badge {
+  font-size: 0.725rem;
+  background-color: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.rw-airport-pills-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.rw-airport-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  background-color: #131b2c;
+  border: 1px solid #1e293b;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  min-width: 140px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.rw-airport-pill:hover {
+  background-color: #1a233a;
+  border-color: #334155;
+}
+
+.rw-airport-pill.active {
+  background-color: #1e2e4a;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.pill-role {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+}
+
+.pill-ident {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #ffffff;
+  font-family: var(--font-mono);
+}
+
+.pill-name {
+  font-size: 0.7rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+/* Live METAR Banner */
+.rw-metar-banner {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 0.6rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.metar-banner-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.metar-source-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: #38bdf8;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #22c55e;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 8px #22c55e;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.metar-station {
+  background-color: #0f172a;
+  border: 1px solid #334155;
+  color: #ffffff;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+
+.flight-cat-badge {
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+.cat-vfr {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.cat-mvfr {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.cat-ifr {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.metar-quick-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  flex-wrap: wrap;
+}
+
+.obs-time {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+.metar-raw-code {
+  background-color: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.775rem;
+  color: #a5f3fc;
+  overflow-x: auto;
+}
+
+.metar-raw-code code {
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+.rw-weather-warn {
+  background-color: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Scored Runway Option Cards */
+.rw-runway-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.rw-runway-choice-card {
+  background-color: #131b2c;
+  border: 1px solid #1e293b;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.rw-runway-choice-card:hover {
+  background-color: #1a233a;
+  border-color: #334155;
+}
+
+.rw-runway-choice-card.selected {
+  background-color: #18263f;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.rw-runway-choice-card.is-best {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.rw-runway-choice-card.selected.is-best {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px #22c55e;
+}
+
+.rwy-choice-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rwy-choice-num {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #ffffff;
+  font-family: var(--font-mono);
+}
+
+.rwy-choice-heading {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-family: var(--font-mono);
+}
+
+.rwy-best-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #4ade80;
+  background-color: rgba(34, 197, 94, 0.15);
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.rwy-choice-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.stat-hw.pos {
+  color: #4ade80;
+}
+
+.stat-hw.neg {
+  color: #f87171;
+}
+
+.stat-xw {
+  color: #cbd5e1;
+}
+
+.rwy-choice-dim {
+  font-size: 0.675rem;
+  color: #64748b;
+  border-top: 1px solid #1e293b;
+  padding-top: 0.25rem;
+  margin-top: 0.15rem;
+}
+
+.rw-custom-heading-wrap {
+  border-top: 1px solid #1e293b;
+  padding-top: 0.6rem;
+}
+
+.badge-live {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-manual {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
 .rw-field-group {
   display: flex;
   flex-direction: column;
