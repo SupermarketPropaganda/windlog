@@ -23,10 +23,6 @@ export const DisclaimerModal: React.FC<DisclaimerModalProps> = ({
 
   const canProceed = isReadOnly || (acknowledgedPic && acknowledgedTerms);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className="modal-overlay" style={{ zIndex: 10000 }}>
       <div className="disclaimer-modal legal-modal-container">
@@ -71,14 +67,6 @@ export const DisclaimerModal: React.FC<DisclaimerModalProps> = ({
             onClick={() => setViewMode('full')}
           >
             📜 Complete Master Agreement (14 Sections)
-          </button>
-          <button
-            type="button"
-            className="legal-tab-btn legal-print-btn"
-            onClick={handlePrint}
-            title="Print or Save PDF of Legal Terms"
-          >
-            🖨️ Print / Save Copy
           </button>
         </div>
 
