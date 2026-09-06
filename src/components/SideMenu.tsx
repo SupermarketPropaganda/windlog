@@ -5,7 +5,7 @@ export interface SideMenuProps {
   activeView: ActiveView;
   onChangeView: (view: ActiveView) => void;
   isOpen: boolean;
-  onClose: () => void;
+  onToggle: () => void;
   onOpenKneeboard: () => void;
   navLogSummary: NavLogSummary | null;
   massBalanceResult?: MassBalanceResult | null;
@@ -16,65 +16,115 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   activeView,
   onChangeView,
   isOpen,
-  onClose,
+  onToggle,
   onOpenKneeboard,
   navLogSummary,
   massBalanceResult,
   runwayWindResult,
 }) => {
-  if (!isOpen) return null;
-
   const handleSelect = (view: ActiveView) => {
     onChangeView(view);
-    onClose();
+    // On mobile devices (< 980px), automatically collapse sidebar on selection
+    if (window.innerWidth < 980) {
+      onToggle();
+    }
   };
 
   const handleKneeboard = () => {
     onOpenKneeboard();
-    onClose();
+    if (window.innerWidth < 980) {
+      onToggle();
+    }
   };
 
   return (
-    <div className="sidemenu-overlay" onClick={onClose}>
-      <div className="sidemenu-drawer" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="sidemenu-header">
-          <div className="sidemenu-brand">
-            <span className="sidemenu-icon">✈</span>
-            <div>
-              <div className="sidemenu-title">WindLog Cockpit</div>
-              <div className="sidemenu-subtitle">VFR Flight Planning Suite</div>
+    <>
+      {/* Floating Toggle Button when Sidebar is Collapsed (Gemini Style) */}
+      {!isOpen && (
+        <button
+          type="button"
+          className="gemini-sidebar-toggle-btn no-print"
+          onClick={onToggle}
+          title="Open Sidebar"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <line x1="9" y1="3" x2="9" y2="21" />
+            <path d="M14 9l3 3-3 3" />
+          </svg>
+        </button>
+      )}
+
+      {/* Backdrop overlay for mobile */}
+      {isOpen && (
+        <div className="gemini-sidebar-backdrop" onClick={onToggle} />
+      )}
+
+      {/* Persistent Gemini-Style Sidebar Drawer */}
+      <aside className={`gemini-sidebar no-print ${isOpen ? 'open' : 'closed'}`}>
+        {/* Header with Title and Collapse Button */}
+        <div className="gemini-sidebar-header">
+          <div className="gemini-sidebar-brand">
+            <span className="gemini-brand-icon">✈</span>
+            <div className="gemini-brand-text">
+              <span className="gemini-brand-title">WindLog</span>
+              <span className="gemini-brand-sub">Cockpit Suite</span>
             </div>
           </div>
+
           <button
             type="button"
-            className="sidemenu-close-btn"
-            onClick={onClose}
-            title="Close Menu"
+            className="gemini-sidebar-collapse-btn"
+            onClick={onToggle}
+            title="Collapse Sidebar"
           >
-            ✕
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="9" y1="3" x2="9" y2="21" />
+              <path d="M16 15l-3-3 3-3" />
+            </svg>
           </button>
         </div>
 
-        {/* Navigation Items */}
-        <div className="sidemenu-nav-list">
-          {/* 1. NavLog & Route Planner */}
+        {/* Navigation Section */}
+        <nav className="gemini-sidebar-nav">
+          <div className="gemini-nav-section-title">FLIGHT TOOLS</div>
+
+          {/* 1. Flight Planner & NavLog */}
           <button
             type="button"
-            className={`sidemenu-item ${activeView === 'navlog' ? 'active' : ''}`}
+            className={`gemini-nav-item ${activeView === 'navlog' ? 'active' : ''}`}
             onClick={() => handleSelect('navlog')}
           >
-            <div className="sidemenu-item-icon">🗺️</div>
-            <div className="sidemenu-item-content">
-              <div className="sidemenu-item-title">Flight Planner &amp; NavLog</div>
-              <div className="sidemenu-item-desc">
+            <span className="gemini-nav-icon">🗺️</span>
+            <div className="gemini-nav-body">
+              <div className="gemini-nav-label">Flight Planner</div>
+              <div className="gemini-nav-hint">
                 {navLogSummary && navLogSummary.legs.length > 0
                   ? `${navLogSummary.legs.length} legs • ${navLogSummary.totalDistance.toFixed(1)} NM`
-                  : 'Scratchpad, Winds Aloft & Tactical Map'}
+                  : 'Scratchpad & Map'}
               </div>
             </div>
             {navLogSummary && navLogSummary.legs.length > 0 && (
-              <span className="sidemenu-badge badge-blue">
+              <span className="gemini-nav-badge badge-blue">
                 {navLogSummary.legs.length}
               </span>
             )}
@@ -83,23 +133,23 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           {/* 2. Mass & Balance */}
           <button
             type="button"
-            className={`sidemenu-item ${activeView === 'mass-balance' ? 'active' : ''}`}
+            className={`gemini-nav-item ${activeView === 'mass-balance' ? 'active' : ''}`}
             onClick={() => handleSelect('mass-balance')}
           >
-            <div className="sidemenu-item-icon">⚖️</div>
-            <div className="sidemenu-item-content">
-              <div className="sidemenu-item-title">Mass &amp; Balance</div>
-              <div className="sidemenu-item-desc">
+            <span className="gemini-nav-icon">⚖️</span>
+            <div className="gemini-nav-body">
+              <div className="gemini-nav-label">Mass &amp; Balance</div>
+              <div className="gemini-nav-hint">
                 {massBalanceResult
                   ? massBalanceResult.isTOWInEnvelope && !massBalanceResult.isOverweightTOW
-                    ? `TOW ${massBalanceResult.takeoffWeight} • CG In Envelope ✓`
-                    : '⚠️ Limits Exceeded!'
-                  : 'Aircraft Presets & 2D CG Envelope'}
+                    ? `TOW ${massBalanceResult.takeoffWeight} • Safe`
+                    : 'Limits Exceeded!'
+                  : 'CG Envelopes & Loading'}
               </div>
             </div>
             {massBalanceResult && (
               <span
-                className={`sidemenu-badge ${
+                className={`gemini-nav-badge ${
                   massBalanceResult.isTOWInEnvelope && !massBalanceResult.isOverweightTOW
                     ? 'badge-green'
                     : 'badge-red'
@@ -115,21 +165,21 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           {/* 3. Runway Wind & Crosswind */}
           <button
             type="button"
-            className={`sidemenu-item ${activeView === 'runway-wind' ? 'active' : ''}`}
+            className={`gemini-nav-item ${activeView === 'runway-wind' ? 'active' : ''}`}
             onClick={() => handleSelect('runway-wind')}
           >
-            <div className="sidemenu-item-icon">🛫</div>
-            <div className="sidemenu-item-content">
-              <div className="sidemenu-item-title">Runway Wind &amp; Crosswind</div>
-              <div className="sidemenu-item-desc">
+            <span className="gemini-nav-icon">🛫</span>
+            <div className="gemini-nav-body">
+              <div className="gemini-nav-label">Runway Wind</div>
+              <div className="gemini-nav-hint">
                 {runwayWindResult
-                  ? `RWY ${Math.round(runwayWindResult.runwayHeading / 10).toString().padStart(2, '0')} • HW ${runwayWindResult.headwind >= 0 ? '+' : ''}${runwayWindResult.headwind}kt • XW ${runwayWindResult.crosswind}kt`
-                  : 'Headwind/Tailwind & Visual Compass'}
+                  ? `RWY ${Math.round(runwayWindResult.runwayHeading / 10).toString().padStart(2, '0')} • HW ${runwayWindResult.headwind >= 0 ? '+' : ''}${runwayWindResult.headwind}kt`
+                  : 'Crosswind & Compass'}
               </div>
             </div>
             {runwayWindResult && (
               <span
-                className={`sidemenu-badge ${
+                className={`gemini-nav-badge ${
                   runwayWindResult.crosswindStatus === 'safe'
                     ? 'badge-green'
                     : runwayWindResult.crosswindStatus === 'caution'
@@ -142,29 +192,33 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             )}
           </button>
 
+          <div className="gemini-nav-section-title" style={{ marginTop: '1rem' }}>
+            DOCUMENTS &amp; LOGS
+          </div>
+
           {/* 4. SOP Form 002 Kneeboard (PDF) */}
           <button
             type="button"
-            className="sidemenu-item"
+            className="gemini-nav-item"
             onClick={handleKneeboard}
           >
-            <div className="sidemenu-item-icon">📄</div>
-            <div className="sidemenu-item-content">
-              <div className="sidemenu-item-title">SOP Form 002 Kneeboard</div>
-              <div className="sidemenu-item-desc">
-                Printable Navigation &amp; Fuel Log (PDF)
-              </div>
+            <span className="gemini-nav-icon">📄</span>
+            <div className="gemini-nav-body">
+              <div className="gemini-nav-label">SOP Form 002</div>
+              <div className="gemini-nav-hint">Printable Kneeboard (PDF)</div>
             </div>
-            <span className="sidemenu-badge badge-outline">PDF</span>
+            <span className="gemini-nav-badge badge-outline">PDF</span>
           </button>
-        </div>
+        </nav>
 
         {/* Footer */}
-        <div className="sidemenu-footer">
-          <div className="sidemenu-version">WindLog v2.1 • WMM2025 • PWA Offline Ready</div>
-          <div className="sidemenu-author">Open-Source Aviation Engine</div>
+        <div className="gemini-sidebar-footer">
+          <div className="gemini-footer-status">
+            <span className="status-indicator-dot"></span> Offline Ready
+          </div>
+          <div className="gemini-footer-version">WindLog v2.1 • WMM2025</div>
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 };

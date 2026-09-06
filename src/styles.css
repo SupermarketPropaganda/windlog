@@ -1632,182 +1632,281 @@ body, html {
 }
 
 /* ==========================================================================
-   SIDE MENU NAVIGATION DRAWER
+   GEMINI-STYLE PERSISTENT COLLAPSIBLE SIDEBAR
    ========================================================================== */
-.sidemenu-overlay {
+.cockpit-app-root {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  background-color: var(--bg-color);
+}
+
+.cockpit-main-content {
+  flex: 1;
+  min-width: 0;
+  transition: margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 980px) {
+  .cockpit-app-root.sidebar-open .cockpit-main-content {
+    margin-left: 260px;
+  }
+  .cockpit-app-root.sidebar-closed .cockpit-main-content {
+    margin-left: 0;
+  }
+}
+
+/* Floating Sidebar Toggle Button (When Collapsed) */
+.gemini-sidebar-toggle-btn {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  z-index: 9999;
-  display: flex;
-  justify-content: flex-start;
-  animation: fadeIn 0.15s ease-out;
-}
-
-.sidemenu-drawer {
-  width: 320px;
-  max-width: 85vw;
-  height: 100vh;
+  top: 14px;
+  left: 14px;
+  z-index: 950;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
   background-color: #0d111a;
-  border-right: 1px solid #1e293b;
-  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  animation: slideInLeft 0.2s ease-out;
-}
-
-@keyframes slideInLeft {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
-.sidemenu-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 1.25rem 1rem 1.25rem;
-  border-bottom: 1px solid #1e293b;
-}
-
-.sidemenu-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.sidemenu-icon {
-  font-size: 1.5rem;
-  background-color: #1e3a8a;
-  color: #38bdf8;
-  width: 36px;
-  height: 36px;
+  border: 1px solid #1e293b;
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  transition: all 0.15s ease;
 }
 
-.sidemenu-title {
-  font-size: 1.05rem;
+.gemini-sidebar-toggle-btn:hover {
+  background-color: #1e293b;
+  border-color: #3b82f6;
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+/* Backdrop for mobile */
+.gemini-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 979px) {
+  .gemini-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 998;
+    animation: fadeIn 0.15s ease-out;
+  }
+}
+
+/* Sidebar Container */
+.gemini-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  background-color: #0a0d14;
+  border-right: 1px solid #1a2234;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+}
+
+.gemini-sidebar.closed {
+  transform: translateX(-100%);
+}
+
+.gemini-sidebar.open {
+  transform: translateX(0);
+}
+
+/* Sidebar Header */
+.gemini-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #1a2234;
+  height: 58px;
+}
+
+.gemini-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.gemini-brand-icon {
+  font-size: 1.15rem;
+  background-color: #1e3a8a;
+  color: #38bdf8;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.gemini-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.gemini-brand-title {
+  font-size: 0.95rem;
   font-weight: 800;
-  color: #f8fafc;
+  color: #ffffff;
   letter-spacing: -0.02em;
 }
 
-.sidemenu-subtitle {
-  font-size: 0.725rem;
+.gemini-brand-sub {
+  font-size: 0.65rem;
   color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
 }
 
-.sidemenu-close-btn {
+.gemini-sidebar-collapse-btn {
   background: transparent;
-  border: none;
-  color: #94a3b8;
-  font-size: 1.25rem;
+  border: 1px solid transparent;
+  color: #64748b;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  transition: all 0.15s ease;
 }
 
-.sidemenu-close-btn:hover {
-  background-color: #1e293b;
+.gemini-sidebar-collapse-btn:hover {
+  background-color: #131b2c;
+  border-color: #1e293b;
   color: #ffffff;
 }
 
-.sidemenu-nav-list {
+/* Sidebar Nav */
+.gemini-sidebar-nav {
   flex: 1;
-  padding: 1rem 0.75rem;
+  padding: 0.75rem 0.6rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
   overflow-y: auto;
 }
 
-.sidemenu-item {
+.gemini-nav-section-title {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.gemini-nav-item {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.85rem 1rem;
-  border-radius: 0.5rem;
-  background-color: transparent;
+  gap: 0.65rem;
+  padding: 0.6rem 0.65rem;
+  border-radius: 0.4rem;
+  background: transparent;
   border: 1px solid transparent;
   color: #cbd5e1;
   text-align: left;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
   width: 100%;
 }
 
-.sidemenu-item:hover {
-  background-color: #131b2c;
-  border-color: #1e293b;
+.gemini-nav-item:hover {
+  background-color: #111724;
   color: #ffffff;
-  transform: translateX(3px);
 }
 
-.sidemenu-item.active {
-  background-color: #1e293b;
-  border-color: #3b82f6;
+.gemini-nav-item.active {
+  background-color: #151e30;
+  border-color: rgba(59, 130, 246, 0.4);
   color: #60a5fa;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.sidemenu-item-icon {
-  font-size: 1.35rem;
+.gemini-nav-icon {
+  font-size: 1.15rem;
 }
 
-.sidemenu-item-content {
+.gemini-nav-body {
   flex: 1;
+  min-width: 0;
 }
 
-.sidemenu-item-title {
-  font-size: 0.925rem;
+.gemini-nav-label {
+  font-size: 0.85rem;
   font-weight: 700;
-  margin-bottom: 0.15rem;
 }
 
-.sidemenu-item-desc {
-  font-size: 0.725rem;
+.gemini-nav-hint {
+  font-size: 0.675rem;
   color: #64748b;
-  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.sidemenu-item.active .sidemenu-item-desc {
+.gemini-nav-item.active .gemini-nav-hint {
   color: #93c5fd;
 }
 
-.sidemenu-badge {
-  font-size: 0.65rem;
+.gemini-nav-badge {
+  font-size: 0.625rem;
   font-weight: 800;
-  padding: 0.2rem 0.45rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  letter-spacing: 0.03em;
 }
 
 .badge-blue { background-color: #1d4ed8; color: #ffffff; }
 .badge-green { background-color: #15803d; color: #ffffff; }
 .badge-amber { background-color: #b45309; color: #ffffff; }
 .badge-red { background-color: #b91c1c; color: #ffffff; }
-.badge-outline { border: 1px solid #475569; color: #94a3b8; }
+.badge-outline { border: 1px solid #334155; color: #94a3b8; }
 
-.sidemenu-footer {
-  padding: 1rem 1.25rem;
-  border-top: 1px solid #1e293b;
-  font-size: 0.7rem;
-  color: #475569;
+/* Sidebar Footer */
+.gemini-sidebar-footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #1a2234;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background-color: #070a0f;
 }
 
-.sidemenu-version {
+.gemini-footer-status {
+  font-size: 0.7rem;
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.status-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.gemini-footer-version {
+  font-size: 0.65rem;
+  color: #475569;
   font-family: var(--font-mono);
-  color: #64748b;
-  margin-bottom: 0.2rem;
 }
 
 /* ==========================================================================

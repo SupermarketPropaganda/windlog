@@ -113,9 +113,27 @@ export default function App() {
     }
   });
   const [activeView, setActiveView] = useState<ActiveView>('navlog');
-  const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(false);
+  const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('windlog_sidebar_open');
+      if (stored !== null) return stored === 'true';
+      return typeof window !== 'undefined' && window.innerWidth >= 1280;
+    } catch {
+      return false;
+    }
+  });
   const [runwayWindResult, setRunwayWindResult] = useState<RunwayWindResult | null>(null);
   const [isKneeboardOpen, setIsKneeboardOpen] = useState<boolean>(false);
+
+  const handleToggleSidebar = useCallback(() => {
+    setIsSideMenuOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('windlog_sidebar_open', String(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
   const [tokens, setTokens] = useState<RouteToken[]>([]);
   const [resolvedWaypoints, setResolvedWaypoints] = useState<Waypoint[]>([]);
   const [activeLegIndex, setActiveLegIndex] = useState<number | null>(null);
@@ -430,61 +448,63 @@ export default function App() {
   }
 
   return (
-    <>
-      {activeView === 'navlog' && (
-        <ScratchpadView
-          profile={profile}
-          onProfileChange={handleProfileChange}
-          windState={windState}
-          onWindChange={handleWindChange}
-          onWindModeChange={handleWindModeChange}
-          isWindLoading={isWindLoading}
-          routeInput={routeInput}
-          onRouteInputChange={handleRouteInputChange}
-          tokens={tokens}
-          resolvedWaypoints={resolvedWaypoints}
-          navLog={navLog}
-          activeLegIndex={activeLegIndex}
-          onSelectLeg={(idx) => setActiveLegIndex(activeLegIndex === idx ? null : idx)}
-          onReverseRoute={handleReverseRoute}
-          onClearRoute={handleClearRoute}
-          onShareRoute={handleShareRoute}
-          onOpenKneeboard={() => setIsKneeboardOpen(true)}
-          onOpenSideMenu={() => setIsSideMenuOpen(true)}
-          onTokenClick={handleTokenClick}
-          onLegAltitudeChange={handleLegAltitudeChange}
-          toastMessage={toastMessage}
-          coordPrompt={coordPrompt}
-          onCoordConfirm={handleCoordConfirm}
-          onCoordCancel={handleCoordCancel}
-        />
-      )}
-
-      {activeView === 'mass-balance' && (
-        <MassBalanceView
-          navLogSummary={navLog}
-          onBackToNavLog={() => setActiveView('navlog')}
-        />
-      )}
-
-      {activeView === 'runway-wind' && (
-        <RunwayWindView
-          navLogSummary={navLog}
-          onBackToNavLog={() => setActiveView('navlog')}
-          onResultChange={setRunwayWindResult}
-        />
-      )}
-
-      {/* Side Navigation Menu Drawer */}
+    <div className={`cockpit-app-root ${isSideMenuOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      {/* Gemini-Style Persistent Fixed Side Menu */}
       <SideMenu
         activeView={activeView}
         onChangeView={setActiveView}
         isOpen={isSideMenuOpen}
-        onClose={() => setIsSideMenuOpen(false)}
+        onToggle={handleToggleSidebar}
         onOpenKneeboard={() => setIsKneeboardOpen(true)}
         navLogSummary={navLog}
         runwayWindResult={runwayWindResult}
       />
+
+      {/* Main Content Area (Shifts smoothly with sidebar) */}
+      <main className="cockpit-main-content">
+        {activeView === 'navlog' && (
+          <ScratchpadView
+            profile={profile}
+            onProfileChange={handleProfileChange}
+            windState={windState}
+            onWindChange={handleWindChange}
+            onWindModeChange={handleWindModeChange}
+            isWindLoading={isWindLoading}
+            routeInput={routeInput}
+            onRouteInputChange={handleRouteInputChange}
+            tokens={tokens}
+            resolvedWaypoints={resolvedWaypoints}
+            navLog={navLog}
+            activeLegIndex={activeLegIndex}
+            onSelectLeg={(idx) => setActiveLegIndex(activeLegIndex === idx ? null : idx)}
+            onReverseRoute={handleReverseRoute}
+            onClearRoute={handleClearRoute}
+            onShareRoute={handleShareRoute}
+            onOpenKneeboard={() => setIsKneeboardOpen(true)}
+            onTokenClick={handleTokenClick}
+            onLegAltitudeChange={handleLegAltitudeChange}
+            toastMessage={toastMessage}
+            coordPrompt={coordPrompt}
+            onCoordConfirm={handleCoordConfirm}
+            onCoordCancel={handleCoordCancel}
+          />
+        )}
+
+        {activeView === 'mass-balance' && (
+          <MassBalanceView
+            navLogSummary={navLog}
+            onBackToNavLog={() => setActiveView('navlog')}
+          />
+        )}
+
+        {activeView === 'runway-wind' && (
+          <RunwayWindView
+            navLogSummary={navLog}
+            onBackToNavLog={() => setActiveView('navlog')}
+            onResultChange={setRunwayWindResult}
+          />
+        )}
+      </main>
 
       {isKneeboardOpen && (
         <KneeboardModal
@@ -497,6 +517,6 @@ export default function App() {
       {showDisclaimer && (
         <DisclaimerModal onAccept={handleAcceptDisclaimer} />
       )}
-    </>
+    </div>
   );
 }
