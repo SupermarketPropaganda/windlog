@@ -19,6 +19,7 @@ import { RunwayWindView } from './components/RunwayWindView';
 import { WaypointDB, initWaypointDatabase } from './data/waypoint-db';
 import { searchOsmReportingPoint } from './data/osm-vrp';
 import { fetchWindsAloft, parseManualWind } from './data/winds-aloft';
+import { CURRENT_LEGAL_VERSION } from './data/legal-terms';
 import { computeNavLog } from './engine/navlog-engine';
 import { parseRouteString } from './utils/route-parser';
 import { decodeRouteFromUrl, copyShareableRouteLink } from './utils/url-route';
@@ -107,11 +108,13 @@ export default function App() {
   const [routeInput, setRouteInput] = useState(loadRouteInput);
   const [showDisclaimer, setShowDisclaimer] = useState<boolean>(() => {
     try {
-      return !localStorage.getItem('windlog_disclaimer_accepted');
+      const acceptedVersion = localStorage.getItem('windlog_legal_version_accepted');
+      return acceptedVersion !== CURRENT_LEGAL_VERSION;
     } catch {
       return true;
     }
   });
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
   const [activeView, setActiveView] = useState<ActiveView>('navlog');
   const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(() => {
     try {
@@ -430,9 +433,11 @@ export default function App() {
 
   const handleAcceptDisclaimer = useCallback(() => {
     try {
-      localStorage.setItem('windlog_disclaimer_accepted', 'true');
+      localStorage.setItem('windlog_legal_version_accepted', CURRENT_LEGAL_VERSION);
+      localStorage.setItem('windlog_legal_timestamp', new Date().toISOString());
     } catch { /* ignore */ }
     setShowDisclaimer(false);
+    setIsLegalModalOpen(false);
   }, []);
 
   // ─── Loading state ───
@@ -456,6 +461,7 @@ export default function App() {
         isOpen={isSideMenuOpen}
         onToggle={handleToggleSidebar}
         onOpenKneeboard={() => setIsKneeboardOpen(true)}
+        onOpenLegal={() => setIsLegalModalOpen(true)}
         navLogSummary={navLog}
         runwayWindResult={runwayWindResult}
       />
@@ -515,8 +521,12 @@ export default function App() {
         />
       )}
 
-      {showDisclaimer && (
-        <DisclaimerModal onAccept={handleAcceptDisclaimer} />
+      {(showDisclaimer || isLegalModalOpen) && (
+        <DisclaimerModal
+          onAccept={handleAcceptDisclaimer}
+          onClose={isLegalModalOpen && !showDisclaimer ? () => setIsLegalModalOpen(false) : undefined}
+          isReadOnly={isLegalModalOpen && !showDisclaimer}
+        />
       )}
     </div>
   );

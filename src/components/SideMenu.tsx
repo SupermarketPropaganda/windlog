@@ -7,6 +7,7 @@ export interface SideMenuProps {
   isOpen: boolean;
   onToggle: () => void;
   onOpenKneeboard: () => void;
+  onOpenLegal?: () => void;
   navLogSummary: NavLogSummary | null;
   massBalanceResult?: MassBalanceResult | null;
   runwayWindResult?: RunwayWindResult | null;
@@ -18,6 +19,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   isOpen,
   onToggle,
   onOpenKneeboard,
+  onOpenLegal,
   navLogSummary,
   massBalanceResult,
   runwayWindResult,
@@ -32,6 +34,13 @@ export const SideMenu: React.FC<SideMenuProps> = ({
 
   const handleKneeboard = () => {
     onOpenKneeboard();
+    if (window.innerWidth < 980) {
+      onToggle();
+    }
+  };
+
+  const handleLegal = () => {
+    if (onOpenLegal) onOpenLegal();
     if (window.innerWidth < 980) {
       onToggle();
     }
@@ -208,6 +217,20 @@ export const SideMenu: React.FC<SideMenuProps> = ({
               <div className="gemini-nav-hint">Printable Kneeboard (PDF)</div>
             </div>
             <span className="gemini-nav-badge badge-outline">PDF</span>
+          </button>
+
+          {/* 5. Legal & Disclaimer */}
+          <button
+            type="button"
+            className="gemini-nav-item"
+            onClick={handleLegal}
+          >
+            <span className="gemini-nav-icon">⚖️</span>
+            <div className="gemini-nav-body">
+              <div className="gemini-nav-label">Legal &amp; Terms</div>
+              <div className="gemini-nav-hint">PIC Disclaimer &amp; EULA</div>
+            </div>
+            <span className="gemini-nav-badge badge-outline">v2026.1</span>
           </button>
         </nav>
 
