@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { NavLogSummary } from '../types';
+import { computeAirspaceProfileSlices, AirspaceVerticalSlice } from '../engine/airspace-engine';
 
 export interface AltitudeProfileProps {
   navLog: NavLogSummary;
@@ -9,7 +10,8 @@ export interface AltitudeProfileProps {
 
 /**
  * 2D Vertical Altitude Profile (Side-view Cross Section)
- * Renders an SVG chart displaying route distance vs cruise altitude profile.
+ * Renders an SVG chart displaying route distance vs cruise altitude profile,
+ * with real-time 3D controlled airspace penetration cross-sections.
  */
 export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   navLog,
@@ -18,21 +20,38 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
 }) => {
   if (!navLog || navLog.legs.length === 0) return null;
 
+  const [showAirspaceSlices, setShowAirspaceSlices] = useState<boolean>(true);
+  const [hoveredSlice, setHoveredSlice] = useState<AirspaceVerticalSlice | null>(null);
+
   const width = 800;
-  const height = 160;
+  const height = 180;
   const paddingLeft = 55;
   const paddingRight = 45;
   const paddingTop = 25;
-  const paddingBottom = 35;
+  const paddingBottom = 40;
 
   const chartWidth = width - paddingLeft - paddingRight;
   const chartHeight = height - paddingTop - paddingBottom;
 
   const totalDist = Math.max(1, navLog.totalDistance);
 
+  // Compute 2D vertical airspace slices
+  const airspaceSlices = useMemo(() => {
+    return computeAirspaceProfileSlices(navLog.legs);
+  }, [navLog.legs]);
+
   // Find max altitude to scale Y axis (rounded up to next 2000ft)
   const maxAltInRoute = Math.max(...navLog.legs.map((l) => l.altitude), 3500);
-  const yMaxAlt = Math.ceil((maxAltInRoute + 1500) / 2000) * 2000;
+  const relevantAirspaceAlt = Math.max(
+    ...airspaceSlices.map((s) =>
+      s.status === 'PENETRATING' || s.status === 'CLIPPING'
+        ? s.upperLimitFt
+        : Math.min(s.upperLimitFt, 9500)
+    ),
+    0
+  );
+  const effectiveMaxAlt = Math.max(maxAltInRoute, Math.min(relevantAirspaceAlt, 14500));
+  const yMaxAlt = Math.ceil((effectiveMaxAlt + 1500) / 2000) * 2000;
 
   const scaleX = (dist: number) => paddingLeft + (dist / totalDist) * chartWidth;
   const scaleY = (alt: number) => paddingTop + chartHeight - (alt / yMaxAlt) * chartHeight;
@@ -87,10 +106,41 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
     <div className="altitude-profile-container">
       <div className="profile-header">
         <span className="profile-title">✈ Vertical Flight Profile (Cross-Section)</span>
-        <span className="profile-stats">
-          Total: {navLog.totalDistance.toFixed(1)} nm • Max Alt: {maxAltInRoute.toLocaleString()} ft MSL
-        </span>
+        <div className="profile-controls">
+          <label className="profile-airspace-toggle">
+            <input
+              type="checkbox"
+              checked={showAirspaceSlices}
+              onChange={(e) => setShowAirspaceSlices(e.target.checked)}
+            />
+            <span>Airspaces ({airspaceSlices.length})</span>
+          </label>
+          <span className="profile-stats">
+            Total: {navLog.totalDistance.toFixed(1)} nm • Max Alt: {maxAltInRoute.toLocaleString()} ft MSL
+          </span>
+        </div>
       </div>
+
+      {hoveredSlice && (
+        <div className="profile-airspace-hover-card">
+          <div className="hover-card-title">
+            <strong>{hoveredSlice.airspace.name}</strong> ({hoveredSlice.airspace.type} · Class {hoveredSlice.airspace.classification})
+          </div>
+          <div className="hover-card-limits">
+            Limits: <strong>{hoveredSlice.airspace.lowerLimitLabel} — {hoveredSlice.airspace.upperLimitLabel}</strong> • Route Dist: {hoveredSlice.startDistNm} to {hoveredSlice.endDistNm} NM
+          </div>
+          {hoveredSlice.airspace.frequency && (
+            <div className="hover-card-freq">
+              ATC: <strong>{hoveredSlice.airspace.frequency}</strong>
+            </div>
+          )}
+          {hoveredSlice.status === 'PENETRATING' && (
+            <div className="hover-card-status alert-pen">
+              ⚠️ Penetrating at cruise altitude {hoveredSlice.legAltitudeFt} ft MSL
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="profile-svg-wrapper">
         <svg viewBox={`0 0 ${width} ${height}`} className="altitude-profile-svg">
@@ -120,6 +170,96 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
             );
           })}
 
+          {/* Airspace Cross-Section Blocks */}
+          {showAirspaceSlices &&
+            airspaceSlices.map((slice, sIdx) => {
+              const startX = scaleX(slice.startDistNm);
+              const endX = scaleX(slice.endDistNm);
+              const rectWidth = Math.max(4, endX - startX);
+              const clampedUpper = Math.min(slice.upperLimitFt, yMaxAlt);
+              const yTop = scaleY(clampedUpper);
+              const yBottom = scaleY(slice.lowerLimitFt);
+              const rectHeight = Math.max(4, yBottom - yTop);
+
+              let fillColor = 'rgba(59, 130, 246, 0.10)';
+              let strokeColor = '#3b82f6';
+              let strokeDash: string | undefined = '3,3';
+
+              if (slice.airspace.type === 'TMA') {
+                fillColor = 'rgba(168, 85, 247, 0.10)';
+                strokeColor = '#a855f7';
+              } else if (
+                slice.airspace.type === 'RESTRICTED' ||
+                slice.airspace.type === 'PROHIBITED'
+              ) {
+                fillColor = 'rgba(239, 68, 68, 0.20)';
+                strokeColor = '#ef4444';
+                strokeDash = '4,2';
+              } else if (slice.airspace.type === 'DANGER') {
+                fillColor = 'rgba(245, 158, 11, 0.16)';
+                strokeColor = '#f59e0b';
+                strokeDash = '4,2';
+              } else if (slice.airspace.type === 'ATZ') {
+                fillColor = 'rgba(20, 184, 166, 0.12)';
+                strokeColor = '#14b8a6';
+              }
+
+              if (slice.status === 'PENETRATING') {
+                fillColor =
+                  slice.airspace.type === 'RESTRICTED' || slice.airspace.type === 'PROHIBITED'
+                    ? 'rgba(239, 68, 68, 0.35)'
+                    : 'rgba(249, 115, 22, 0.25)';
+                strokeColor = '#f97316';
+                strokeDash = undefined;
+              }
+
+              return (
+                <g
+                  key={`${slice.airspace.id}-${sIdx}`}
+                  className="profile-airspace-slice"
+                  onMouseEnter={() => setHoveredSlice(slice)}
+                  onMouseLeave={() => setHoveredSlice(null)}
+                >
+                  <rect
+                    x={startX}
+                    y={yTop}
+                    width={rectWidth}
+                    height={rectHeight}
+                    fill={fillColor}
+                    stroke={strokeColor}
+                    strokeWidth={slice.status === 'PENETRATING' ? 1.5 : 1}
+                    strokeDasharray={strokeDash}
+                    rx={2}
+                  />
+                  {rectWidth > 32 && (
+                    <text
+                      x={startX + 4}
+                      y={yTop + 11}
+                      fill={strokeColor}
+                      fontSize="8.5"
+                      fontFamily="monospace"
+                      fontWeight="bold"
+                    >
+                      {slice.airspace.name.length > 14 && rectWidth < 80
+                        ? slice.airspace.id
+                        : slice.airspace.name}
+                    </text>
+                  )}
+                  {rectWidth > 40 && (
+                    <text
+                      x={startX + 4}
+                      y={yBottom - 4}
+                      fill="#94a3b8"
+                      fontSize="7.5"
+                      fontFamily="monospace"
+                    >
+                      {slice.airspace.lowerLimitLabel}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+
           {/* Area Fill */}
           <path d={areaD} fill="url(#profileGradient)" />
 
@@ -134,7 +274,8 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
 
           {/* Interactive Leg Blocks */}
           {navLog.legs.map((leg, idx) => {
-            const startDist = idx === 0 ? 0 : navLog.legs.slice(0, idx).reduce((acc, l) => acc + l.distance, 0);
+            const startDist =
+              idx === 0 ? 0 : navLog.legs.slice(0, idx).reduce((acc, l) => acc + l.distance, 0);
             const startX = scaleX(startDist);
             const endX = scaleX(startDist + leg.distance);
             const legY = scaleY(leg.altitude);

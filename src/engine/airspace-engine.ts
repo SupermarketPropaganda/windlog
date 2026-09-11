@@ -454,3 +454,245 @@ export function checkRouteAirspaceConflicts(
     summaryMessage,
   };
 }
+
+export interface AirspaceVerticalSlice {
+  airspace: Airspace;
+  legIndex: number;
+  startDistNm: number;
+  endDistNm: number;
+  lowerLimitFt: number;
+  upperLimitFt: number;
+  status: PenetrationStatus;
+  severity: ConflictSeverity;
+  legAltitudeFt: number;
+  verticalClearanceFt: number;
+}
+
+/**
+ * Computes parametric intersection fraction t in [0, 1] between segment [p1, p2] and [q1, q2].
+ * Returns null if segments are parallel or do not intersect.
+ */
+function getSegmentIntersectionFraction(
+  p1: [number, number],
+  p2: [number, number],
+  q1: [number, number],
+  q2: [number, number]
+): number | null {
+  const rx = p2[0] - p1[0];
+  const ry = p2[1] - p1[1];
+  const sx = q2[0] - q1[0];
+  const sy = q2[1] - q1[1];
+
+  const crossRS = rx * sy - ry * sx;
+  if (Math.abs(crossRS) < 1e-9) return null; // parallel or collinear
+
+  const qpX = q1[0] - p1[0];
+  const qpY = q1[1] - p1[1];
+
+  const t = (qpX * sy - qpY * sx) / crossRS;
+  const u = (qpX * ry - qpY * rx) / crossRS;
+
+  if (t >= -1e-7 && t <= 1 + 1e-7 && u >= -1e-7 && u <= 1 + 1e-7) {
+    return Math.max(0, Math.min(1, t));
+  }
+  return null;
+}
+
+/**
+ * Computes 2D vertical cross-section slices along the flight plan route.
+ * Used by AltitudeProfile to render airspace blocks along the route distance X-axis.
+ */
+export function computeAirspaceProfileSlices(
+  legs: Leg[],
+  airspaces: Airspace[] = AIRSPACES
+): AirspaceVerticalSlice[] {
+  if (!legs || legs.length === 0 || !airspaces || airspaces.length === 0) {
+    return [];
+  }
+
+  const rawSlices: AirspaceVerticalSlice[] = [];
+  let cumulativeDist = 0;
+
+  for (let i = 0; i < legs.length; i++) {
+    const leg = legs[i];
+    const legDist = leg.distance || 0;
+    const legStartDist = cumulativeDist;
+    cumulativeDist += legDist;
+
+    if (!leg.from || !leg.to || legDist <= 0) continue;
+
+    const p1: [number, number] = [leg.from.latitude, leg.from.longitude];
+    const p2: [number, number] = [leg.to.latitude, leg.to.longitude];
+
+    for (const as of airspaces) {
+      const conflict = checkLegAirspaceConflict(leg, i, as);
+      if (!conflict) continue;
+
+      const poly = as.polygon;
+      if (!poly || poly.length < 3) continue;
+
+      // Find all parametric t fractions where the leg enters or exits the polygon
+      const tSet = new Set<number>();
+      tSet.add(0);
+      tSet.add(1);
+
+      for (let j = 0; j < poly.length - 1; j++) {
+        const t = getSegmentIntersectionFraction(p1, p2, poly[j], poly[j + 1]);
+        if (t !== null && t > 0.001 && t < 0.999) {
+          tSet.add(t);
+        }
+      }
+
+      const sortedT = Array.from(tSet).sort((a, b) => a - b);
+
+      for (let k = 0; k < sortedT.length - 1; k++) {
+        const tA = sortedT[k];
+        const tB = sortedT[k + 1];
+        if (tB - tA < 0.005) continue; // Skip sub-millimeter segments
+
+        const midT = (tA + tB) / 2;
+        const midPoint: [number, number] = [
+          p1[0] + midT * (p2[0] - p1[0]),
+          p1[1] + midT * (p2[1] - p1[1]),
+        ];
+
+        if (isPointInPolygon(midPoint, poly)) {
+          rawSlices.push({
+            airspace: as,
+            legIndex: i,
+            startDistNm: Math.round((legStartDist + tA * legDist) * 10) / 10,
+            endDistNm: Math.round((legStartDist + tB * legDist) * 10) / 10,
+            lowerLimitFt: as.lowerLimitFt,
+            upperLimitFt: as.upperLimitFt,
+            status: conflict.status,
+            severity: conflict.severity,
+            legAltitudeFt: leg.altitude,
+            verticalClearanceFt: conflict.verticalClearanceFt,
+          });
+        }
+      }
+    }
+  }
+
+  // Merge contiguous slices of the same airspace on the same leg
+  const mergedSlices: AirspaceVerticalSlice[] = [];
+  for (const slice of rawSlices) {
+    const prev = mergedSlices[mergedSlices.length - 1];
+    if (
+      prev &&
+      prev.airspace.id === slice.airspace.id &&
+      prev.legIndex === slice.legIndex &&
+      Math.abs(prev.endDistNm - slice.startDistNm) < 0.5
+    ) {
+      prev.endDistNm = Math.max(prev.endDistNm, slice.endDistNm);
+    } else {
+      mergedSlices.push({ ...slice });
+    }
+  }
+
+  return mergedSlices;
+}
+
+/**
+ * Filters an airspace list to only include sectors relevant to a given target altitude.
+ */
+export function filterAirspacesByAltitude(
+  airspaces: Airspace[],
+  targetAltitudeFt: number,
+  bufferFt = 1000
+): Airspace[] {
+  if (targetAltitudeFt <= 0) return airspaces;
+  return airspaces.filter((as) => {
+    return (
+      as.lowerLimitFt <= targetAltitudeFt + bufferFt &&
+      as.upperLimitFt >= targetAltitudeFt - bufferFt
+    );
+  });
+}
+
+/**
+ * Returns actionable ATC clearance and flight rules advisory for a given airspace.
+ */
+export function getAirspaceClearanceAdvisory(
+  airspace: Airspace,
+  legAltitudeFt: number
+): {
+  actionTitle: string;
+  actionDetail: string;
+  frequency: string;
+  isClearanceRequired: boolean;
+} {
+  const freq = airspace.frequency || '123.750 MHz (Lisboa Info)';
+  const alt = legAltitudeFt || 0;
+
+  if (airspace.type === 'PROHIBITED') {
+    return {
+      actionTitle: 'PROHIBITED AIRSPACE — RE-ROUTE MANDATORY',
+      actionDetail: `Flight inside ${airspace.name} is strictly prohibited at all times. Re-route horizontally around the area.`,
+      frequency: freq,
+      isClearanceRequired: true,
+    };
+  }
+
+  if (airspace.type === 'RESTRICTED') {
+    return {
+      actionTitle: 'RESTRICTED AIRSPACE — VERIFY NOTAM ACTIVATION',
+      actionDetail: `Active military firing/artillery in ${airspace.name}. If activated by NOTAM, entry is forbidden. Contact ${freq} to verify status prior to entry.`,
+      frequency: freq,
+      isClearanceRequired: true,
+    };
+  }
+
+  if (airspace.type === 'DANGER') {
+    return {
+      actionTitle: 'DANGER AREA — INTENSE HAZARD ADVISORY',
+      actionDetail: `${airspace.remarks || 'Intense parachute/aerobatic activity'}. Extreme visual lookout mandatory. Monitor ${freq}.`,
+      frequency: freq,
+      isClearanceRequired: false,
+    };
+  }
+
+  if (airspace.type === 'CTR') {
+    return {
+      actionTitle: `CLASS ${airspace.classification} CTR CLEARANCE MANDATORY`,
+      actionDetail: `Establish two-way radio contact with ${freq} prior to crossing CTR boundary. Maintain designated VFR reporting points and assigned altitude.`,
+      frequency: freq,
+      isClearanceRequired: true,
+    };
+  }
+
+  if (airspace.type === 'TMA') {
+    const isPenetrating = alt >= airspace.lowerLimitFt && alt <= airspace.upperLimitFt;
+    if (isPenetrating) {
+      return {
+        actionTitle: `CLASS ${airspace.classification} TMA PENETRATION — CLEARANCE REQUIRED`,
+        actionDetail: `Cruising at ${alt} ft penetrates ${airspace.name} (Floor: ${airspace.lowerLimitLabel}). Request Class C VFR transit on ${freq}, or cruise below ${airspace.lowerLimitFt} ft.`,
+        frequency: freq,
+        isClearanceRequired: true,
+      };
+    } else if (alt < airspace.lowerLimitFt) {
+      const buffer = airspace.lowerLimitFt - alt;
+      return {
+        actionTitle: `FLYING UNDER TMA FLOOR (${buffer} FT BUFFER)`,
+        actionDetail: `Operating clear below ${airspace.name} floor (${airspace.lowerLimitLabel}). Monitor ${freq} for regional QNH and traffic advisories.`,
+        frequency: freq,
+        isClearanceRequired: false,
+      };
+    } else {
+      return {
+        actionTitle: `OPERATING ABOVE TMA CEILING`,
+        actionDetail: `Operating above ${airspace.name} ceiling (${airspace.upperLimitLabel}). Maintain FL cruise and transponder assignment.`,
+        frequency: freq,
+        isClearanceRequired: false,
+      };
+    }
+  }
+
+  // ATZ / Uncontrolled
+  return {
+    actionTitle: 'UNCONTROLLED AERODROME ADVISORY (ATZ)',
+    actionDetail: `Broadcast blind intentions (position, altitude, landing/transit) on ${freq} 5 minutes prior to entering the ATZ.`,
+    frequency: freq,
+    isClearanceRequired: false,
+  };
+}

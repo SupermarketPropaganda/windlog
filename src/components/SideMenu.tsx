@@ -8,10 +8,8 @@ export interface SideMenuProps {
   onToggle: () => void;
   onOpenKneeboard: () => void;
   onOpenLegal?: () => void;
-  onOpenAvionics?: () => void;
   airacCycle?: string;
   airacStatus?: 'CURRENT' | 'EXPIRING_SOON' | 'EXPIRED';
-  avionicsStatus?: 'DISCONNECTED' | 'SEARCHING' | 'CONNECTED' | 'SIMULATING';
   navLogSummary: NavLogSummary | null;
   massBalanceResult?: MassBalanceResult | null;
   runwayWindResult?: RunwayWindResult | null;
@@ -24,10 +22,8 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   onToggle,
   onOpenKneeboard,
   onOpenLegal,
-  onOpenAvionics,
   airacCycle,
   airacStatus,
-  avionicsStatus,
   navLogSummary,
   massBalanceResult,
   runwayWindResult,
@@ -49,13 +45,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({
 
   const handleLegal = () => {
     if (onOpenLegal) onOpenLegal();
-    if (window.innerWidth < 980) {
-      onToggle();
-    }
-  };
-
-  const handleAvionics = () => {
-    if (onOpenAvionics) onOpenAvionics();
     if (window.innerWidth < 980) {
       onToggle();
     }
@@ -214,38 +203,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({
                 {runwayWindResult.crosswindStatus.toUpperCase()}
               </span>
             )}
-          </button>
-
-          <div className="gemini-nav-section-title" style={{ marginTop: '1rem' }}>
-            IN-FLIGHT &amp; HARDWARE
-          </div>
-
-          {/* Cockpit Avionics HUD */}
-          <button
-            type="button"
-            className="gemini-nav-item"
-            onClick={handleAvionics}
-          >
-            <span className="gemini-nav-icon">📡</span>
-            <div className="gemini-nav-body">
-              <div className="gemini-nav-label">Cockpit Avionics</div>
-              <div className="gemini-nav-hint">GPS &amp; ADS-B Receiver</div>
-            </div>
-            <span
-              className={`gemini-nav-badge ${
-                avionicsStatus === 'CONNECTED'
-                  ? 'badge-green'
-                  : avionicsStatus === 'SIMULATING'
-                  ? 'badge-amber'
-                  : 'badge-outline'
-              }`}
-            >
-              {avionicsStatus === 'CONNECTED'
-                ? 'GPS ON'
-                : avionicsStatus === 'SIMULATING'
-                ? 'SIM'
-                : 'OFF'}
-            </span>
           </button>
 
           <div className="gemini-nav-section-title" style={{ marginTop: '1rem' }}>

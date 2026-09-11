@@ -27,8 +27,6 @@ import { initStorage, getStorageItemSync, setStorageItem } from './data/storage-
 import { CURRENT_DATABASE_METADATA } from './data/airac-meta';
 import { checkDatabaseAiracStatus } from './engine/airac';
 import { initializeNativeShell } from './utils/platform';
-import { AvionicsModal } from './components/AvionicsModal';
-import { avionicsManager, AvionicsState } from './engine/avionics-manager';
 
 // ─── Local storage helpers via StorageManager ───
 
@@ -125,23 +123,13 @@ export default function App() {
   });
   const [runwayWindResult, setRunwayWindResult] = useState<RunwayWindResult | null>(null);
   const [isKneeboardOpen, setIsKneeboardOpen] = useState<boolean>(false);
-  const [isAvionicsOpen, setIsAvionicsOpen] = useState<boolean>(false);
-  const [avionicsState, setAvionicsState] = useState<AvionicsState>(avionicsManager.getState());
   const [dbProgress, setDbProgress] = useState<{ percent: number }>({ percent: 0 });
   const [airacReport] = useState(() => checkDatabaseAiracStatus(CURRENT_DATABASE_METADATA.airacCycle));
 
-  // ─── Native shell & Avionics telemetry subscriptions ───
+  // ─── Native shell & Storage initialization ───
   useEffect(() => {
     initializeNativeShell();
     initStorage().catch(console.warn);
-
-    const unsubAvionics = avionicsManager.subscribe((state) => {
-      setAvionicsState(state);
-    });
-
-    return () => {
-      unsubAvionics();
-    };
   }, []);
 
   const handleToggleSidebar = useCallback(() => {
@@ -484,10 +472,8 @@ export default function App() {
         onToggle={handleToggleSidebar}
         onOpenKneeboard={() => setIsKneeboardOpen(true)}
         onOpenLegal={() => setIsLegalModalOpen(true)}
-        onOpenAvionics={() => setIsAvionicsOpen(true)}
         airacCycle={airacReport.currentCycle.cycle}
         airacStatus={airacReport.status}
-        avionicsStatus={avionicsState.status}
         navLogSummary={navLog}
         runwayWindResult={runwayWindResult}
       />
@@ -554,12 +540,6 @@ export default function App() {
           isReadOnly={isLegalModalOpen && !showDisclaimer}
         />
       )}
-
-      <AvionicsModal
-        isOpen={isAvionicsOpen}
-        onClose={() => setIsAvionicsOpen(false)}
-        activeRoute={resolvedWaypoints}
-      />
     </div>
   );
 }

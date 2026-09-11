@@ -18,6 +18,32 @@ describe('Airspace Geometry & Conflict Detection Engine', () => {
     [0, 0],
   ];
 
+  const makeWpt = (id: number, ident: string, lat: number, lon: number): Waypoint => ({
+    id,
+    identifier: ident,
+    name: ident,
+    type: 'airport',
+    latitude: lat,
+    longitude: lon,
+    country: 'PT',
+  });
+
+  const makeLeg = (from: Waypoint, to: Waypoint, altitude: number): Leg => ({
+    id: `${from.identifier}-${to.identifier}`,
+    from,
+    to,
+    distance: 50,
+    trueTrack: 90,
+    magneticVariation: -1,
+    windCorrectionAngle: 0,
+    trueHeading: 90,
+    magneticHeading: 91,
+    groundSpeed: 100,
+    ete: 1800,
+    altitude,
+    fuelBurn: 4.5,
+  });
+
   describe('Point in Polygon (Ray Casting)', () => {
     it('correctly identifies interior, exterior, and boundary points', () => {
       // Interior point
@@ -78,32 +104,6 @@ describe('Airspace Geometry & Conflict Detection Engine', () => {
   });
 
   describe('Leg Airspace Conflict Detection', () => {
-    const makeWpt = (id: number, ident: string, lat: number, lon: number): Waypoint => ({
-      id,
-      identifier: ident,
-      name: ident,
-      type: 'airport',
-      latitude: lat,
-      longitude: lon,
-      country: 'PT',
-    });
-
-    const makeLeg = (from: Waypoint, to: Waypoint, altitude: number): Leg => ({
-      id: `${from.identifier}-${to.identifier}`,
-      from,
-      to,
-      distance: 50,
-      trueTrack: 90,
-      magneticVariation: -1,
-      windCorrectionAngle: 0,
-      trueHeading: 90,
-      magneticHeading: 91,
-      groundSpeed: 100,
-      ete: 1800,
-      altitude,
-      fuelBurn: 4.5,
-    });
-
     it('flags PENETRATING when cruising altitude is inside CTR limits', () => {
       const cascaisCtr = AIRSPACES.find((a) => a.id === 'LPCS_CTR')!;
       const wptDep = makeWpt(1, 'LPCS', 38.725, -9.355);
@@ -171,6 +171,73 @@ describe('Airspace Geometry & Conflict Detection Engine', () => {
       expect(report.conflicts.length).toBe(0);
       expect(report.hasCriticalConflict).toBe(false);
       expect(report.hasWarningConflict).toBe(false);
+    });
+  });
+
+  describe('Vertical Profile Airspace Slicing (AltitudeProfile Integration)', () => {
+    it('computes exact distance intervals for route crossing Cascais CTR', async () => {
+      const { computeAirspaceProfileSlices } = await import('../engine/airspace-engine');
+      const wptDep = makeWpt(1, 'LPCS', 38.725, -9.355);
+      const wptArr = makeWpt(2, 'COIMB', 40.160, -8.470);
+      const leg = makeLeg(wptDep, wptArr, 1500);
+
+      const slices = computeAirspaceProfileSlices([leg], AIRSPACES);
+      expect(slices.length).toBeGreaterThan(0);
+
+      // Verify Cascais CTR is sliced at beginning of flight
+      const cascaisSlice = slices.find((s) => s.airspace.id === 'LPCS_CTR');
+      expect(cascaisSlice).toBeDefined();
+      expect(cascaisSlice?.startDistNm).toBe(0);
+      expect(cascaisSlice?.endDistNm).toBeGreaterThan(0);
+      expect(cascaisSlice?.status).toBe('PENETRATING');
+    });
+
+    it('returns empty slices for empty legs list', async () => {
+      const { computeAirspaceProfileSlices } = await import('../engine/airspace-engine');
+      const slices = computeAirspaceProfileSlices([]);
+      expect(slices).toEqual([]);
+    });
+  });
+
+  describe('Altitude Filtering & Pilot Clearance Advisories', () => {
+    it('filters airspaces by operational cruise altitude', async () => {
+      const { filterAirspacesByAltitude } = await import('../engine/airspace-engine');
+      
+      // Filter for low VFR cruise at 1,000 ft (buffer 500 ft -> airspaces between SFC and 1,500 ft)
+      const lowSectors = filterAirspacesByAltitude(AIRSPACES, 1000, 500);
+      
+      // Cascais CTR (SFC to 2500) must be included
+      expect(lowSectors.some((a) => a.id === 'LPCS_CTR')).toBe(true);
+      
+      // Lisboa TMA Sector 4 (4500' to FL245) must be excluded because floor 4500 > 1500
+      expect(lowSectors.some((a) => a.id === 'LISBOA_TMA_4')).toBe(false);
+    });
+
+    it('generates actionable clearance advisory for CTR and Restricted airspace', async () => {
+      const { getAirspaceClearanceAdvisory } = await import('../engine/airspace-engine');
+      const cascaisCtr = AIRSPACES.find((a) => a.id === 'LPCS_CTR')!;
+      const r51a = AIRSPACES.find((a) => a.id === 'LP_R51A')!;
+
+      const ctrAdv = getAirspaceClearanceAdvisory(cascaisCtr, 1500);
+      expect(ctrAdv.isClearanceRequired).toBe(true);
+      expect(ctrAdv.frequency).toContain('120.305');
+      expect(ctrAdv.actionTitle).toContain('CLEARANCE MANDATORY');
+
+      const reAdv = getAirspaceClearanceAdvisory(r51a, 3500);
+      expect(reAdv.isClearanceRequired).toBe(true);
+      expect(reAdv.actionTitle).toContain('RESTRICTED AIRSPACE');
+      expect(reAdv.actionDetail).toContain('NOTAM');
+    });
+
+    it('validates all airspaces in the expanded catalog have valid coordinates and non-zero area', () => {
+      expect(AIRSPACES.length).toBeGreaterThanOrEqual(25);
+      for (const as of AIRSPACES) {
+        expect(as.polygon.length).toBeGreaterThanOrEqual(3);
+        expect(as.lowerLimitFt).toBeGreaterThanOrEqual(0);
+        expect(as.upperLimitFt).toBeGreaterThan(as.lowerLimitFt);
+        expect(as.name).toBeTruthy();
+        expect(as.id).toBeTruthy();
+      }
     });
   });
 });
