@@ -9,6 +9,7 @@ import {
   checkLegAirspaceConflict,
   getAirspaceClearanceAdvisory,
   isPointInPolygon,
+  doesSegmentOverlapPolygon,
 } from '../engine/airspace-engine';
 
 export type MapLayerType = 'dark' | 'satellite' | 'terrain' | 'street';
@@ -180,6 +181,7 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   const [airspaceFilter, setAirspaceFilter] = useState<AirspaceFilterType>('ALL');
   const [altitudeFilter, setAltitudeFilter] = useState<AirspaceAltitudeFilter>('ALL');
   const [showSectorLabels, setShowSectorLabels] = useState<boolean>(true);
+  const [onlyRouteAirspaces, setOnlyRouteAirspaces] = useState<boolean>(false);
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState<boolean>(false);
 
   // Initialize Leaflet Map with Offline-Capable Tile Layer
@@ -263,6 +265,29 @@ export const RouteMap: React.FC<RouteMapProps> = ({
 
     // 1. Filter airspaces according to active filters
     const filteredAirspaces = AIRSPACES.filter((as: Airspace) => {
+      // If user enabled "Route Airspaces Only", filter strictly to airspaces the route penetrates or enters
+      if (onlyRouteAirspaces) {
+        if (!navLog || !navLog.legs || navLog.legs.length === 0) return false;
+        const goesThrough = navLog.legs.some((leg) => {
+          const start: [number, number] = [leg.from.latitude, leg.from.longitude];
+          const end: [number, number] = [leg.to.latitude, leg.to.longitude];
+          const overlaps2D = doesSegmentOverlapPolygon(start, end, as.polygon);
+          if (!overlaps2D) return false;
+
+          // If altitude is not specified or 0, match 2D corridor
+          if (!leg.altitude || leg.altitude <= 0) return true;
+
+          // Departure / arrival waypoint inside airspace (climb or descent containment)
+          if (isPointInPolygon(start, as.polygon) || isPointInPolygon(end, as.polygon)) {
+            return as.lowerLimitFt <= leg.altitude + 500;
+          }
+
+          // En-route: cruising altitude penetrates or clips vertical sector (with 500ft clearance buffer)
+          return leg.altitude >= as.lowerLimitFt - 500 && leg.altitude <= as.upperLimitFt + 500;
+        });
+        if (!goesThrough) return false;
+      }
+
       if (airspaceFilter === 'CTR' && as.type !== 'CTR') return false;
       if (airspaceFilter === 'TMA' && as.type !== 'TMA') return false;
       if (
@@ -474,6 +499,7 @@ export const RouteMap: React.FC<RouteMapProps> = ({
     airspaceFilter,
     altitudeFilter,
     showSectorLabels,
+    onlyRouteAirspaces,
     navLog,
     routeAltRange,
   ]);
@@ -612,6 +638,18 @@ export const RouteMap: React.FC<RouteMapProps> = ({
             </button>
             {showAirspaces && (
               <>
+                <button
+                  type="button"
+                  className={`layer-btn route-crossing-btn ${onlyRouteAirspaces ? 'active' : ''}`}
+                  onClick={() => setOnlyRouteAirspaces(!onlyRouteAirspaces)}
+                  title={
+                    navLog && navLog.legs.length > 0
+                      ? 'Only display airspaces that your current flight route penetrates or enters'
+                      : 'Requires an active flight route'
+                  }
+                >
+                  {onlyRouteAirspaces ? '✈ Route Only (ON)' : '✈ Route Airspaces Only'}
+                </button>
                 <button
                   type="button"
                   className={`layer-btn ${airspaceFilter === 'ALL' ? 'active' : ''}`}

@@ -269,5 +269,39 @@ describe('Airspace Geometry & Conflict Detection Engine', () => {
       const r42 = report.conflicts.find((c) => c.airspace.id === 'LP_R42');
       expect(r42?.status).toBe('ABOVE');
     });
+
+    it('accurately filters airspaces that the route passes through or penetrates', () => {
+      // Route: Cascais (LPCS) to Coimbra (LPCO) at 4,500 ft
+      const lpcs = makeWpt(1, 'LPCS', 38.725, -9.355);
+      const lpco = makeWpt(2, 'LPCO', 40.158, -8.470);
+      const legs = [makeLeg(lpcs, lpco, 4500)];
+
+      const routeFilter = (as: typeof AIRSPACES[0]) => {
+        return legs.some((leg) => {
+          const start: [number, number] = [leg.from.latitude, leg.from.longitude];
+          const end: [number, number] = [leg.to.latitude, leg.to.longitude];
+          const overlaps = doesSegmentOverlapPolygon(start, end, as.polygon);
+          if (!overlaps) return false;
+          if (!leg.altitude || leg.altitude <= 0) return true;
+          if (isPointInPolygon(start, as.polygon) || isPointInPolygon(end, as.polygon)) {
+            return as.lowerLimitFt <= leg.altitude + 500;
+          }
+          return leg.altitude >= as.lowerLimitFt - 500 && leg.altitude <= as.upperLimitFt + 500;
+        });
+      };
+
+      const matched = AIRSPACES.filter(routeFilter);
+      const matchedIds = matched.map((a) => a.id);
+
+      // Cascais CTR (departure containment) must be matched
+      expect(matchedIds).toContain('LPCS_CTR');
+      // Coimbra ATZ (arrival containment) must be matched
+      expect(matchedIds).toContain('LPCO_ATZ');
+
+      // Faraway southern airspaces must NOT be matched
+      expect(matchedIds).not.toContain('LPFR_CTR');
+      expect(matchedIds).not.toContain('FARO_TMA');
+      expect(matchedIds).not.toContain('LPBJ_CTR');
+    });
   });
 });

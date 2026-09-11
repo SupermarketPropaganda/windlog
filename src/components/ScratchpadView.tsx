@@ -14,7 +14,7 @@ import { NavLogRow } from './NavLogRow';
 import { CoordPrompt } from './CoordPrompt';
 import { RouteMap } from './RouteMap';
 import { AltitudeProfile } from './AltitudeProfile';
-import { AirspaceAlertBadge, AirspaceConflictDetails } from './AirspaceAlertBanner';
+import { AirspaceAlertBanner } from './AirspaceAlertBanner';
 
 export interface ScratchpadViewProps {
   /** The current aircraft profile */
@@ -77,7 +77,6 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
   const [showMap, setShowMap] = useState(true);
   const [showProfile, setShowProfile] = useState(true);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
-  const [isAirspaceExpanded, setIsAirspaceExpanded] = useState(false);
 
   const hasWaypoints = props.resolvedWaypoints.length > 0;
   const fuelUnitLabel = props.profile.fuelUnit === 'gph' ? 'gal' : 'L';
@@ -117,97 +116,89 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
             autoComplete="off"
           />
 
-          <div className="route-actions">
-            {props.routeInput.trim().length > 0 && (
-              <>
-                <button
-                  type="button"
-                  className="route-action-btn"
-                  title="Share flight route as URL"
-                  onClick={props.onShareRoute}
-                >
-                  🔗 Share
-                </button>
-                {props.navLog && props.navLog.legs.length > 0 && (
+          <div className="route-toolbar-row">
+            <div className="route-actions">
+              {props.routeInput.trim().length > 0 && (
+                <>
                   <button
                     type="button"
                     className="route-action-btn"
-                    title="Open Printable SOP Form 002 Kneeboard / PDF"
-                    onClick={props.onOpenKneeboard}
-                    style={{ borderColor: '#3b82f6', color: '#60a5fa' }}
+                    title="Share flight route as URL"
+                    onClick={props.onShareRoute}
                   >
-                    📄 PDF Kneeboard
+                    🔗 Share
                   </button>
-                )}
-                <button
-                  type="button"
-                  className="route-action-btn"
-                  title="Reverse Route (Return Flight)"
-                  onClick={props.onReverseRoute}
-                >
-                  ⇄ Reverse
-                </button>
-                <button
-                  type="button"
-                  className="route-action-btn"
-                  title="Clear Route"
-                  onClick={props.onClearRoute}
-                >
-                  ✕ Clear
-                </button>
-              </>
-            )}
-
-            {hasWaypoints && (
-              <>
-                <button
-                  type="button"
-                  className={`route-action-btn ${showMap ? 'active-toggle' : ''}`}
-                  onClick={() => setShowMap(!showMap)}
-                  title="Toggle interactive map"
-                >
-                  🗺️ {showMap ? 'Hide Map' : 'Show Map'}
-                </button>
-                {showMap && (
+                  {props.navLog && props.navLog.legs.length > 0 && (
+                    <button
+                      type="button"
+                      className="route-action-btn"
+                      title="Open Printable SOP Form 002 Kneeboard / PDF"
+                      onClick={props.onOpenKneeboard}
+                      style={{ borderColor: '#3b82f6', color: '#60a5fa' }}
+                    >
+                      📄 PDF Kneeboard
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className={`route-action-btn fullscreen-action-btn ${isMapFullscreen ? 'active-toggle' : ''}`}
-                    onClick={() => setIsMapFullscreen(!isMapFullscreen)}
-                    title={isMapFullscreen ? 'Exit full screen map (Esc)' : 'Expand map to full screen'}
-                    style={{ borderColor: '#38bdf8', color: isMapFullscreen ? '#ffffff' : '#38bdf8' }}
+                    className="route-action-btn"
+                    title="Reverse Route (Return Flight)"
+                    onClick={props.onReverseRoute}
                   >
-                    {isMapFullscreen ? '⤓ Normal Map' : '⛶ Fullscreen'}
+                    ⇄ Reverse
                   </button>
-                )}
-                <button
-                  type="button"
-                  className={`route-action-btn ${showProfile ? 'active-toggle' : ''}`}
-                  onClick={() => setShowProfile(!showProfile)}
-                  title="Toggle vertical altitude cross-section"
-                >
-                  ✈ {showProfile ? 'Hide Profile' : 'Show Profile'}
-                </button>
-              </>
-            )}
+                  <button
+                    type="button"
+                    className="route-action-btn"
+                    title="Clear Route"
+                    onClick={props.onClearRoute}
+                  >
+                    ✕ Clear
+                  </button>
+                </>
+              )}
 
-            {/* Restricted / Prohibited Airspace conflict alert right at level with Share, Clear, etc. buttons */}
+              {hasWaypoints && (
+                <>
+                  <button
+                    type="button"
+                    className={`route-action-btn ${showMap ? 'active-toggle' : ''}`}
+                    onClick={() => setShowMap(!showMap)}
+                    title="Toggle interactive map"
+                  >
+                    🗺️ {showMap ? 'Hide Map' : 'Show Map'}
+                  </button>
+                  {showMap && (
+                    <button
+                      type="button"
+                      className={`route-action-btn fullscreen-action-btn ${isMapFullscreen ? 'active-toggle' : ''}`}
+                      onClick={() => setIsMapFullscreen(!isMapFullscreen)}
+                      title={isMapFullscreen ? 'Exit full screen map (Esc)' : 'Expand map to full screen'}
+                      style={{ borderColor: '#38bdf8', color: isMapFullscreen ? '#ffffff' : '#38bdf8' }}
+                    >
+                      {isMapFullscreen ? '⤓ Normal Map' : '⛶ Fullscreen'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className={`route-action-btn ${showProfile ? 'active-toggle' : ''}`}
+                    onClick={() => setShowProfile(!showProfile)}
+                    title="Toggle vertical altitude cross-section"
+                  >
+                    ✈ {showProfile ? 'Hide Profile' : 'Show Profile'}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Restricted / Prohibited Airspace conflict alert aligned with Share, Clear, etc. buttons */}
             {props.navLog && props.navLog.legs.length > 0 && (
-              <AirspaceAlertBadge
-                navLog={props.navLog}
-                isExpanded={isAirspaceExpanded}
-                onToggle={() => setIsAirspaceExpanded(!isAirspaceExpanded)}
-              />
+              <div className="route-airspace-banner-slot">
+                <AirspaceAlertBanner navLog={props.navLog} />
+              </div>
             )}
           </div>
         </div>
-
-        {/* Expanded Airspace Conflict Breakdown Panel */}
-        {isAirspaceExpanded && props.navLog && props.navLog.legs.length > 0 && (
-          <AirspaceConflictDetails
-            navLog={props.navLog}
-            onClose={() => setIsAirspaceExpanded(false)}
-          />
-        )}
 
         {props.tokens.length > 0 && (
           <div className="route-tokens">
