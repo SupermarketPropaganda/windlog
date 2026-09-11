@@ -753,14 +753,16 @@ export const RouteMap: React.FC<RouteMapProps> = ({
             >
               💾 Offline Charts
             </button>
-            <button
-              type="button"
-              className={`layer-btn fullscreen-toggle-btn ${isFullscreen ? 'active' : ''}`}
-              onClick={toggleFullscreen}
-              title={isFullscreen ? 'Exit full screen (or press Esc)' : 'Expand map to full screen'}
-            >
-              {isFullscreen ? '⤓ Normal View' : '⛶ Fullscreen'}
-            </button>
+            {!isFullscreen && (
+              <button
+                type="button"
+                className="layer-btn fullscreen-toggle-btn"
+                onClick={toggleFullscreen}
+                title="Expand map to full screen"
+              >
+                ⛶ Fullscreen
+              </button>
+            )}
           </div>
         </div>
       </div>

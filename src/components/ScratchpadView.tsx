@@ -168,15 +168,15 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                   >
                     🗺️ {showMap ? 'Hide Map' : 'Show Map'}
                   </button>
-                  {showMap && (
+                  {!isMapFullscreen && (
                     <button
                       type="button"
-                      className={`route-action-btn fullscreen-action-btn ${isMapFullscreen ? 'active-toggle' : ''}`}
-                      onClick={() => setIsMapFullscreen(!isMapFullscreen)}
-                      title={isMapFullscreen ? 'Exit full screen map (Esc)' : 'Expand map to full screen'}
-                      style={{ borderColor: '#38bdf8', color: isMapFullscreen ? '#ffffff' : '#38bdf8' }}
+                      className="route-action-btn fullscreen-action-btn"
+                      onClick={() => setIsMapFullscreen(true)}
+                      title="Expand map to full screen"
+                      style={{ borderColor: '#38bdf8', color: '#38bdf8' }}
                     >
-                      {isMapFullscreen ? '⤓ Normal Map' : '⛶ Fullscreen'}
+                      ⛶ Fullscreen
                     </button>
                   )}
                   <button
