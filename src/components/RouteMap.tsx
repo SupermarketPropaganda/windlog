@@ -20,6 +20,8 @@ export interface RouteMapProps {
   waypoints: Waypoint[];
   activeLegIndex: number | null;
   onSelectLeg: (idx: number) => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: (fullscreen: boolean) => void;
 }
 
 const TILE_LAYERS: Record<
@@ -131,12 +133,47 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   waypoints,
   activeLegIndex,
   onSelectLeg,
+  isFullscreen: externalIsFullscreen,
+  onToggleFullscreen,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const routeLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const airspaceLayerGroupRef = useRef<L.LayerGroup | null>(null);
+
+  const [internalFullscreen, setInternalFullscreen] = useState<boolean>(false);
+  const isFullscreen = externalIsFullscreen !== undefined ? externalIsFullscreen : internalFullscreen;
+
+  const toggleFullscreen = () => {
+    const next = !isFullscreen;
+    if (onToggleFullscreen) {
+      onToggleFullscreen(next);
+    } else {
+      setInternalFullscreen(next);
+    }
+  };
+
+  // Keyboard shortcut: Esc to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen]);
+
+  // When fullscreen state changes, invalidate map size so Leaflet recalculates viewport
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [isFullscreen]);
 
   const [activeLayer, setActiveLayer] = useState<MapLayerType>('dark');
   const [showAirspaces, setShowAirspaces] = useState<boolean>(true);
@@ -519,7 +556,7 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   }, [waypoints, navLog, activeLegIndex, onSelectLeg]);
 
   return (
-    <div className="route-map-container">
+    <div className={`route-map-container ${isFullscreen ? 'is-fullscreen' : ''}`}>
       {/* Primary Map Layer & Airspace Controls Bar */}
       <div className="map-layer-bar">
         {/* Base Layer Switcher */}
@@ -678,11 +715,31 @@ export const RouteMap: React.FC<RouteMapProps> = ({
             >
               💾 Offline Charts
             </button>
+            <button
+              type="button"
+              className={`layer-btn fullscreen-toggle-btn ${isFullscreen ? 'active' : ''}`}
+              onClick={toggleFullscreen}
+              title={isFullscreen ? 'Exit full screen (or press Esc)' : 'Expand map to full screen'}
+            >
+              {isFullscreen ? '⤓ Normal View' : '⛶ Fullscreen'}
+            </button>
           </div>
         </div>
       </div>
 
       <div ref={mapContainerRef} className="route-map-leaflet" />
+
+      {/* Floating Exit Fullscreen Button in Fullscreen mode */}
+      {isFullscreen && (
+        <button
+          type="button"
+          className="fullscreen-floating-exit-btn"
+          onClick={toggleFullscreen}
+          title="Exit full screen (Esc)"
+        >
+          ✕ Exit Fullscreen (Esc)
+        </button>
+      )}
 
       {/* Offline Chart Pack Downloader Modal */}
       <OfflineChartModal

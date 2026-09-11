@@ -14,7 +14,7 @@ import { NavLogRow } from './NavLogRow';
 import { CoordPrompt } from './CoordPrompt';
 import { RouteMap } from './RouteMap';
 import { AltitudeProfile } from './AltitudeProfile';
-import { AirspaceAlertBanner } from './AirspaceAlertBanner';
+import { AirspaceAlertBadge, AirspaceConflictDetails } from './AirspaceAlertBanner';
 
 export interface ScratchpadViewProps {
   /** The current aircraft profile */
@@ -38,29 +38,28 @@ export interface ScratchpadViewProps {
   /** The compiled navigation log summary */
   navLog: NavLogSummary | null;
 
-  /** Currently active leg index for in-flight tracking */
+  /** The active leg index clicked on map/profile/navlog */
   activeLegIndex: number | null;
-  onSelectLeg: (index: number) => void;
+  onSelectLeg: (idx: number) => void;
+  onLegAltitudeChange: (legIdx: number, newAlt: number) => void;
 
-  /** Action handlers */
-  onReverseRoute: () => void;
-  onClearRoute: () => void;
+  /** Route Action Handlers */
   onShareRoute: () => void;
   onOpenKneeboard: () => void;
+  onReverseRoute: () => void;
+  onClearRoute: () => void;
   onTokenClick: (token: RouteToken) => void;
-  onLegAltitudeChange: (legIndex: number, newAltitude: number) => void;
 
-  /** Toast notification text */
-  toastMessage: string | null;
-
-  /** If present, displays the custom coordinate modal for the given identifier */
+  /** Custom coordinate resolution modal */
   coordPrompt: { identifier: string } | null;
   onCoordConfirm: (w: Waypoint) => void;
   onCoordCancel: () => void;
+
+  /** Temporary toast message */
+  toastMessage: string | null;
 }
 
-const formatTime = (seconds: number) => {
-  if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) return '--:--';
+const formatTime = (seconds: number): string => {
   const totalMins = Math.floor(seconds / 60);
   const totalSecs = Math.round(seconds % 60);
   const h = Math.floor(totalMins / 60);
@@ -77,6 +76,8 @@ const formatTime = (seconds: number) => {
 export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
   const [showMap, setShowMap] = useState(true);
   const [showProfile, setShowProfile] = useState(true);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [isAirspaceExpanded, setIsAirspaceExpanded] = useState(false);
 
   const hasWaypoints = props.resolvedWaypoints.length > 0;
   const fuelUnitLabel = props.profile.fuelUnit === 'gph' ? 'gal' : 'L';
@@ -167,6 +168,17 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                 >
                   🗺️ {showMap ? 'Hide Map' : 'Show Map'}
                 </button>
+                {showMap && (
+                  <button
+                    type="button"
+                    className={`route-action-btn fullscreen-action-btn ${isMapFullscreen ? 'active-toggle' : ''}`}
+                    onClick={() => setIsMapFullscreen(!isMapFullscreen)}
+                    title={isMapFullscreen ? 'Exit full screen map (Esc)' : 'Expand map to full screen'}
+                    style={{ borderColor: '#38bdf8', color: isMapFullscreen ? '#ffffff' : '#38bdf8' }}
+                  >
+                    {isMapFullscreen ? '⤓ Normal Map' : '⛶ Fullscreen'}
+                  </button>
+                )}
                 <button
                   type="button"
                   className={`route-action-btn ${showProfile ? 'active-toggle' : ''}`}
@@ -177,8 +189,25 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                 </button>
               </>
             )}
+
+            {/* Restricted / Prohibited Airspace conflict alert right at level with Share, Clear, etc. buttons */}
+            {props.navLog && props.navLog.legs.length > 0 && (
+              <AirspaceAlertBadge
+                navLog={props.navLog}
+                isExpanded={isAirspaceExpanded}
+                onToggle={() => setIsAirspaceExpanded(!isAirspaceExpanded)}
+              />
+            )}
           </div>
         </div>
+
+        {/* Expanded Airspace Conflict Breakdown Panel */}
+        {isAirspaceExpanded && props.navLog && props.navLog.legs.length > 0 && (
+          <AirspaceConflictDetails
+            navLog={props.navLog}
+            onClose={() => setIsAirspaceExpanded(false)}
+          />
+        )}
 
         {props.tokens.length > 0 && (
           <div className="route-tokens">
@@ -266,16 +295,14 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
         {/* Right Column: Tactical Map + Vertical Altitude Profile directly below */}
         {hasWaypoints && (showMap || showProfile) && (
           <div className="dashboard-right-col">
-            {props.navLog && props.navLog.legs.length > 0 && (
-              <AirspaceAlertBanner navLog={props.navLog} />
-            )}
-
             {showMap && (
               <RouteMap
                 navLog={props.navLog}
                 waypoints={props.resolvedWaypoints}
                 activeLegIndex={props.activeLegIndex}
                 onSelectLeg={props.onSelectLeg}
+                isFullscreen={isMapFullscreen}
+                onToggleFullscreen={setIsMapFullscreen}
               />
             )}
 

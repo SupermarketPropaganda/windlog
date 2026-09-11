@@ -240,4 +240,34 @@ describe('Airspace Geometry & Conflict Detection Engine', () => {
       }
     });
   });
+
+  describe('Airspace Alert Action Bar & Conflict Details Components', () => {
+    it('detects critical conflicts on route crossing LP-R42 Alcochete', async () => {
+      const { checkRouteAirspaceConflicts } = await import('../engine/airspace-engine');
+      const wpt1 = makeWpt(1, 'WPT1', 38.76, -8.95);
+      const wpt2 = makeWpt(2, 'WPT2', 38.76, -8.60);
+      const legs = [makeLeg(wpt1, wpt2, 4500)];
+
+      const report = checkRouteAirspaceConflicts(legs, AIRSPACES);
+      const active = report.conflicts.filter((c) => c.status === 'PENETRATING' || c.status === 'CLIPPING');
+      expect(active.length).toBeGreaterThan(0);
+      
+      const r42 = active.find((c) => c.airspace.id === 'LP_R42');
+      expect(r42).toBeDefined();
+      expect(r42?.severity).toBe('CRITICAL');
+      expect(r42?.status).toBe('PENETRATING');
+    });
+
+    it('reports clear of conflicts when cruising above LP-R42 ceiling at 15,000 ft', async () => {
+      const { checkRouteAirspaceConflicts } = await import('../engine/airspace-engine');
+      const wpt1 = makeWpt(1, 'WPT1', 38.76, -8.95);
+      const wpt2 = makeWpt(2, 'WPT2', 38.76, -8.60);
+      const legs = [makeLeg(wpt1, wpt2, 15000)];
+
+      const report = checkRouteAirspaceConflicts(legs, AIRSPACES);
+      // R42 upper limit is 14,000 ft, so at 15,000 ft it should be ABOVE, not PENETRATING
+      const r42 = report.conflicts.find((c) => c.airspace.id === 'LP_R42');
+      expect(r42?.status).toBe('ABOVE');
+    });
+  });
 });
