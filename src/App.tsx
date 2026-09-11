@@ -23,11 +23,16 @@ import { CURRENT_LEGAL_VERSION } from './data/legal-terms';
 import { computeNavLog } from './engine/navlog-engine';
 import { parseRouteString } from './utils/route-parser';
 import { decodeRouteFromUrl, copyShareableRouteLink } from './utils/url-route';
+import { initStorage, getStorageItemSync, setStorageItem } from './data/storage-manager';
+import { CURRENT_DATABASE_METADATA } from './data/airac-meta';
+import { checkDatabaseAiracStatus } from './engine/airac';
+import { initializeNativeShell } from './utils/platform';
+import { AvionicsModal } from './components/AvionicsModal';
+import { avionicsManager, AvionicsState } from './engine/avionics-manager';
 
-// ─── Local storage helpers ───
+// ─── Local storage helpers via StorageManager ───
 
 function loadProfile(): AircraftProfile {
-  // Check if shared via URL first
   const shared = decodeRouteFromUrl();
   if (shared?.profile) {
     return {
@@ -39,19 +44,16 @@ function loadProfile(): AircraftProfile {
     };
   }
 
-  try {
-    const stored = localStorage.getItem('windlog_profile');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return {
-        aircraftModel: parsed.aircraftModel || 'c172',
-        cruiseAltitude: parsed.cruiseAltitude || 4500,
-        tas: parsed.tas || 105,
-        fuelFlow: parsed.fuelFlow !== undefined ? parsed.fuelFlow : 8.5,
-        fuelUnit: parsed.fuelUnit || 'gph',
-      };
-    }
-  } catch { /* ignore */ }
+  const stored = getStorageItemSync<any>('windlog_profile', null);
+  if (stored) {
+    return {
+      aircraftModel: stored.aircraftModel || 'c172',
+      cruiseAltitude: stored.cruiseAltitude || 4500,
+      tas: stored.tas || 105,
+      fuelFlow: stored.fuelFlow !== undefined ? stored.fuelFlow : 8.5,
+      fuelUnit: stored.fuelUnit || 'gph',
+    };
+  }
 
   return {
     aircraftModel: 'c172',
@@ -63,19 +65,15 @@ function loadProfile(): AircraftProfile {
 }
 
 function saveProfile(p: AircraftProfile) {
-  localStorage.setItem('windlog_profile', JSON.stringify(p));
+  setStorageItem('windlog_profile', p);
 }
 
 function loadCustomWaypoints(): Record<string, Waypoint> {
-  try {
-    const stored = localStorage.getItem('windlog_custom_wpts');
-    if (stored) return JSON.parse(stored);
-  } catch { /* ignore */ }
-  return {};
+  return getStorageItemSync<Record<string, Waypoint>>('windlog_custom_wpts', {});
 }
 
 function saveCustomWaypoints(wpts: Record<string, Waypoint>) {
-  localStorage.setItem('windlog_custom_wpts', JSON.stringify(wpts));
+  setStorageItem('windlog_custom_wpts', wpts);
 }
 
 function loadRouteInput(): string {
@@ -83,19 +81,19 @@ function loadRouteInput(): string {
   if (shared?.route) {
     return shared.route;
   }
-  return localStorage.getItem('windlog_route') || '';
+  return getStorageItemSync<string>('windlog_route', '');
 }
 
 function saveRouteInput(s: string) {
-  localStorage.setItem('windlog_route', s);
+  setStorageItem('windlog_route', s);
 }
 
 function loadWindMode(): WindMode {
-  return (localStorage.getItem('windlog_wind_mode') as WindMode) || 'auto';
+  return getStorageItemSync<WindMode>('windlog_wind_mode', 'auto');
 }
 
 function loadManualWind(): string {
-  return localStorage.getItem('windlog_manual_wind') || '';
+  return getStorageItemSync<string>('windlog_manual_wind', '');
 }
 
 // ─── App Component ───
@@ -127,12 +125,30 @@ export default function App() {
   });
   const [runwayWindResult, setRunwayWindResult] = useState<RunwayWindResult | null>(null);
   const [isKneeboardOpen, setIsKneeboardOpen] = useState<boolean>(false);
+  const [isAvionicsOpen, setIsAvionicsOpen] = useState<boolean>(false);
+  const [avionicsState, setAvionicsState] = useState<AvionicsState>(avionicsManager.getState());
+  const [dbProgress, setDbProgress] = useState<{ percent: number }>({ percent: 0 });
+  const [airacReport] = useState(() => checkDatabaseAiracStatus(CURRENT_DATABASE_METADATA.airacCycle));
+
+  // ─── Native shell & Avionics telemetry subscriptions ───
+  useEffect(() => {
+    initializeNativeShell();
+    initStorage().catch(console.warn);
+
+    const unsubAvionics = avionicsManager.subscribe((state) => {
+      setAvionicsState(state);
+    });
+
+    return () => {
+      unsubAvionics();
+    };
+  }, []);
 
   const handleToggleSidebar = useCallback(() => {
     setIsSideMenuOpen((prev) => {
       const next = !prev;
       try {
-        localStorage.setItem('windlog_sidebar_open', String(next));
+        setStorageItem('windlog_sidebar_open', String(next));
       } catch { /* ignore */ }
       return next;
     });
@@ -158,9 +174,12 @@ export default function App() {
 
   const windCacheRef = useRef<Map<string, Wind | null>>(new Map());
 
-  // ─── Initialize database ───
+  // ─── Initialize database with IndexedDB cache & progress ───
   useEffect(() => {
-    initWaypointDatabase().then((waypointDb) => {
+    initWaypointDatabase(
+      (percent) => setDbProgress({ percent }),
+      CURRENT_DATABASE_METADATA.airacCycle
+    ).then((waypointDb) => {
       setDb(waypointDb);
       setDbReady(true);
     });
@@ -432,10 +451,8 @@ export default function App() {
   }, []);
 
   const handleAcceptDisclaimer = useCallback(() => {
-    try {
-      localStorage.setItem('windlog_legal_version_accepted', CURRENT_LEGAL_VERSION);
-      localStorage.setItem('windlog_legal_timestamp', new Date().toISOString());
-    } catch { /* ignore */ }
+    setStorageItem('windlog_legal_version_accepted', CURRENT_LEGAL_VERSION);
+    setStorageItem('windlog_legal_timestamp', new Date().toISOString());
     setShowDisclaimer(false);
     setIsLegalModalOpen(false);
   }, []);
@@ -446,7 +463,12 @@ export default function App() {
       <div className="app-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>✈</div>
-          <div style={{ fontSize: '1.125rem', fontWeight: 600 }}>Loading 84,000+ waypoints...</div>
+          <div style={{ fontSize: '1.125rem', fontWeight: 600 }}>
+            Loading Aeronautical Database (AIRAC {airacReport.currentCycle.cycle})...
+          </div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+            {dbProgress.percent > 0 ? `Loading cached assets: ${dbProgress.percent}%` : 'Initializing IndexedDB & WebAssembly...'}
+          </div>
         </div>
       </div>
     );
@@ -462,6 +484,10 @@ export default function App() {
         onToggle={handleToggleSidebar}
         onOpenKneeboard={() => setIsKneeboardOpen(true)}
         onOpenLegal={() => setIsLegalModalOpen(true)}
+        onOpenAvionics={() => setIsAvionicsOpen(true)}
+        airacCycle={airacReport.currentCycle.cycle}
+        airacStatus={airacReport.status}
+        avionicsStatus={avionicsState.status}
         navLogSummary={navLog}
         runwayWindResult={runwayWindResult}
       />
@@ -528,6 +554,12 @@ export default function App() {
           isReadOnly={isLegalModalOpen && !showDisclaimer}
         />
       )}
+
+      <AvionicsModal
+        isOpen={isAvionicsOpen}
+        onClose={() => setIsAvionicsOpen(false)}
+        activeRoute={resolvedWaypoints}
+      />
     </div>
   );
 }

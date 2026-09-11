@@ -1,4 +1,5 @@
 import { Waypoint, WaypointType } from '../types';
+import { getCachedDatabase, fetchAndCacheDatabase, DownloadProgressCallback } from './db-cache';
 
 export class WaypointDB {
   private db: any = null;
@@ -116,10 +117,15 @@ export class WaypointDB {
 }
 
 /**
- * Initializes the waypoint database by loading the WASM and fetching the SQLite file
+ * Initializes the waypoint database by loading the WASM and fetching/caching the SQLite file
+ * @param onProgress Optional callback for download progress reporting
+ * @param dbVersion Optional version tag to invalidate outdated cache
  * @returns Promise resolving to an initialized WaypointDB instance
  */
-export async function initWaypointDatabase(): Promise<WaypointDB> {
+export async function initWaypointDatabase(
+  onProgress?: DownloadProgressCallback,
+  dbVersion: string = '2609'
+): Promise<WaypointDB> {
   try {
     const rawBase = import.meta.env.BASE_URL || './';
     const baseUrl = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
@@ -133,12 +139,18 @@ export async function initWaypointDatabase(): Promise<WaypointDB> {
     });
 
     try {
-      const response = await fetch(`${baseUrl}waypoints.sqlite`);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch database from ${baseUrl}waypoints.sqlite: ${response.status} ${response.statusText}`);
+      // 1. Attempt to load from IndexedDB persistent cache first
+      let binary = await getCachedDatabase(dbVersion);
+      
+      if (binary) {
+        if (onProgress) onProgress(100, binary.length, binary.length);
+        const db = new SQL.Database(binary);
+        return new WaypointDB(db);
       }
-      const buffer = await response.arrayBuffer();
-      const db = new SQL.Database(new Uint8Array(buffer));
+
+      // 2. Fallback to stream fetch with download progress and automatic IndexedDB caching
+      binary = await fetchAndCacheDatabase(`${baseUrl}waypoints.sqlite`, dbVersion, onProgress);
+      const db = new SQL.Database(binary);
       return new WaypointDB(db);
     } catch (fetchError) {
       console.warn('Could not fetch waypoints.sqlite, returning empty database instance:', fetchError);

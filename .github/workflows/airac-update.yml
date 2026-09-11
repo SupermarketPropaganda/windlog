@@ -1,0 +1,35 @@
+name: Automated 28-Day AIRAC Database Pipeline
+
+on:
+  schedule:
+    # Runs at 02:00 UTC on Thursdays every 4 weeks
+    - cron: '0 2 1-31/28 * 4'
+  workflow_dispatch:
+
+jobs:
+  update-airac:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run AIRAC Ingestion Pipeline
+        run: npx ts-node tools/airac-pipeline.ts
+
+      - name: Run Test Suite
+        run: npm test
+
+      - name: Commit and Push Updated AIRAC Database
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(aeronautical-data): Automated AIRAC 28-day cycle update"
+          file_pattern: "public/waypoints.sqlite src/data/airac-meta.ts"

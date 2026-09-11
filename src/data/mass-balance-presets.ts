@@ -167,33 +167,21 @@ export const MASS_BALANCE_PRESETS: MassBalanceProfile[] = [
   },
 ];
 
+import { getStorageItemSync, setStorageItem } from './storage-manager';
+
 const CUSTOM_MB_STORAGE_KEY = 'windlog_custom_mb_profiles';
 
 export function loadSavedCustomProfiles(): MassBalanceProfile[] {
-  try {
-    const raw = localStorage.getItem(CUSTOM_MB_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {
-    // Ignore error
-  }
-  return [];
+  return getStorageItemSync<MassBalanceProfile[]>(CUSTOM_MB_STORAGE_KEY, []);
 }
 
 export function saveCustomProfile(profile: MassBalanceProfile): void {
-  try {
-    const list = loadSavedCustomProfiles().filter(p => p.id !== profile.id);
-    list.push({ ...profile, isCustom: true });
-    localStorage.setItem(CUSTOM_MB_STORAGE_KEY, JSON.stringify(list));
-  } catch {
-    // Ignore error
-  }
+  const list = loadSavedCustomProfiles().filter(p => p.id !== profile.id);
+  list.push({ ...profile, isCustom: true });
+  setStorageItem(CUSTOM_MB_STORAGE_KEY, list);
 }
 
 export function deleteCustomProfile(id: string): void {
-  try {
-    const list = loadSavedCustomProfiles().filter(p => p.id !== id);
-    localStorage.setItem(CUSTOM_MB_STORAGE_KEY, JSON.stringify(list));
-  } catch {
-    // Ignore error
-  }
+  const list = loadSavedCustomProfiles().filter(p => p.id !== id);
+  setStorageItem(CUSTOM_MB_STORAGE_KEY, list);
 }

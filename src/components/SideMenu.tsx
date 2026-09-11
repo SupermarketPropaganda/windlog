@@ -8,6 +8,10 @@ export interface SideMenuProps {
   onToggle: () => void;
   onOpenKneeboard: () => void;
   onOpenLegal?: () => void;
+  onOpenAvionics?: () => void;
+  airacCycle?: string;
+  airacStatus?: 'CURRENT' | 'EXPIRING_SOON' | 'EXPIRED';
+  avionicsStatus?: 'DISCONNECTED' | 'SEARCHING' | 'CONNECTED' | 'SIMULATING';
   navLogSummary: NavLogSummary | null;
   massBalanceResult?: MassBalanceResult | null;
   runwayWindResult?: RunwayWindResult | null;
@@ -20,6 +24,10 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   onToggle,
   onOpenKneeboard,
   onOpenLegal,
+  onOpenAvionics,
+  airacCycle,
+  airacStatus,
+  avionicsStatus,
   navLogSummary,
   massBalanceResult,
   runwayWindResult,
@@ -41,6 +49,13 @@ export const SideMenu: React.FC<SideMenuProps> = ({
 
   const handleLegal = () => {
     if (onOpenLegal) onOpenLegal();
+    if (window.innerWidth < 980) {
+      onToggle();
+    }
+  };
+
+  const handleAvionics = () => {
+    if (onOpenAvionics) onOpenAvionics();
     if (window.innerWidth < 980) {
       onToggle();
     }
@@ -202,6 +217,38 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           </button>
 
           <div className="gemini-nav-section-title" style={{ marginTop: '1rem' }}>
+            IN-FLIGHT &amp; HARDWARE
+          </div>
+
+          {/* Cockpit Avionics HUD */}
+          <button
+            type="button"
+            className="gemini-nav-item"
+            onClick={handleAvionics}
+          >
+            <span className="gemini-nav-icon">📡</span>
+            <div className="gemini-nav-body">
+              <div className="gemini-nav-label">Cockpit Avionics</div>
+              <div className="gemini-nav-hint">GPS &amp; ADS-B Receiver</div>
+            </div>
+            <span
+              className={`gemini-nav-badge ${
+                avionicsStatus === 'CONNECTED'
+                  ? 'badge-green'
+                  : avionicsStatus === 'SIMULATING'
+                  ? 'badge-amber'
+                  : 'badge-outline'
+              }`}
+            >
+              {avionicsStatus === 'CONNECTED'
+                ? 'GPS ON'
+                : avionicsStatus === 'SIMULATING'
+                ? 'SIM'
+                : 'OFF'}
+            </span>
+          </button>
+
+          <div className="gemini-nav-section-title" style={{ marginTop: '1rem' }}>
             DOCUMENTS &amp; LOGS
           </div>
 
@@ -237,9 +284,33 @@ export const SideMenu: React.FC<SideMenuProps> = ({
         {/* Footer */}
         <div className="gemini-sidebar-footer">
           <div className="gemini-footer-status">
-            <span className="status-indicator-dot"></span> Offline Ready
+            <span className="status-indicator-dot"></span>
+            <span>AIRAC {airacCycle || '2609'}</span>
+            <span
+              style={{
+                marginLeft: '0.4rem',
+                fontSize: '0.65rem',
+                padding: '0.1rem 0.35rem',
+                borderRadius: '4px',
+                backgroundColor:
+                  airacStatus === 'CURRENT'
+                    ? 'rgba(16, 185, 129, 0.2)'
+                    : airacStatus === 'EXPIRING_SOON'
+                    ? 'rgba(245, 158, 11, 0.2)'
+                    : 'rgba(239, 68, 68, 0.2)',
+                color:
+                  airacStatus === 'CURRENT'
+                    ? '#10b981'
+                    : airacStatus === 'EXPIRING_SOON'
+                    ? '#f59e0b'
+                    : '#ef4444',
+                fontWeight: 600,
+              }}
+            >
+              {airacStatus || 'CURRENT'}
+            </span>
           </div>
-          <div className="gemini-footer-version">WindLog v2.1 • WMM2025</div>
+          <div className="gemini-footer-version">WindLog v2.1 • WMM2025 • OPFS</div>
         </div>
       </aside>
     </>
