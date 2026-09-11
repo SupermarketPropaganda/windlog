@@ -14,6 +14,7 @@ import { NavLogRow } from './NavLogRow';
 import { CoordPrompt } from './CoordPrompt';
 import { RouteMap } from './RouteMap';
 import { AltitudeProfile } from './AltitudeProfile';
+import { AirspaceAlertBanner } from './AirspaceAlertBanner';
 
 export interface ScratchpadViewProps {
   /** The current aircraft profile */
@@ -265,6 +266,10 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
         {/* Right Column: Tactical Map + Vertical Altitude Profile directly below */}
         {hasWaypoints && (showMap || showProfile) && (
           <div className="dashboard-right-col">
+            {props.navLog && props.navLog.legs.length > 0 && (
+              <AirspaceAlertBanner navLog={props.navLog} />
+            )}
+
             {showMap && (
               <RouteMap
                 navLog={props.navLog}
