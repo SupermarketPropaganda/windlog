@@ -521,6 +521,16 @@ describe('Cockpit Protocol & Avionics Fuzzer', () => {
         }),
       };
 
+      // Ensure globalThis.navigator exists in test environments (e.g. Node 20 runner)
+      if (typeof globalThis.navigator === 'undefined') {
+        Object.defineProperty(globalThis, 'navigator', {
+          value: {},
+          configurable: true,
+          writable: true,
+        });
+      }
+      const origGeolocation = Object.getOwnPropertyDescriptor(globalThis.navigator, 'geolocation');
+
       try {
         Object.defineProperty(globalThis.navigator, 'geolocation', {
           value: mockGeolocation,
@@ -545,6 +555,11 @@ describe('Cockpit Protocol & Avionics Fuzzer', () => {
       } finally {
         // Cleanup all active watches
         watchIds.forEach((id) => mockGeolocation.clearWatch(id));
+        if (origGeolocation) {
+          Object.defineProperty(globalThis.navigator, 'geolocation', origGeolocation);
+        } else {
+          delete (globalThis.navigator as any).geolocation;
+        }
       }
     });
 
