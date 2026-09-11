@@ -8,6 +8,7 @@ import { AIRSPACES, Airspace } from '../data/airspace-data';
 import {
   checkLegAirspaceConflict,
   getAirspaceClearanceAdvisory,
+  isPointInPolygon,
 } from '../engine/airspace-engine';
 
 export type MapLayerType = 'dark' | 'satellite' | 'terrain' | 'street';
@@ -60,6 +61,20 @@ function getPolygonCentroid(polygon: [number, number][]): [number, number] {
     sumLon += polygon[i][1];
   }
   return [sumLat / count, sumLon / count];
+}
+
+/**
+ * Computes approximate 2D surface area of polygon in degree space
+ * to properly order smaller airspaces on top of larger encompassing TMAs.
+ */
+function computePolygonApproxArea(polygon: [number, number][]): number {
+  if (!polygon || polygon.length < 3) return 0;
+  let area = 0;
+  const n = polygon.length;
+  for (let i = 0; i < n - 1; i++) {
+    area += polygon[i][1] * polygon[i + 1][0] - polygon[i + 1][1] * polygon[i][0];
+  }
+  return Math.abs(area) / 2;
 }
 
 /**
@@ -202,35 +217,137 @@ export const RouteMap: React.FC<RouteMapProps> = ({
 
   // Render Airspace Polygons and Sector Badges
   useEffect(() => {
+    const map = mapInstanceRef.current;
     const airspaceGroup = airspaceLayerGroupRef.current;
-    if (!airspaceGroup) return;
+    if (!airspaceGroup || !map) return;
 
     airspaceGroup.clearLayers();
     if (!showAirspaces) return;
 
-    AIRSPACES.forEach((as: Airspace) => {
-      // 1. Type Filter
-      if (airspaceFilter === 'CTR' && as.type !== 'CTR') return;
-      if (airspaceFilter === 'TMA' && as.type !== 'TMA') return;
+    // 1. Filter airspaces according to active filters
+    const filteredAirspaces = AIRSPACES.filter((as: Airspace) => {
+      if (airspaceFilter === 'CTR' && as.type !== 'CTR') return false;
+      if (airspaceFilter === 'TMA' && as.type !== 'TMA') return false;
       if (
         airspaceFilter === 'SPECIAL' &&
         as.type !== 'RESTRICTED' &&
         as.type !== 'PROHIBITED' &&
         as.type !== 'DANGER'
       )
-        return;
-      if (airspaceFilter === 'ATZ' && as.type !== 'ATZ') return;
+        return false;
+      if (airspaceFilter === 'ATZ' && as.type !== 'ATZ') return false;
 
-      // 2. Altitude Filter
-      if (altitudeFilter === 'VFR_LOW' && as.lowerLimitFt > 3500) return;
-      if (altitudeFilter === 'VFR_MID' && as.lowerLimitFt > 6500) return;
+      if (altitudeFilter === 'VFR_LOW' && as.lowerLimitFt > 3500) return false;
+      if (altitudeFilter === 'VFR_MID' && as.lowerLimitFt > 6500) return false;
       if (altitudeFilter === 'ROUTE') {
         const matchesRoute =
           as.lowerLimitFt <= routeAltRange.max + 1000 &&
           as.upperLimitFt >= routeAltRange.min - 1000;
-        if (!matchesRoute) return;
+        if (!matchesRoute) return false;
       }
+      return true;
+    });
 
+    // 2. Sort by polygon area DESCENDING:
+    // Largest encompassing TMAs are added first (at bottom of SVG DOM stack),
+    // and smaller CTRs/Prohibited zones are added last (rendered on top!)
+    const sortedAirspaces = [...filteredAirspaces].sort((a, b) => {
+      const areaA = computePolygonApproxArea(a.polygon);
+      const areaB = computePolygonApproxArea(b.polygon);
+      return areaB - areaA;
+    });
+
+    // 3. Multi-sector Airspace Column Inspector:
+    // When clicking any point inside overlapping airspaces, displays ALL matching
+    // sectors ordered from surface (SFC) up to high altitude, eliminating large-area click traps.
+    const openAirspaceColumnPopup = (latlng: L.LatLng) => {
+      const clickedCoord: [number, number] = [latlng.lat, latlng.lng];
+      const matched = filteredAirspaces.filter((as) =>
+        isPointInPolygon(clickedCoord, as.polygon)
+      );
+
+      if (matched.length === 0) return;
+
+      // Sort matching sectors by lowerLimitFt ascending (SFC first -> Flight Levels)
+      matched.sort((a, b) => a.lowerLimitFt - b.lowerLimitFt || a.upperLimitFt - b.upperLimitFt);
+
+      const sectorsHtml = matched
+        .map((as, idx) => {
+          const advisory = getAirspaceClearanceAdvisory(
+            as,
+            navLog && navLog.legs[0] ? navLog.legs[0].altitude : 0
+          );
+
+          let conflictHtml = '';
+          if (navLog && navLog.legs.length > 0) {
+            for (let i = 0; i < navLog.legs.length; i++) {
+              const c = checkLegAirspaceConflict(navLog.legs[i], i, as);
+              if (c) {
+                if (c.status === 'PENETRATING') {
+                  conflictHtml = `<div class="airspace-popup-alert alert-pen">⚠️ Leg ${i + 1} (${c.legFrom}→${c.legTo}) enters at ${c.legAltitudeFt.toLocaleString()} ft!</div>`;
+                  break;
+                } else if (c.status === 'CLIPPING') {
+                  conflictHtml = `<div class="airspace-popup-alert alert-clip">⚡ Leg ${i + 1} clears within ${c.verticalClearanceFt} ft</div>`;
+                }
+              }
+            }
+          }
+
+          return `
+            <div class="column-sector-card card-${as.type.toLowerCase()}">
+              <div class="sector-card-top">
+                <span class="sector-order-num">#${idx + 1}</span>
+                <strong class="sector-name">${as.name}</strong>
+                <span class="sector-badge badge-${as.type.toLowerCase()}">${as.type} · Cl ${as.classification}</span>
+              </div>
+              <div class="sector-limits-row">
+                <span>Vertical Limits:</span>
+                <strong>${as.lowerLimitLabel} — ${as.upperLimitLabel}</strong>
+              </div>
+              ${
+                as.frequency
+                  ? `<div class="sector-freq-row"><span>ATC Contact:</span> <strong>${as.frequency}</strong></div>`
+                  : ''
+              }
+              <div class="sector-advisory-row">
+                <span class="advisory-title">${advisory.actionTitle}:</span>
+                <span class="advisory-text">${advisory.actionDetail}</span>
+              </div>
+              ${as.remarks ? `<div class="sector-remarks"><em>${as.remarks}</em></div>` : ''}
+              ${conflictHtml}
+            </div>
+          `;
+        })
+        .join('');
+
+      const popupContent = `
+        <div class="airspace-column-popup">
+          <div class="column-popup-header">
+            <div class="column-popup-title">
+              <span class="column-icon">📍</span>
+              <strong>Airspace Column (${matched.length} Sector${matched.length === 1 ? '' : 's'})</strong>
+            </div>
+            <span class="column-coords">${latlng.lat.toFixed(3)}°N, ${Math.abs(latlng.lng).toFixed(3)}°W</span>
+          </div>
+          <div class="column-sectors-scroll">
+            ${sectorsHtml}
+          </div>
+        </div>
+      `;
+
+      L.popup({
+        maxWidth: 380,
+        minWidth: 280,
+        className: 'custom-airspace-leaflet-popup',
+        autoPan: true,
+      })
+        .setLatLng(latlng)
+        .setContent(popupContent)
+        .openOn(map);
+    };
+
+    // Render sorted polygons
+    sortedAirspaces.forEach((as: Airspace) => {
       const isSpecial =
         as.type === 'RESTRICTED' || as.type === 'PROHIBITED' || as.type === 'DANGER';
 
@@ -260,21 +377,14 @@ export const RouteMap: React.FC<RouteMapProps> = ({
         dashArray = '4, 4';
       }
 
-      // Check if current route has any leg conflict with this airspace
-      let conflictSummary = '';
+      // Route conflict check for visual highlighting
       let hasPenetration = false;
-
       if (navLog && navLog.legs.length > 0) {
         for (let i = 0; i < navLog.legs.length; i++) {
           const c = checkLegAirspaceConflict(navLog.legs[i], i, as);
-          if (c) {
-            if (c.status === 'PENETRATING') {
-              hasPenetration = true;
-              conflictSummary = `<div class="airspace-popup-alert alert-pen">⚠️ Leg ${i + 1} (${c.legFrom}→${c.legTo}) enters at ${c.legAltitudeFt.toLocaleString()} ft!</div>`;
-              break;
-            } else if (c.status === 'CLIPPING') {
-              conflictSummary = `<div class="airspace-popup-alert alert-clip">⚡ Leg ${i + 1} clears within ${c.verticalClearanceFt} ft</div>`;
-            }
+          if (c && c.status === 'PENETRATING') {
+            hasPenetration = true;
+            break;
           }
         }
       }
@@ -292,35 +402,10 @@ export const RouteMap: React.FC<RouteMapProps> = ({
         dashArray,
       }).addTo(airspaceGroup);
 
-      const advisory = getAirspaceClearanceAdvisory(
-        as,
-        navLog && navLog.legs[0] ? navLog.legs[0].altitude : 0
-      );
-
-      const popupContent = `
-        <div class="airspace-popup">
-          <div class="airspace-popup-header">
-            <strong>${as.name}</strong>
-            <span class="badge-${as.type.toLowerCase()}">${as.type} · Class ${as.classification}</span>
-          </div>
-          <div class="airspace-popup-limits">
-            <span>Limits:</span> <strong>${as.lowerLimitLabel} — ${as.upperLimitLabel}</strong>
-          </div>
-          ${
-            as.frequency
-              ? `<div class="airspace-popup-freq"><span>ATC Contact:</span> <strong>${as.frequency}</strong></div>`
-              : ''
-          }
-          <div class="airspace-popup-advisory">
-            <span class="advisory-title">${advisory.actionTitle}:</span>
-            <span class="advisory-text">${advisory.actionDetail}</span>
-          </div>
-          ${as.remarks ? `<div class="airspace-popup-remarks"><em>${as.remarks}</em></div>` : ''}
-          ${conflictSummary}
-        </div>
-      `;
-
-      polygon.bindPopup(popupContent);
+      polygon.on('click', (e: L.LeafletMouseEvent) => {
+        L.DomEvent.stopPropagation(e);
+        openAirspaceColumnPopup(e.latlng);
+      });
 
       // Centroid label for prominent airspaces
       if (showSectorLabels && as.polygon.length >= 3) {
@@ -338,6 +423,15 @@ export const RouteMap: React.FC<RouteMapProps> = ({
         L.marker(center, { icon: labelIcon, interactive: false }).addTo(airspaceGroup);
       }
     });
+
+    const handleMapClick = (e: L.LeafletMouseEvent) => {
+      openAirspaceColumnPopup(e.latlng);
+    };
+    map.on('click', handleMapClick);
+
+    return () => {
+      map.off('click', handleMapClick);
+    };
   }, [
     showAirspaces,
     airspaceFilter,
