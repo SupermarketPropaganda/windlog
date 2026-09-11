@@ -4,7 +4,8 @@
  * Replaces vulnerable 5MB synchronous localStorage with an asynchronous,
  * high-capacity IndexedDB store. Automatically requests durable persistence
  * via navigator.storage.persist() to protect against Safari ITP 7-day eviction,
- * auto-migrates existing localStorage data, and provides JSON backup/restore.
+ * auto-migrates existing localStorage data, provides JSON backup/restore,
+ * and defends against prototype pollution and transaction hangs.
  */
 
 const DB_NAME = 'windlog_user_data_v1';
@@ -13,9 +14,14 @@ const STORE_NAME = 'key_value_store';
 // In-memory synchronous cache to allow synchronous access when needed
 const memoryCache = new Map<string, any>();
 let isInitialized = false;
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 function openUserDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  if (dbPromise) return dbPromise;
+
+  dbPromise = new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
       return reject(new Error('IndexedDB not supported'));
     }
@@ -28,8 +34,13 @@ function openUserDB(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onerror = () => {
+      dbPromise = null;
+      reject(request.error);
+    };
   });
+
+  return dbPromise;
 }
 
 /**
@@ -64,13 +75,16 @@ export async function initStorage(): Promise<void> {
       cursorReq.onsuccess = (event) => {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
         if (cursor) {
-          memoryCache.set(cursor.key as string, cursor.value);
+          if (!FORBIDDEN_KEYS.has(cursor.key as string)) {
+            memoryCache.set(cursor.key as string, cursor.value);
+          }
           cursor.continue();
         } else {
           resolve();
         }
       };
       cursorReq.onerror = () => resolve();
+      tx.onabort = () => resolve();
     });
   } catch (err) {
     console.warn('[StorageManager] Could not read from IndexedDB, falling back to localStorage:', err);
@@ -117,6 +131,8 @@ export async function initStorage(): Promise<void> {
  * Synchronous read from memory cache with optional fallback to localStorage
  */
 export function getStorageItemSync<T>(key: string, defaultValue: T): T {
+  if (FORBIDDEN_KEYS.has(key)) return defaultValue;
+
   if (memoryCache.has(key)) {
     return memoryCache.get(key) as T;
   }
@@ -130,8 +146,7 @@ export function getStorageItemSync<T>(key: string, defaultValue: T): T {
         memoryCache.set(key, parsed);
         return parsed as T;
       } catch {
-        memoryCache.set(key, raw);
-        return raw as unknown as T;
+        return defaultValue;
       }
     }
   }
@@ -143,13 +158,15 @@ export function getStorageItemSync<T>(key: string, defaultValue: T): T {
  * Asynchronous read from IndexedDB
  */
 export async function getStorageItem<T>(key: string, defaultValue: T): Promise<T> {
+  if (FORBIDDEN_KEYS.has(key)) return defaultValue;
+
   if (memoryCache.has(key)) {
     return memoryCache.get(key) as T;
   }
 
   try {
     const db = await openUserDB();
-    return new Promise((resolve) => {
+    return await new Promise((resolve) => {
       const tx = db.transaction(STORE_NAME, 'readonly');
       const store = tx.objectStore(STORE_NAME);
       const request = store.get(key);
@@ -159,12 +176,12 @@ export async function getStorageItem<T>(key: string, defaultValue: T): Promise<T
           memoryCache.set(key, request.result);
           resolve(request.result as T);
         } else {
-          // Check localStorage as secondary fallback
           const localVal = getStorageItemSync(key, defaultValue);
           resolve(localVal);
         }
       };
       request.onerror = () => resolve(getStorageItemSync(key, defaultValue));
+      tx.onabort = () => resolve(getStorageItemSync(key, defaultValue));
     });
   } catch {
     return getStorageItemSync(key, defaultValue);
@@ -175,12 +192,14 @@ export async function getStorageItem<T>(key: string, defaultValue: T): Promise<T
  * Stores an item durably in IndexedDB and mirrors in memoryCache and localStorage
  */
 export async function setStorageItem<T>(key: string, value: T): Promise<void> {
+  if (FORBIDDEN_KEYS.has(key)) return;
+
   memoryCache.set(key, value);
 
   // Mirror to localStorage for instant synchronous retrieval
   if (typeof localStorage !== 'undefined') {
     try {
-      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+      const serialized = JSON.stringify(value);
       localStorage.setItem(key, serialized);
     } catch {
       // Ignore quota exceeded errors in localStorage
@@ -190,12 +209,17 @@ export async function setStorageItem<T>(key: string, value: T): Promise<void> {
   // Persist to IndexedDB
   try {
     const db = await openUserDB();
-    return new Promise((resolve) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      const store = tx.objectStore(STORE_NAME);
-      store.put(value, key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => resolve();
+    return await new Promise((resolve) => {
+      try {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        store.put(value, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+        tx.onabort = () => resolve();
+      } catch {
+        resolve();
+      }
     });
   } catch (err) {
     console.warn(`[StorageManager] Failed to persist key ${key} to IndexedDB:`, err);
@@ -206,6 +230,8 @@ export async function setStorageItem<T>(key: string, value: T): Promise<void> {
  * Removes an item from IndexedDB, memoryCache, and localStorage
  */
 export async function removeStorageItem(key: string): Promise<void> {
+  if (FORBIDDEN_KEYS.has(key)) return;
+
   memoryCache.delete(key);
 
   if (typeof localStorage !== 'undefined') {
@@ -218,12 +244,17 @@ export async function removeStorageItem(key: string): Promise<void> {
 
   try {
     const db = await openUserDB();
-    return new Promise((resolve) => {
-      const tx = db.transaction(STORE_NAME, 'readwrite');
-      const store = tx.objectStore(STORE_NAME);
-      store.delete(key);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => resolve();
+    return await new Promise((resolve) => {
+      try {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        store.delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => resolve();
+        tx.onabort = () => resolve();
+      } catch {
+        resolve();
+      }
     });
   } catch {
     // Ignore
@@ -239,11 +270,13 @@ export async function exportAllUserData(): Promise<string> {
     app: 'WindLog',
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
-    data: {},
+    data: Object.create(null),
   };
 
   memoryCache.forEach((value, key) => {
-    backup.data[key] = value;
+    if (!FORBIDDEN_KEYS.has(key) && !key.startsWith('__')) {
+      backup.data[key] = value;
+    }
   });
 
   return JSON.stringify(backup, null, 2);
@@ -254,13 +287,27 @@ export async function exportAllUserData(): Promise<string> {
  */
 export async function importUserData(jsonString: string): Promise<{ success: boolean; importedKeys: string[]; error?: string }> {
   try {
+    if (typeof jsonString !== 'string' || jsonString.length > 25 * 1024 * 1024) {
+      return { success: false, importedKeys: [], error: 'Backup payload exceeds size limit (25MB)' };
+    }
+
     const backup = JSON.parse(jsonString);
-    if (!backup || typeof backup !== 'object' || !backup.data) {
+    if (
+      !backup ||
+      typeof backup !== 'object' ||
+      backup.app !== 'WindLog' ||
+      !backup.data ||
+      typeof backup.data !== 'object' ||
+      Array.isArray(backup.data)
+    ) {
       return { success: false, importedKeys: [], error: 'Invalid backup file format' };
     }
 
     const importedKeys: string[] = [];
-    for (const [key, value] of Object.entries(backup.data)) {
+    const entries = Object.entries(backup.data).slice(0, 1000); // Cap at 1000 keys
+
+    for (const [key, value] of entries) {
+      if (FORBIDDEN_KEYS.has(key) || key.startsWith('__')) continue;
       await setStorageItem(key, value);
       importedKeys.push(key);
     }

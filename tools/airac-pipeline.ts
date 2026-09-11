@@ -23,31 +23,10 @@ interface WaypointRecord {
   country: string;
 }
 
+import { getAiracCycle } from '../src/engine/airac';
+
 export function computeAiracCycleCode(date: Date = new Date()): string {
-  const EPOCH_DATE = new Date(Date.UTC(2020, 0, 23, 0, 0, 0));
-  const CYCLE_MS = 28 * 24 * 60 * 60 * 1000;
-  
-  const targetUtc = Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate()
-  );
-
-  const diffMs = targetUtc - EPOCH_DATE.getTime();
-  const cycleIndex = Math.floor(diffMs / CYCLE_MS);
-  const effectiveMs = EPOCH_DATE.getTime() + cycleIndex * CYCLE_MS;
-  const effectiveDate = new Date(effectiveMs);
-  
-  const effYear = effectiveDate.getUTCFullYear();
-  let testMs = EPOCH_DATE.getTime();
-  while (new Date(testMs).getUTCFullYear() < effYear) {
-    testMs += CYCLE_MS;
-  }
-  const cycleInYearIndex = Math.floor((effectiveMs - testMs) / CYCLE_MS) + 1;
-
-  const yy = String(effYear).slice(2);
-  const nn = String(cycleInYearIndex).padStart(2, '0');
-  return `${yy}${nn}`;
+  return getAiracCycle(date).cycle;
 }
 
 export async function runAiracPipeline(targetDir: string = './public'): Promise<{ cycle: string; count: number }> {

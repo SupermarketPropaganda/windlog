@@ -80,10 +80,21 @@ class AvionicsManager {
   /**
    * Starts high-accuracy GPS tracking
    */
-  public async startGpsTracking(nextWaypoint?: Waypoint | null): Promise<void> {
+  public async startGpsTracking(nextWaypoint?: Waypoint | null, prevWaypoint?: Waypoint | null): Promise<void> {
     if (this.state.status === 'CONNECTED') return;
 
     this.stopSimulation();
+
+    // Clear any pending watch IDs to prevent listener leaks on rapid calls
+    if (this.nativeWatchId !== null) {
+      Geolocation.clearWatch({ id: this.nativeWatchId }).catch(() => {});
+      this.nativeWatchId = null;
+    }
+    if (this.webWatchId !== null && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
+      navigator.geolocation.clearWatch(this.webWatchId);
+      this.webWatchId = null;
+    }
+
     this.state.status = 'SEARCHING';
     this.state.receiverName = isNativePlatform() ? 'Device Native GPS' : 'Browser High-Acc GPS';
     this.notify();
@@ -102,7 +113,7 @@ class AvionicsManager {
           { enableHighAccuracy: true, timeout: 10000, maximumAge: 1000 },
           (position: Position | null) => {
             if (position) {
-              this.handlePositionUpdate(position.coords, nextWaypoint);
+              this.handlePositionUpdate(position.coords, nextWaypoint, prevWaypoint);
             }
           }
         );
@@ -116,7 +127,7 @@ class AvionicsManager {
       if (typeof navigator !== 'undefined' && 'geolocation' in navigator) {
         this.webWatchId = navigator.geolocation.watchPosition(
           (pos) => {
-            this.handlePositionUpdate(pos.coords, nextWaypoint);
+            this.handlePositionUpdate(pos.coords, nextWaypoint, prevWaypoint);
           },
           (err) => {
             console.warn('[Avionics] Web Geolocation error:', err);
@@ -157,7 +168,8 @@ class AvionicsManager {
 
   private handlePositionUpdate(
     coords: RawLocationCoords,
-    nextWaypoint?: Waypoint | null
+    nextWaypoint?: Waypoint | null,
+    prevWaypoint?: Waypoint | null
   ): void {
     const lat = coords.latitude;
     const lon = coords.longitude;
@@ -174,6 +186,18 @@ class AvionicsManager {
       distanceToNextNm = greatCircleDistance(lat, lon, nextWaypoint.latitude, nextWaypoint.longitude);
       if (speedKnots > 20 && distanceToNextNm !== undefined) {
         eteSec = Math.round((distanceToNextNm / speedKnots) * 3600);
+      }
+
+      if (prevWaypoint) {
+        const R = 3440.065; // Earth radius in nautical miles
+        const d13 = greatCircleDistance(prevWaypoint.latitude, prevWaypoint.longitude, lat, lon);
+        const brg13 = initialBearing(prevWaypoint.latitude, prevWaypoint.longitude, lat, lon);
+        const brg12 = initialBearing(prevWaypoint.latitude, prevWaypoint.longitude, nextWaypoint.latitude, nextWaypoint.longitude);
+        const radD13 = d13 / R;
+        const radBrgDiff = ((brg13 - brg12) * Math.PI) / 180;
+        const sinXte = Math.sin(radD13) * Math.sin(radBrgDiff);
+        const clampedSin = Math.max(-1, Math.min(1, sinXte));
+        crossTrackErrorNm = Number((Math.asin(clampedSin) * R).toFixed(2));
       }
     }
 
@@ -276,13 +300,14 @@ class AvionicsManager {
       const distToDest = greatCircleDistance(currentLat, currentLon, dest.latitude, dest.longitude);
 
       // Step by 1 second interval: distance = speedKnots / 3600 NM
-      const stepNm = speedKnots / 3600;
-      if (distToDest <= stepNm) {
+      const stepNm = speedKnots > 0 ? speedKnots / 3600 : 0;
+      if (stepNm > 0 && distToDest <= stepNm) {
         currentLegIdx++;
-      } else {
+      } else if (stepNm > 0) {
         const radBearing = (bearing * Math.PI) / 180;
         const dLat = (stepNm / 60) * Math.cos(radBearing);
-        const dLon = (stepNm / (60 * Math.cos((currentLat * Math.PI) / 180))) * Math.sin(radBearing);
+        const latCos = Math.max(0.0001, Math.cos((currentLat * Math.PI) / 180));
+        const dLon = (stepNm / (60 * latCos)) * Math.sin(radBearing);
         currentLat += dLat;
         currentLon += dLon;
       }
@@ -297,7 +322,7 @@ class AvionicsManager {
         timestamp: Date.now(),
         isSimulated: true,
         distanceToNextNm: Number(distToDest.toFixed(1)),
-        estimatedTimeEnrouteSec: Math.round((distToDest / speedKnots) * 3600),
+        estimatedTimeEnrouteSec: speedKnots > 0 ? Math.round((distToDest / speedKnots) * 3600) : undefined,
       };
 
       this.notify();

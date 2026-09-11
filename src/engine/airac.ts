@@ -33,14 +33,10 @@ const CYCLE_MS = 28 * 24 * 60 * 60 * 1000;
  * @param date Reference date (defaults to current UTC time)
  */
 export function getAiracCycle(date: Date = new Date()): AiracCycle {
-  const targetUtc = Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate(),
-    date.getUTCHours(),
-    date.getUTCMinutes(),
-    date.getUTCSeconds()
-  );
+  const targetUtc = date.getTime();
+  if (Number.isNaN(targetUtc)) {
+    throw new TypeError('Invalid date provided to getAiracCycle');
+  }
 
   const diffMs = targetUtc - EPOCH_DATE.getTime();
   const cycleIndex = Math.floor(diffMs / CYCLE_MS);
@@ -54,21 +50,19 @@ export function getAiracCycle(date: Date = new Date()): AiracCycle {
   // Compute cycle number within the effective year
   const effYear = effectiveDate.getUTCFullYear();
   
-  // Calculate first cycle of this effective year
-  // Find cycle that begins on or after Jan 1 of effYear, or includes Jan 1
-  let testMs = EPOCH_DATE.getTime();
-  while (new Date(testMs).getUTCFullYear() < effYear) {
-    testMs += CYCLE_MS;
+  // Find the first cycle of effYear by stepping backward within the same year
+  // (Runs at most 13 iterations for any year in past, present, or future)
+  let firstCycleOfYearMs = effectiveMs;
+  while (new Date(firstCycleOfYearMs - CYCLE_MS).getUTCFullYear() === effYear) {
+    firstCycleOfYearMs -= CYCLE_MS;
   }
-  // If the previous cycle ended in effYear and covered Jan 1, check first Thursday
-  const firstCycleOfYearMs = testMs;
-  const cycleInYearIndex = Math.floor((effectiveMs - firstCycleOfYearMs) / CYCLE_MS) + 1;
+  const cycleInYearIndex = Math.round((effectiveMs - firstCycleOfYearMs) / CYCLE_MS) + 1;
 
   const yy = String(effYear).slice(2);
   const nn = String(cycleInYearIndex).padStart(2, '0');
   const cycleCode = `${yy}${nn}`;
 
-  const msRemaining = expirationMs - targetUtc;
+  const msRemaining = Math.max(0, expirationMs - targetUtc);
   const daysRemaining = Math.max(0, Math.ceil(msRemaining / (24 * 60 * 60 * 1000)));
 
   return {
@@ -78,7 +72,7 @@ export function getAiracCycle(date: Date = new Date()): AiracCycle {
     effectiveDate,
     expirationDate,
     daysRemaining,
-    isCurrent: targetUtc >= effectiveMs && targetUtc <= expirationMs,
+    isCurrent: targetUtc >= effectiveMs && targetUtc < effectiveMs + CYCLE_MS,
   };
 }
 
@@ -90,9 +84,9 @@ export function getAiracCycle(date: Date = new Date()): AiracCycle {
  */
 export function checkDatabaseAiracStatus(dbCycle: string, date: Date = new Date()): AiracStatusReport {
   const current = getAiracCycle(date);
-  const cleanDbCycle = dbCycle.trim().toUpperCase();
+  const cleanDbCycle = typeof dbCycle === 'string' ? dbCycle.trim().toUpperCase() : '';
 
-  if (cleanDbCycle === current.cycle) {
+  if (cleanDbCycle && cleanDbCycle === current.cycle) {
     if (current.daysRemaining <= 5) {
       return {
         status: 'EXPIRING_SOON',
@@ -112,12 +106,13 @@ export function checkDatabaseAiracStatus(dbCycle: string, date: Date = new Date(
     };
   }
 
-  // If DB cycle is different from current cycle
+  // If DB cycle is different from current cycle, missing, or malformed
   return {
     status: 'EXPIRED',
     currentCycle: current,
     dbCycleCode: cleanDbCycle,
-    message: `Aeronautical database (AIRAC ${cleanDbCycle}) is expired. Current active cycle is AIRAC ${current.cycle}. Update recommended.`,
+    message: `Aeronautical database (AIRAC ${cleanDbCycle || 'UNKNOWN'}) is expired. Current active cycle is AIRAC ${current.cycle}. Update recommended.`,
     daysRemaining: 0,
   };
 }
+

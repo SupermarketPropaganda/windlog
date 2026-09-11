@@ -159,7 +159,8 @@ export function parseGdl90Frame(rawBuffer: Uint8Array): Gdl90Message | null {
   if (msgId === 0x00 && payload.length >= 6) {
     const b1 = payload[0];
     const b2 = payload[1];
-    const timeStamp = ((payload[2] & 0x80) ? 0 : 0) | ((payload[3] << 8) | payload[4]); // seconds UTC
+    // Byte 2 bit 7 is the 17th bit (weight 65536s) of UTC seconds since midnight
+    const timeStamp = ((payload[2] & 0x80) ? 0x10000 : 0) | ((payload[3] << 8) | payload[4]);
     return {
       type: 'HEARTBEAT',
       gpsValid: (b1 & 0x80) !== 0,
@@ -177,10 +178,14 @@ export function parseGdl90Frame(rawBuffer: Uint8Array): Gdl90Message | null {
     // 24-bit Latitude and Longitude scaled: deg = val * 180 / 2^23
     const rawLat = decodeInt24(payload[4], payload[5], payload[6]);
     const rawLon = decodeInt24(payload[7], payload[8], payload[9]);
-    const latitude = (rawLat * 180.0) / 8388608.0;
-    const longitude = (rawLon * 180.0) / 8388608.0;
+    const rawDegLat = (rawLat * 180.0) / 8388608.0;
+    const rawDegLon = (rawLon * 180.0) / 8388608.0;
 
-    // 12-bit altitude: resolution 25 ft, offset -1,000 ft
+    // Physical WGS-84 clamping
+    const latitude = Math.max(-90.0, Math.min(90.0, rawDegLat));
+    const longitude = Math.max(-180.0, Math.min(180.0, rawDegLon));
+
+    // 12-bit altitude: resolution 25 ft, offset -1,000 ft (0xFFF = invalid/unavailable)
     const rawAlt = (payload[10] << 4) | (payload[11] >> 4);
     const altitudeFeet = rawAlt === 0xfff ? 0 : rawAlt * 25 - 1000;
 
@@ -188,13 +193,17 @@ export function parseGdl90Frame(rawBuffer: Uint8Array): Gdl90Message | null {
     const isAirborne = (payload[12] & 0x80) === 0;
     const nic = payload[12] & 0x0f;
 
-    // Ground speed (12 bits, 1 kt resolution)
-    const groundSpeedKnots = (payload[13] << 4) | (payload[14] >> 4);
+    // Ground speed (12 bits, 1 kt resolution; 0xFFF = unavailable)
+    const rawGs = (payload[13] << 4) | (payload[14] >> 4);
+    const groundSpeedKnots = rawGs === 0xfff ? 0 : rawGs;
 
-    // Vertical speed (12 bits signed, 64 fpm resolution)
+    // Vertical speed (12 bits signed, 64 fpm resolution; 0x800 = unavailable)
+    let verticalSpeedFpm = 0;
     let rawVs = ((payload[14] & 0x0f) << 8) | payload[15];
-    if (rawVs & 0x800) rawVs -= 0x1000;
-    const verticalSpeedFpm = rawVs * 64;
+    if (rawVs !== 0x800) {
+      if (rawVs & 0x800) rawVs -= 0x1000;
+      verticalSpeedFpm = rawVs * 64;
+    }
 
     // Track (8 bits, scaled 360 / 256)
     const trackDegrees = Math.round((payload[16] * 360.0) / 256.0) % 360;
@@ -209,6 +218,8 @@ export function parseGdl90Frame(rawBuffer: Uint8Array): Gdl90Message | null {
     }
     callSign = callSign.trim();
 
+    const fallbackCallsign = msgId === 0x0A ? 'OWNSHIP' : `TFC-${addr}`;
+
     const result = {
       address: addr,
       latitude: Number(latitude.toFixed(5)),
@@ -217,7 +228,7 @@ export function parseGdl90Frame(rawBuffer: Uint8Array): Gdl90Message | null {
       groundSpeedKnots,
       trackDegrees,
       verticalSpeedFpm,
-      callSign: callSign || `TFC-${addr}`,
+      callSign: callSign || fallbackCallsign,
       isAirborne,
       nic,
     };
@@ -232,8 +243,11 @@ export function parseGdl90Frame(rawBuffer: Uint8Array): Gdl90Message | null {
   // Message 0x0B: Ownship Geometric Altitude
   if (msgId === 0x0B && payload.length >= 4) {
     let rawGeoAlt = (payload[0] << 8) | payload[1];
-    if (rawGeoAlt & 0x8000) rawGeoAlt -= 0x10000;
-    const altitudeFeet = rawGeoAlt * 5;
+    let altitudeFeet = 0;
+    if (rawGeoAlt !== 0x8000) {
+      if (rawGeoAlt & 0x8000) rawGeoAlt -= 0x10000;
+      altitudeFeet = rawGeoAlt * 5;
+    }
     const vfomFeet = (payload[2] << 8) | payload[3];
 
     return {
