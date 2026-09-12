@@ -5,27 +5,24 @@ import { getSemicircularOptions } from '../engine/navlog-engine';
 export interface NavLogRowProps {
   /** The leg data to display */
   leg: Leg;
-  /** 0-based leg index in route */
-  legIndex?: number;
   /** Whether this leg is currently selected/active */
   isActive?: boolean;
   /** Callback fired when the leg is tapped */
   onSelect?: () => void;
   /** Callback fired when altitude is modified for this specific leg */
   onAltitudeChange?: (newAltitude: number) => void;
-  /** Whether this is the final leg in route */
-  isLast?: boolean;
 }
 
 const formatEte = (seconds: number) => {
   if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) return '--:--';
   const totalMins = Math.floor(seconds / 60);
+  const totalSecs = Math.round(seconds % 60);
   if (totalMins >= 60) {
     const h = Math.floor(totalMins / 60);
     const m = totalMins % 60;
-    return `${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m`;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   } else {
-    return `${totalMins}m`;
+    return `${totalMins.toString().padStart(2, '0')}:${totalSecs.toString().padStart(2, '0')}`;
   }
 };
 
@@ -34,11 +31,9 @@ const formatEte = (seconds: number) => {
  */
 export const NavLogRow: React.FC<NavLogRowProps> = ({
   leg,
-  legIndex = 0,
   isActive = false,
   onSelect,
   onAltitudeChange,
-  isLast = false,
 }) => {
   const [showMathDetails, setShowMathDetails] = useState(false);
   const [isEditingAlt, setIsEditingAlt] = useState(false);
@@ -77,91 +72,77 @@ export const NavLogRow: React.FC<NavLogRowProps> = ({
   };
 
   return (
-    <div className={`timeline-leg-item ${isActive ? 'active' : ''}`}>
-      <div className="timeline-rail-col">
-        <div
-          className={`timeline-node ${isActive ? 'active' : ''}`}
-          onClick={onSelect}
-          title={`Leg ${legIndex + 1}: ${leg.from.identifier} to ${leg.to.identifier}`}
-        >
-          {(legIndex + 1).toString().padStart(2, '0')}
+    <div
+      className={`navlog-row ${isActive ? 'active-leg' : ''}`}
+      onClick={onSelect}
+    >
+      <div className="navlog-header">
+        <div className="navlog-waypoints">
+          <span className="waypoint-id">{leg.from.identifier}</span>
+          {leg.from.name && <span className="waypoint-name"> {leg.from.name}</span>}
+          <span className="waypoint-arrow"> ➔ </span>
+          <span className="waypoint-id">{leg.to.identifier}</span>
+          {leg.to.name && <span className="waypoint-name"> {leg.to.name}</span>}
         </div>
-        {!isLast && <div className="timeline-rail-line" />}
+
+        <div className="navlog-header-actions" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className={`alt-chip-btn ${isEditingAlt ? 'editing' : ''}`}
+            title="Click to change altitude for this leg"
+            onClick={() => {
+              setCustomAltInput(leg.altitude.toString());
+              setIsEditingAlt(!isEditingAlt);
+            }}
+          >
+            ✈ {leg.altitude.toLocaleString()} ft {isEditingAlt ? '▲' : '✎'}
+          </button>
+
+          <button
+            type="button"
+            className="details-toggle-btn"
+            title="Toggle flight math breakdown"
+            onClick={() => setShowMathDetails(!showMathDetails)}
+          >
+            {showMathDetails ? '▲ Math' : '▼ Math'}
+          </button>
+        </div>
       </div>
 
-      <div
-        className={`navlog-row ${isActive ? 'active-leg' : ''}`}
-        onClick={onSelect}
-      >
-        <div className="navlog-header">
-          <div className="navlog-waypoints">
-            <span className="waypoint-id">{leg.from.identifier}</span>
-            {leg.from.name && <span className="waypoint-name"> {leg.from.name}</span>}
-            <span className="waypoint-arrow"> ➔ </span>
-            <span className="waypoint-id">{leg.to.identifier}</span>
-            {leg.to.name && <span className="waypoint-name"> {leg.to.name}</span>}
-          </div>
-
-          <div className="navlog-header-actions" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className={`alt-chip-btn ${isEditingAlt ? 'editing' : ''}`}
-              title="Click to change altitude for this leg"
-              onClick={() => {
-                setCustomAltInput(leg.altitude.toString());
-                setIsEditingAlt(!isEditingAlt);
-              }}
-            >
-              ✈ {leg.altitude.toLocaleString()} ft {isEditingAlt ? '▲' : '✎'}
-            </button>
-
-            <button
-              type="button"
-              className="details-toggle-btn"
-              title="Toggle flight math breakdown"
-              onClick={() => setShowMathDetails(!showMathDetails)}
-            >
-              {showMathDetails ? '▲ Math' : '▼ Math'}
-            </button>
-          </div>
+      <div className="navlog-grid">
+        <div className="grid-item">
+          <span className="grid-label">MH (Heading)</span>
+          <span className="grid-val val-mh">
+            {Math.round(leg.magneticHeading).toString().padStart(3, '0')}°
+          </span>
         </div>
-
-        <div className="navlog-grid">
-          <div className="grid-item">
-            <span className="grid-label">MAG HDG</span>
-            <span className="grid-val val-mh">
-              {Math.round(leg.magneticHeading).toString().padStart(3, '0')}°
-            </span>
-          </div>
-          <div className="grid-item">
-            <span className="grid-label">WCA</span>
-            <span className="grid-val val-wca">{wcaSign}</span>
-          </div>
-          <div className="grid-item">
-            <span className="grid-label">GS</span>
-            <span className={`grid-val val-gs ${isZeroGs ? 'val-warning' : ''}`}>
-              {Math.round(leg.groundSpeed)} kt
-            </span>
-          </div>
-          <div className="grid-item">
-            <span className="grid-label">DIST / ETE</span>
-            <span className="grid-val val-dist-ete">
-              {leg.distance.toFixed(1)}nm <span className="ete-bullet">•</span> {formatEte(leg.ete)}
-            </span>
-          </div>
-          {leg.fuelBurn > 0 && (
-            <div className="grid-item grid-item-fuel">
-              <span className="grid-label">Fuel</span>
-              <span className="grid-val val-fuel">{leg.fuelBurn.toFixed(1)}</span>
-            </div>
-          )}
+        <div className="grid-item">
+          <span className="grid-label">Dist</span>
+          <span className="grid-val">{leg.distance.toFixed(1)} nm</span>
         </div>
-
-        {isZeroGs && (
-          <div className="wind-warning-badge">
-            ⚠️ Headwind/Crosswind exceeds TAS — zero forward progress!
+        <div className="grid-item">
+          <span className="grid-label">Ground Speed</span>
+          <span className={`grid-val ${isZeroGs ? 'val-warning' : ''}`}>
+            {Math.round(leg.groundSpeed)} kt
+          </span>
+        </div>
+        <div className="grid-item">
+          <span className="grid-label">ETE</span>
+          <span className="grid-val">{formatEte(leg.ete)}</span>
+        </div>
+        {leg.fuelBurn > 0 && (
+          <div className="grid-item">
+            <span className="grid-label">Fuel</span>
+            <span className="grid-val val-fuel">{leg.fuelBurn.toFixed(1)}</span>
           </div>
         )}
+      </div>
+
+      {isZeroGs && (
+        <div className="wind-warning-badge">
+          ⚠️ Headwind/Crosswind exceeds TAS — zero forward progress!
+        </div>
+      )}
 
       {/* Interactive Altitude Selector Panel */}
       {isEditingAlt && (
@@ -250,6 +231,5 @@ export const NavLogRow: React.FC<NavLogRowProps> = ({
         </div>
       )}
     </div>
-  </div>
-);
+  );
 };
