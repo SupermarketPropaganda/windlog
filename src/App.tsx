@@ -147,11 +147,16 @@ export default function App() {
   const [legAltitudeOverrides, setLegAltitudeOverrides] = useState<Record<number, number>>({});
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const [windState, setWindState] = useState<WindState>({
-    mode: loadWindMode(),
-    wind: null,
-    lastUpdated: null,
-    source: null,
+  const [windState, setWindState] = useState<WindState>(() => {
+    const mode = loadWindMode();
+    const manualStr = loadManualWind();
+    const manualParsed = mode === 'manual' ? parseManualWind(manualStr) : null;
+    return {
+      mode,
+      wind: manualParsed,
+      lastUpdated: manualParsed ? new Date() : null,
+      source: manualParsed ? 'Manual' : null,
+    };
   });
   const [isWindLoading, setIsWindLoading] = useState(false);
   const [manualWindInput, setManualWindInput] = useState(loadManualWind);
@@ -324,12 +329,15 @@ export default function App() {
       legAlts.push(legAlt);
     }
 
+    const effectiveLegWinds =
+      windState.mode === 'auto' && perLegWinds.length > 0 ? perLegWinds : undefined;
+
     return computeNavLog(
       resolvedWaypoints,
       profile,
       windState.wind,
       legAlts,
-      perLegWinds
+      effectiveLegWinds
     );
   })();
 
@@ -351,32 +359,37 @@ export default function App() {
   // ─── Wind mode handling ───
   const handleWindModeChange = useCallback((mode: WindMode) => {
     localStorage.setItem('windlog_wind_mode', mode);
-    setWindState(prev => ({ ...prev, mode }));
 
     if (mode === 'manual') {
       const parsed = parseManualWind(manualWindInput);
-      setWindState(prev => ({
-        ...prev,
+      setPerLegWinds([]); // Clear auto per-leg cache so manual wind takes absolute precedence
+      setWindState({
         mode: 'manual',
         wind: parsed,
         source: parsed ? 'Manual' : null,
+        lastUpdated: parsed ? new Date() : null,
+      });
+    } else {
+      setWindState(prev => ({
+        ...prev,
+        mode: 'auto',
+        source: null,
       }));
     }
   }, [manualWindInput]);
 
   const handleWindChange = useCallback((wind: Wind | null) => {
-    if (windState.mode === 'manual') {
-      const windStr = wind ? `${wind.direction}/${wind.speed}` : '';
-      setManualWindInput(windStr);
-      localStorage.setItem('windlog_manual_wind', windStr);
-      setWindState(prev => ({
-        ...prev,
-        wind,
-        source: wind ? 'Manual' : null,
-        lastUpdated: new Date(),
-      }));
-    }
-  }, [windState.mode]);
+    const windStr = wind ? `${wind.direction}/${wind.speed}` : '';
+    setManualWindInput(windStr);
+    localStorage.setItem('windlog_manual_wind', windStr);
+    setPerLegWinds([]); // Clear any leftover auto per-leg cache
+    setWindState({
+      mode: 'manual',
+      wind,
+      source: wind ? 'Manual' : null,
+      lastUpdated: new Date(),
+    });
+  }, []);
 
   // ─── Auto winds aloft fetch (with per-altitude awareness) ───
   useEffect(() => {

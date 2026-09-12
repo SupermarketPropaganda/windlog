@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { WindState, Wind, WindMode } from '../types';
+import { parseManualWind } from '../data/winds-aloft';
 
 export interface WindPanelProps {
   /** The current wind state */
@@ -21,15 +22,39 @@ export const WindPanel: React.FC<WindPanelProps> = ({
   onModeChange,
   isLoading,
 }) => {
+  const [inputValue, setInputValue] = useState<string>(() =>
+    windState.wind ? `${windState.wind.direction}/${windState.wind.speed}` : ''
+  );
+
+  // Synchronize input value with external windState when not actively editing
+  useEffect(() => {
+    if (windState.mode === 'manual') {
+      const currentParsed = parseManualWind(inputValue);
+      const isAlreadyMatching =
+        currentParsed &&
+        windState.wind &&
+        currentParsed.direction === windState.wind.direction &&
+        currentParsed.speed === windState.wind.speed;
+
+      if (!isAlreadyMatching) {
+        if (windState.wind) {
+          setInputValue(`${windState.wind.direction}/${windState.wind.speed}`);
+        } else if (!inputValue.trim()) {
+          setInputValue('');
+        }
+      }
+    }
+  }, [windState.mode, windState.wind?.direction, windState.wind?.speed]);
+
   const handleManualChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    const match = val.match(/^(\d{1,3})\/(\d{1,3})$/);
-    if (match) {
-      const dir = parseInt(match[1], 10);
-      const spd = parseInt(match[2], 10);
-      if (dir >= 0 && dir <= 360) {
-        onWindChange({ direction: dir, speed: spd });
-      }
+    setInputValue(val);
+
+    const parsed = parseManualWind(val);
+    if (parsed) {
+      onWindChange(parsed);
+    } else if (val.trim() === '') {
+      onWindChange(null);
     }
   };
 
@@ -46,11 +71,7 @@ export const WindPanel: React.FC<WindPanelProps> = ({
                 type="text"
                 className="manual-wind-input"
                 placeholder="270/15"
-                defaultValue={
-                  windState.wind
-                    ? `${windState.wind.direction}/${windState.wind.speed}`
-                    : ''
-                }
+                value={inputValue}
                 onChange={handleManualChange}
               />
               <span className="manual-wind-hint">DIR/KT (e.g. 290/15)</span>

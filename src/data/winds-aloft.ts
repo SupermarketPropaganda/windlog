@@ -287,17 +287,39 @@ export async function fetchWindsAloft(
 }
 
 /**
- * Parses manual wind input in the format "270/15" (direction/speed).
+ * Parses manual wind input supporting common aviation formats:
+ * - "270/15" or "270 / 15" (Direction / Speed in knots)
+ * - "270 15" (Space separated)
+ * - "270@15" (E6B notation)
+ * - "27015" or "27015KT" (METAR 5-digit notation)
+ * - "0/0" or "CALM" (Calm wind)
  */
 export function parseManualWind(input: string): Wind | null {
-  const match = input.trim().match(/^(\d{1,3})\s*\/\s*(\d{1,3})$/);
-  if (!match) return null;
+  if (!input) return null;
+  const trimmed = input.trim().toUpperCase().replace(/KT$/, '').trim();
+  if (trimmed === 'CALM') return { direction: 0, speed: 0 };
 
-  const direction = parseInt(match[1], 10);
-  const speed = parseInt(match[2], 10);
+  // Format 1: Separator by slash, space, or at-symbol (e.g. 270/15, 270 15, 270@15)
+  const sepMatch = trimmed.match(/^(\d{1,3})[\s/@]+(\d{1,3})$/);
+  if (sepMatch) {
+    const direction = parseInt(sepMatch[1], 10);
+    const speed = parseInt(sepMatch[2], 10);
+    if (direction >= 0 && direction <= 360 && speed >= 0 && speed <= 250) {
+      return { direction, speed };
+    }
+    return null;
+  }
 
-  if (isNaN(direction) || isNaN(speed)) return null;
-  if (direction < 0 || direction > 360 || speed < 0) return null;
+  // Format 2: 5-digit METAR format e.g. 27015 (dir 270, spd 15)
+  const compactMatch = trimmed.match(/^(\d{3})(\d{2,3})$/);
+  if (compactMatch) {
+    const direction = parseInt(compactMatch[1], 10);
+    const speed = parseInt(compactMatch[2], 10);
+    if (direction >= 0 && direction <= 360 && speed >= 0 && speed <= 250) {
+      return { direction, speed };
+    }
+    return null;
+  }
 
-  return { direction, speed };
+  return null;
 }

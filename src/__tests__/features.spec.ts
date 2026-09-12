@@ -3,6 +3,7 @@ import { computeNavLog } from '../engine/navlog-engine';
 import { AircraftProfile, Waypoint } from '../types';
 import { encodeRouteToUrl, parseRouteUrlHash } from '../utils/url-route';
 import { AIRCRAFT_PRESETS } from '../components/AircraftBar';
+import { parseManualWind } from '../data/winds-aloft';
 
 const mockWaypoints: Waypoint[] = [
   {
@@ -191,6 +192,73 @@ describe('New Flight Features & Fuel Planning Tests', () => {
       expect(holding).toBeCloseTo(12.0);
       expect(altFuel).toBeCloseTo(5.33, 1);
       expect(totalRequired).toBeCloseTo(42.33, 1);
+    });
+  });
+
+  describe('5. Wind Mode Switching & Manual Wind Precedence', () => {
+    it('parses various user manual wind input formats', () => {
+      expect(parseManualWind('270/15')).toEqual({ direction: 270, speed: 15 });
+      expect(parseManualWind('270 / 15')).toEqual({ direction: 270, speed: 15 });
+      expect(parseManualWind('270 15')).toEqual({ direction: 270, speed: 15 });
+      expect(parseManualWind('270@15')).toEqual({ direction: 270, speed: 15 });
+      expect(parseManualWind('27015')).toEqual({ direction: 270, speed: 15 });
+      expect(parseManualWind('27015KT')).toEqual({ direction: 270, speed: 15 });
+      expect(parseManualWind('0/0')).toEqual({ direction: 0, speed: 0 });
+      expect(parseManualWind('CALM')).toEqual({ direction: 0, speed: 0 });
+
+      // Out of bounds / invalid inputs
+      expect(parseManualWind('370/10')).toBeNull();
+      expect(parseManualWind('-10/10')).toBeNull();
+      expect(parseManualWind('270/999')).toBeNull();
+      expect(parseManualWind('invalid')).toBeNull();
+      expect(parseManualWind('')).toBeNull();
+    });
+
+    it('ensures manual wind overrides previous auto winds when in manual mode', () => {
+      const profile: AircraftProfile = {
+        aircraftModel: 'c172',
+        tas: 100,
+        cruiseAltitude: 3500,
+        fuelFlow: 8.5,
+        fuelUnit: 'gph',
+      };
+
+      // Simulating auto winds returned earlier
+      const cachedAutoWinds = [
+        { direction: 360, speed: 25 },
+        { direction: 350, speed: 20 },
+      ];
+
+      // User switches to manual and enters 200/10
+      const manualWind = { direction: 200, speed: 10 };
+
+      // In manual mode, effectiveLegWinds must be undefined, so computeNavLog applies manualWind
+      const effectiveLegWindsInManual = undefined;
+      const navlogManual = computeNavLog(
+        mockWaypoints,
+        profile,
+        manualWind,
+        [3500, 3500],
+        effectiveLegWindsInManual
+      );
+
+      // Verify every leg uses the manual wind, NOT the cached auto wind
+      expect(navlogManual.legs.length).toBe(2);
+      expect(navlogManual.legs[0].wind).toEqual(manualWind);
+      expect(navlogManual.legs[1].wind).toEqual(manualWind);
+      expect(navlogManual.legs[0].wind?.direction).toBe(200);
+      expect(navlogManual.legs[0].wind?.speed).toBe(10);
+
+      // Conversely, in auto mode, effectiveLegWinds is passed
+      const navlogAuto = computeNavLog(
+        mockWaypoints,
+        profile,
+        null,
+        [3500, 3500],
+        cachedAutoWinds
+      );
+      expect(navlogAuto.legs[0].wind).toEqual(cachedAutoWinds[0]);
+      expect(navlogAuto.legs[1].wind).toEqual(cachedAutoWinds[1]);
     });
   });
 });
