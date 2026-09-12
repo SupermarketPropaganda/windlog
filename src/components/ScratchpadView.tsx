@@ -192,17 +192,19 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
         )}
       </div>
 
-      {/* Responsive Main Layout:
-          - Desktop & iPad: 2 Columns (Left: NavLog & Summary, Right: Map & Vertical Profile)
-          - Mobile: Single Column (NavLog & Summary, then Map, then Vertical Profile below) */}
-      <div className={`flight-dashboard-grid ${hasWaypoints ? 'with-sidebar' : 'single-col'}`}>
-        {/* Left Column: NavLog Legs & Summary */}
+      {/* Main Layout:
+          - Middle Row: Waypoints Timeline (Left) + Tactical Map (Right)
+          - Bottom Row: Full-width Vertical Altitude Profile + Flight Summary (Below both) */}
+      <div className={`flight-dashboard-middle ${hasWaypoints ? 'has-route' : 'single-col'}`}>
+        {/* Left Column: Waypoint Timeline */}
         <div className="dashboard-left-col">
           <div className="navlog-list">
             {props.navLog?.legs.map((leg, idx) => (
               <NavLogRow
                 key={leg.id}
                 leg={leg}
+                legIndex={idx}
+                isLast={idx === (props.navLog?.legs.length ?? 0) - 1}
                 isActive={props.activeLegIndex === idx}
                 onSelect={() => props.onSelectLeg(idx)}
                 onAltitudeChange={(newAlt) => props.onLegAltitudeChange(idx, newAlt)}
@@ -216,37 +218,9 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                 </div>
               )}
           </div>
-
-          {/* Clean Flight & Fuel Summary */}
-          {props.navLog && props.navLog.legs.length > 0 && (
-            <div className="navlog-summary-container">
-              <div className="navlog-summary">
-                <div className="summary-item">
-                  <div className="summary-label">Total Distance</div>
-                  <div className="summary-val">{props.navLog.totalDistance.toFixed(1)} nm</div>
-                </div>
-                <div className="summary-item">
-                  <div className="summary-label">Total ETE</div>
-                  <div className="summary-val">{formatTime(props.navLog.totalEte)}</div>
-                </div>
-                <div className="summary-item">
-                  <div className="summary-label">Total Legs</div>
-                  <div className="summary-val">{props.navLog.legs.length}</div>
-                </div>
-                {props.profile.fuelFlow > 0 && (
-                  <div className="summary-item">
-                    <div className="summary-label">Trip Fuel</div>
-                    <div className="summary-val val-fuel">
-                      {props.navLog.totalFuel.toFixed(1)} {fuelUnitLabel}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Right Column: Tactical Map + Vertical Altitude Profile directly below */}
+        {/* Right Column: Tactical Map & Airspace Alerts */}
         {hasWaypoints && (
           <div className="dashboard-right-col">
             {props.navLog && props.navLog.legs.length > 0 && (
@@ -269,21 +243,50 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
               onlyRouteAirspaces={onlyRouteAirspaces}
               onToggleOnlyRouteAirspaces={setOnlyRouteAirspaces}
             />
-
-            {props.navLog && props.navLog.legs.length > 0 && (
-              <AltitudeProfile
-                navLog={props.navLog}
-                activeLegIndex={props.activeLegIndex}
-                onSelectLeg={props.onSelectLeg}
-                showAirspaces={showAirspaces}
-                onToggleShowAirspaces={setShowAirspaces}
-                airspaceFilter={airspaceFilter}
-                onlyRouteAirspaces={onlyRouteAirspaces}
-              />
-            )}
           </div>
         )}
       </div>
+
+      {/* Bottom Row: Full-width Vertical Altitude Profile & Flight Summary (BELOW BOTH MAP AND WAYPOINTS) */}
+      {hasWaypoints && props.navLog && props.navLog.legs.length > 0 && (
+        <div className="flight-dashboard-bottom">
+          <AltitudeProfile
+            navLog={props.navLog}
+            activeLegIndex={props.activeLegIndex}
+            onSelectLeg={props.onSelectLeg}
+            showAirspaces={showAirspaces}
+            onToggleShowAirspaces={setShowAirspaces}
+            airspaceFilter={airspaceFilter}
+            onlyRouteAirspaces={onlyRouteAirspaces}
+          />
+
+          {/* Clean Flight & Fuel Summary */}
+          <div className="navlog-summary-container">
+            <div className="navlog-summary">
+              <div className="summary-item">
+                <div className="summary-label">Total Distance</div>
+                <div className="summary-val">{props.navLog.totalDistance.toFixed(1)} nm</div>
+              </div>
+              <div className="summary-item">
+                <div className="summary-label">Total ETE</div>
+                <div className="summary-val">{formatTime(props.navLog.totalEte)}</div>
+              </div>
+              <div className="summary-item">
+                <div className="summary-label">Total Legs</div>
+                <div className="summary-val">{props.navLog.legs.length}</div>
+              </div>
+              {props.profile.fuelFlow > 0 && (
+                <div className="summary-item">
+                  <div className="summary-label">Trip Fuel</div>
+                  <div className="summary-val val-fuel">
+                    {props.navLog.totalFuel.toFixed(1)} {fuelUnitLabel}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {props.coordPrompt && (
         <CoordPrompt
