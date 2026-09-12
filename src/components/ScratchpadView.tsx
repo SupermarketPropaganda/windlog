@@ -116,86 +116,77 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
             autoComplete="off"
           />
 
-          <div className="route-toolbar-row">
-            <div className="route-actions">
-              {props.routeInput.trim().length > 0 && (
-                <>
+          <div className="route-actions">
+            {props.routeInput.trim().length > 0 && (
+              <>
+                <button
+                  type="button"
+                  className="route-action-btn"
+                  title="Share flight route as URL"
+                  onClick={props.onShareRoute}
+                >
+                  🔗 Share
+                </button>
+                {props.navLog && props.navLog.legs.length > 0 && (
                   <button
                     type="button"
                     className="route-action-btn"
-                    title="Share flight route as URL"
-                    onClick={props.onShareRoute}
+                    title="Open Printable SOP Form 002 Kneeboard / PDF"
+                    onClick={props.onOpenKneeboard}
+                    style={{ borderColor: '#3b82f6', color: '#60a5fa' }}
                   >
-                    🔗 Share
+                    📄 PDF Kneeboard
                   </button>
-                  {props.navLog && props.navLog.legs.length > 0 && (
-                    <button
-                      type="button"
-                      className="route-action-btn"
-                      title="Open Printable SOP Form 002 Kneeboard / PDF"
-                      onClick={props.onOpenKneeboard}
-                      style={{ borderColor: '#3b82f6', color: '#60a5fa' }}
-                    >
-                      📄 PDF Kneeboard
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="route-action-btn"
-                    title="Reverse Route (Return Flight)"
-                    onClick={props.onReverseRoute}
-                  >
-                    ⇄ Reverse
-                  </button>
-                  <button
-                    type="button"
-                    className="route-action-btn"
-                    title="Clear Route"
-                    onClick={props.onClearRoute}
-                  >
-                    ✕ Clear
-                  </button>
-                </>
-              )}
+                )}
+                <button
+                  type="button"
+                  className="route-action-btn"
+                  title="Reverse Route (Return Flight)"
+                  onClick={props.onReverseRoute}
+                >
+                  ⇄ Reverse
+                </button>
+                <button
+                  type="button"
+                  className="route-action-btn"
+                  title="Clear Route"
+                  onClick={props.onClearRoute}
+                >
+                  ✕ Clear
+                </button>
+              </>
+            )}
 
-              {hasWaypoints && (
-                <>
+            {hasWaypoints && (
+              <>
+                <button
+                  type="button"
+                  className={`route-action-btn ${showMap ? 'active-toggle' : ''}`}
+                  onClick={() => setShowMap(!showMap)}
+                  title="Toggle interactive map"
+                >
+                  🗺️ {showMap ? 'Hide Map' : 'Show Map'}
+                </button>
+                {!isMapFullscreen && (
                   <button
                     type="button"
-                    className={`route-action-btn ${showMap ? 'active-toggle' : ''}`}
-                    onClick={() => setShowMap(!showMap)}
-                    title="Toggle interactive map"
+                    className="route-action-btn fullscreen-action-btn"
+                    onClick={() => setIsMapFullscreen(true)}
+                    title="Expand map to full screen"
+                    style={{ borderColor: '#38bdf8', color: '#38bdf8' }}
                   >
-                    🗺️ {showMap ? 'Hide Map' : 'Show Map'}
+                    ⛶ Fullscreen
                   </button>
-                  {!isMapFullscreen && (
-                    <button
-                      type="button"
-                      className="route-action-btn fullscreen-action-btn"
-                      onClick={() => setIsMapFullscreen(true)}
-                      title="Expand map to full screen"
-                      style={{ borderColor: '#38bdf8', color: '#38bdf8' }}
-                    >
-                      ⛶ Fullscreen
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className={`route-action-btn ${showProfile ? 'active-toggle' : ''}`}
-                    onClick={() => setShowProfile(!showProfile)}
-                    title="Toggle vertical altitude cross-section"
-                  >
-                    ✈ {showProfile ? 'Hide Profile' : 'Show Profile'}
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Restricted / Prohibited Airspace conflict alert aligned with Share, Clear, etc. buttons */}
-            {props.navLog && props.navLog.legs.length > 0 && (
-              <div className="route-airspace-banner-slot">
-                <AirspaceAlertBanner navLog={props.navLog} />
-              </div>
+                )}
+                <button
+                  type="button"
+                  className={`route-action-btn ${showProfile ? 'active-toggle' : ''}`}
+                  onClick={() => setShowProfile(!showProfile)}
+                  title="Toggle vertical altitude cross-section"
+                >
+                  ✈ {showProfile ? 'Hide Profile' : 'Show Profile'}
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -286,6 +277,10 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
         {/* Right Column: Tactical Map + Vertical Altitude Profile directly below */}
         {hasWaypoints && (showMap || showProfile) && (
           <div className="dashboard-right-col">
+            {props.navLog && props.navLog.legs.length > 0 && (
+              <AirspaceAlertBanner navLog={props.navLog} />
+            )}
+
             {showMap && (
               <RouteMap
                 navLog={props.navLog}

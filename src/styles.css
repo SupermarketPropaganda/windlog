@@ -334,26 +334,8 @@ body, html {
 }
 
 /* ==========================================================================
-   ROUTE ACTIONS TOOLBAR & AIRSPACE ALERT ROW (ALIGNED)
+   AIRSPACE ALERT BANNER (ABOVE ROUTE MAP)
    ========================================================================== */
-.route-toolbar-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.route-airspace-banner-slot {
-  flex: 1 1 360px;
-  max-width: 100%;
-}
-
-.route-airspace-banner-slot .airspace-alert-banner,
-.route-airspace-banner-slot .airspace-clear-pill {
-  margin-bottom: 0;
-}
-
 /* Clear Pill */
 .airspace-clear-pill {
   display: flex;
@@ -366,6 +348,7 @@ body, html {
   border: 1px solid rgba(34, 197, 94, 0.25);
   color: #4ade80;
   border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
 }
 
 .airspace-clear-pill .clear-icon {
@@ -374,7 +357,8 @@ body, html {
 
 /* Alert Banner */
 .airspace-alert-banner {
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
   overflow: hidden;
   border: 1px solid transparent;
   transition: all 0.2s ease;
