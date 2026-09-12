@@ -303,5 +303,41 @@ describe('Airspace Geometry & Conflict Detection Engine', () => {
       expect(matchedIds).not.toContain('FARO_TMA');
       expect(matchedIds).not.toContain('LPBJ_CTR');
     });
+
+    it('identifies route airspaces with isAirspaceOnRoute and evaluates 3D status with getAirspaceRouteStatus', async () => {
+      const { isAirspaceOnRoute, getAirspaceRouteStatus, computeAirspaceProfileSlices } =
+        await import('../engine/airspace-engine');
+
+      const lpcs = makeWpt(1, 'LPCS', 38.725, -9.355);
+      const lppt = makeWpt(2, 'LPPT', 38.774, -9.134);
+      const legs = [makeLeg(lpcs, lppt, 2000)];
+
+      const cascaisCtr = AIRSPACES.find((a) => a.id === 'LPCS_CTR')!;
+      const faroCtr = AIRSPACES.find((a) => a.id === 'LPFR_CTR')!;
+      const tma4 = AIRSPACES.find((a) => a.id === 'LISBOA_TMA_4')!;
+
+      // isAirspaceOnRoute parity
+      expect(isAirspaceOnRoute(cascaisCtr, legs)).toBe(true);
+      expect(isAirspaceOnRoute(tma4, legs)).toBe(true);
+      expect(isAirspaceOnRoute(faroCtr, legs)).toBe(false);
+
+      // getAirspaceRouteStatus evaluation
+      const statusCtr = getAirspaceRouteStatus(cascaisCtr, legs);
+      expect(statusCtr.isOnRoute).toBe(true);
+      expect(statusCtr.status).toBe('PENETRATING');
+
+      const statusTma4 = getAirspaceRouteStatus(tma4, legs);
+      expect(statusTma4.isOnRoute).toBe(true);
+      // At 2000ft, TMA 4 (4500' to FL245) is overhead (status BELOW)
+      expect(statusTma4.status).toBe('BELOW');
+
+      // Parity between vertical profile slices and isAirspaceOnRoute
+      const slices = computeAirspaceProfileSlices(legs, AIRSPACES);
+      const sliceAirspaceIds = Array.from(new Set(slices.map((s) => s.airspace.id)));
+      for (const id of sliceAirspaceIds) {
+        const as = AIRSPACES.find((a) => a.id === id)!;
+        expect(isAirspaceOnRoute(as, legs)).toBe(true);
+      }
+    });
   });
 });

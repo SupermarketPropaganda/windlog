@@ -536,8 +536,8 @@ export function computeAirspaceProfileSlices(
       tSet.add(0);
       tSet.add(1);
 
-      for (let j = 0; j < poly.length - 1; j++) {
-        const t = getSegmentIntersectionFraction(p1, p2, poly[j], poly[j + 1]);
+      for (let j = 0, k = poly.length - 1; j < poly.length; k = j++) {
+        const t = getSegmentIntersectionFraction(p1, p2, poly[k], poly[j]);
         if (t !== null && t > 0.001 && t < 0.999) {
           tSet.add(t);
         }
@@ -694,5 +694,96 @@ export function getAirspaceClearanceAdvisory(
     actionDetail: `Broadcast blind intentions (position, altitude, landing/transit) on ${freq} 5 minutes prior to entering the ATZ.`,
     frequency: freq,
     isClearanceRequired: false,
+  };
+}
+
+/**
+ * Checks whether an airspace polygon is traversed or entered in 2D by any leg of the route.
+ */
+export function isAirspaceOnRoute(airspace: Airspace, legs: Leg[]): boolean {
+  if (!legs || legs.length === 0 || !airspace || !airspace.polygon) return false;
+  return legs.some((leg) => {
+    if (!leg.from || !leg.to) return false;
+    const start: [number, number] = [leg.from.latitude, leg.from.longitude];
+    const end: [number, number] = [leg.to.latitude, leg.to.longitude];
+    return doesSegmentOverlapPolygon(start, end, airspace.polygon);
+  });
+}
+
+/**
+ * Evaluates the comprehensive 3D status of an airspace along the entire route.
+ */
+export function getAirspaceRouteStatus(
+  airspace: Airspace,
+  legs: Leg[]
+): {
+  isOnRoute: boolean;
+  status: PenetrationStatus | null;
+  severity: ConflictSeverity | null;
+  verticalClearanceFt: number;
+} {
+  if (!legs || legs.length === 0 || !airspace || !airspace.polygon) {
+    return { isOnRoute: false, status: null, severity: null, verticalClearanceFt: 0 };
+  }
+
+  let hasPenetration = false;
+  let hasClipping = false;
+  let hasBelow = false;
+  let hasAbove = false;
+  let minClearance = Infinity;
+  let foundAny = false;
+
+  for (let i = 0; i < legs.length; i++) {
+    const conflict = checkLegAirspaceConflict(legs[i], i, airspace);
+    if (conflict) {
+      foundAny = true;
+      if (conflict.verticalClearanceFt < minClearance) {
+        minClearance = conflict.verticalClearanceFt;
+      }
+      if (conflict.status === 'PENETRATING') hasPenetration = true;
+      else if (conflict.status === 'CLIPPING') hasClipping = true;
+      else if (conflict.status === 'BELOW') hasBelow = true;
+      else if (conflict.status === 'ABOVE') hasAbove = true;
+    }
+  }
+
+  if (!foundAny) {
+    return { isOnRoute: false, status: null, severity: null, verticalClearanceFt: 0 };
+  }
+
+  if (hasPenetration) {
+    const isSpecial =
+      airspace.type === 'RESTRICTED' || airspace.type === 'PROHIBITED';
+    return {
+      isOnRoute: true,
+      status: 'PENETRATING',
+      severity: isSpecial ? 'CRITICAL' : 'WARNING',
+      verticalClearanceFt: 0,
+    };
+  }
+
+  if (hasClipping) {
+    return {
+      isOnRoute: true,
+      status: 'CLIPPING',
+      severity: 'CAUTION',
+      verticalClearanceFt: minClearance === Infinity ? 0 : minClearance,
+    };
+  }
+
+  if (hasBelow) {
+    return {
+      isOnRoute: true,
+      status: 'BELOW',
+      severity: 'INFO',
+      verticalClearanceFt: minClearance === Infinity ? 0 : minClearance,
+    };
+  }
+
+  return {
+    isOnRoute: true,
+    status: hasAbove ? 'ABOVE' : null,
+    severity: 'INFO',
+    verticalClearanceFt: minClearance === Infinity ? 0 : minClearance,
   };
 }

@@ -1,11 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { NavLogSummary } from '../types';
 import { computeAirspaceProfileSlices, AirspaceVerticalSlice } from '../engine/airspace-engine';
+import { AirspaceFilterType } from './RouteMap';
 
 export interface AltitudeProfileProps {
   navLog: NavLogSummary;
   activeLegIndex: number | null;
   onSelectLeg: (idx: number) => void;
+  showAirspaces?: boolean;
+  onToggleShowAirspaces?: (show: boolean) => void;
+  airspaceFilter?: AirspaceFilterType;
+  onlyRouteAirspaces?: boolean;
 }
 
 /**
@@ -17,10 +22,17 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   navLog,
   activeLegIndex,
   onSelectLeg,
+  showAirspaces: externalShowAirspaces,
+  onToggleShowAirspaces,
+  airspaceFilter = 'ALL',
 }) => {
   if (!navLog || navLog.legs.length === 0) return null;
 
-  const [showAirspaceSlices, setShowAirspaceSlices] = useState<boolean>(true);
+  const [internalShowAirspaces, setInternalShowAirspaces] = useState<boolean>(true);
+  const showAirspaceSlices =
+    externalShowAirspaces !== undefined ? externalShowAirspaces : internalShowAirspaces;
+  const setShowAirspaceSlices = onToggleShowAirspaces || setInternalShowAirspaces;
+
   const [hoveredSlice, setHoveredSlice] = useState<AirspaceVerticalSlice | null>(null);
 
   const width = 800;
@@ -36,9 +48,27 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   const totalDist = Math.max(1, navLog.totalDistance);
 
   // Compute 2D vertical airspace slices
-  const airspaceSlices = useMemo(() => {
+  const allAirspaceSlices = useMemo(() => {
     return computeAirspaceProfileSlices(navLog.legs);
   }, [navLog.legs]);
+
+  // Filter slices based on shared airspaceFilter
+  const airspaceSlices = useMemo(() => {
+    if (!airspaceFilter || airspaceFilter === 'ALL') return allAirspaceSlices;
+    return allAirspaceSlices.filter((s) => {
+      if (airspaceFilter === 'CTR') return s.airspace.type === 'CTR';
+      if (airspaceFilter === 'TMA') return s.airspace.type === 'TMA';
+      if (airspaceFilter === 'SPECIAL') {
+        return (
+          s.airspace.type === 'RESTRICTED' ||
+          s.airspace.type === 'PROHIBITED' ||
+          s.airspace.type === 'DANGER'
+        );
+      }
+      if (airspaceFilter === 'ATZ') return s.airspace.type === 'ATZ';
+      return true;
+    });
+  }, [allAirspaceSlices, airspaceFilter]);
 
   // Find max altitude to scale Y axis (rounded up to next 2000ft)
   const maxAltInRoute = Math.max(...navLog.legs.map((l) => l.altitude), 3500);
@@ -113,7 +143,9 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
               checked={showAirspaceSlices}
               onChange={(e) => setShowAirspaceSlices(e.target.checked)}
             />
-            <span>Airspaces ({airspaceSlices.length})</span>
+            <span>
+              Airspaces{airspaceFilter && airspaceFilter !== 'ALL' ? ` (${airspaceFilter})` : ''} ({airspaceSlices.length})
+            </span>
           </label>
           <span className="profile-stats">
             Total: {navLog.totalDistance.toFixed(1)} nm • Max Alt: {maxAltInRoute.toLocaleString()} ft MSL

@@ -9,7 +9,8 @@ import {
   checkLegAirspaceConflict,
   getAirspaceClearanceAdvisory,
   isPointInPolygon,
-  doesSegmentOverlapPolygon,
+  isAirspaceOnRoute,
+  getAirspaceRouteStatus,
 } from '../engine/airspace-engine';
 
 export type MapLayerType = 'dark' | 'satellite' | 'terrain' | 'street';
@@ -22,6 +23,14 @@ export interface RouteMapProps {
   onSelectLeg: (idx: number) => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: (fullscreen: boolean) => void;
+  showAirspaces?: boolean;
+  onToggleShowAirspaces?: (show: boolean) => void;
+  airspaceFilter?: AirspaceFilterType;
+  onAirspaceFilterChange?: (filter: AirspaceFilterType) => void;
+  showSectorLabels?: boolean;
+  onToggleSectorLabels?: (show: boolean) => void;
+  onlyRouteAirspaces?: boolean;
+  onToggleOnlyRouteAirspaces?: (onlyRoute: boolean) => void;
 }
 
 const TILE_LAYERS: Record<
@@ -135,6 +144,14 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   onSelectLeg,
   isFullscreen: externalIsFullscreen,
   onToggleFullscreen,
+  showAirspaces: externalShowAirspaces,
+  onToggleShowAirspaces,
+  airspaceFilter: externalAirspaceFilter,
+  onAirspaceFilterChange,
+  showSectorLabels: externalShowSectorLabels,
+  onToggleSectorLabels,
+  onlyRouteAirspaces: externalOnlyRouteAirspaces,
+  onToggleOnlyRouteAirspaces,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -176,10 +193,23 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   }, [isFullscreen]);
 
   const [activeLayer, setActiveLayer] = useState<MapLayerType>('dark');
-  const [showAirspaces, setShowAirspaces] = useState<boolean>(true);
-  const [airspaceFilter, setAirspaceFilter] = useState<AirspaceFilterType>('ALL');
-  const [showSectorLabels, setShowSectorLabels] = useState<boolean>(true);
-  const [onlyRouteAirspaces, setOnlyRouteAirspaces] = useState<boolean>(false);
+
+  const [internalShowAirspaces, setInternalShowAirspaces] = useState<boolean>(true);
+  const showAirspaces = externalShowAirspaces !== undefined ? externalShowAirspaces : internalShowAirspaces;
+  const setShowAirspaces = onToggleShowAirspaces || setInternalShowAirspaces;
+
+  const [internalAirspaceFilter, setInternalAirspaceFilter] = useState<AirspaceFilterType>('ALL');
+  const airspaceFilter = externalAirspaceFilter !== undefined ? externalAirspaceFilter : internalAirspaceFilter;
+  const setAirspaceFilter = onAirspaceFilterChange || setInternalAirspaceFilter;
+
+  const [internalShowSectorLabels, setInternalShowSectorLabels] = useState<boolean>(true);
+  const showSectorLabels = externalShowSectorLabels !== undefined ? externalShowSectorLabels : internalShowSectorLabels;
+  const setShowSectorLabels = onToggleSectorLabels || setInternalShowSectorLabels;
+
+  const [internalOnlyRouteAirspaces, setInternalOnlyRouteAirspaces] = useState<boolean>(false);
+  const onlyRouteAirspaces = externalOnlyRouteAirspaces !== undefined ? externalOnlyRouteAirspaces : internalOnlyRouteAirspaces;
+  const setOnlyRouteAirspaces = onToggleOnlyRouteAirspaces || setInternalOnlyRouteAirspaces;
+
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState<boolean>(false);
 
   // Initialize Leaflet Map with Offline-Capable Tile Layer
@@ -253,27 +283,10 @@ export const RouteMap: React.FC<RouteMapProps> = ({
 
     // 1. Filter airspaces according to active filters
     const filteredAirspaces = AIRSPACES.filter((as: Airspace) => {
-      // If user enabled "Route Airspaces Only", filter strictly to airspaces the route penetrates or enters
+      // If user enabled "Route Airspaces Only", filter strictly to airspaces along the route corridor
       if (onlyRouteAirspaces) {
         if (!navLog || !navLog.legs || navLog.legs.length === 0) return false;
-        const goesThrough = navLog.legs.some((leg) => {
-          const start: [number, number] = [leg.from.latitude, leg.from.longitude];
-          const end: [number, number] = [leg.to.latitude, leg.to.longitude];
-          const overlaps2D = doesSegmentOverlapPolygon(start, end, as.polygon);
-          if (!overlaps2D) return false;
-
-          // If altitude is not specified or 0, match 2D corridor
-          if (!leg.altitude || leg.altitude <= 0) return true;
-
-          // Departure / arrival waypoint inside airspace (climb or descent containment)
-          if (isPointInPolygon(start, as.polygon) || isPointInPolygon(end, as.polygon)) {
-            return as.lowerLimitFt <= leg.altitude + 500;
-          }
-
-          // En-route: cruising altitude penetrates or clips vertical sector (with 500ft clearance buffer)
-          return leg.altitude >= as.lowerLimitFt - 500 && leg.altitude <= as.upperLimitFt + 500;
-        });
-        if (!goesThrough) return false;
+        if (!isAirspaceOnRoute(as, navLog.legs)) return false;
       }
 
       if (airspaceFilter === 'CTR' && as.type !== 'CTR') return false;
@@ -419,28 +432,40 @@ export const RouteMap: React.FC<RouteMapProps> = ({
         dashArray = '4, 4';
       }
 
-      // Route conflict check for visual highlighting
-      let hasPenetration = false;
-      if (navLog && navLog.legs.length > 0) {
-        for (let i = 0; i < navLog.legs.length; i++) {
-          const c = checkLegAirspaceConflict(navLog.legs[i], i, as);
-          if (c && c.status === 'PENETRATING') {
-            hasPenetration = true;
-            break;
-          }
-        }
-      }
+      // Route conflict and vertical column evaluation
+      const routeStatus =
+        navLog && navLog.legs.length > 0 ? getAirspaceRouteStatus(as, navLog.legs) : null;
+
+      const hasPenetration = routeStatus?.status === 'PENETRATING';
+      const hasClipping = routeStatus?.status === 'CLIPPING';
+      const isOverheadOrBelow =
+        routeStatus?.status === 'ABOVE' || routeStatus?.status === 'BELOW';
+
+      let weight = isSpecial ? 2 : 1.5;
 
       if (hasPenetration) {
+        strokeColor = isSpecial ? '#ef4444' : '#f97316';
         fillColor = isSpecial ? '#ef4444' : '#f97316';
         fillOpacity = 0.30;
+        weight = 2.5;
+        dashArray = undefined;
+      } else if (hasClipping) {
+        strokeColor = '#eab308';
+        fillColor = '#eab308';
+        fillOpacity = 0.18;
+        weight = 2;
+        dashArray = '5, 4';
+      } else if (onlyRouteAirspaces && isOverheadOrBelow) {
+        fillOpacity = 0.05;
+        weight = 1.2;
+        dashArray = '4, 4';
       }
 
       const polygon = L.polygon(as.polygon, {
         color: strokeColor,
         fillColor: fillColor,
         fillOpacity: fillOpacity,
-        weight: isSpecial || hasPenetration ? 2.5 : 1.5,
+        weight,
         dashArray,
       }).addTo(airspaceGroup);
 
@@ -452,11 +477,19 @@ export const RouteMap: React.FC<RouteMapProps> = ({
       // Centroid label for prominent airspaces
       if (showSectorLabels && as.polygon.length >= 3) {
         const center = getPolygonCentroid(as.polygon);
+        let statusTag = '';
+        if (onlyRouteAirspaces && routeStatus) {
+          if (hasPenetration) statusTag = ' · ⚠️ IN';
+          else if (hasClipping) statusTag = ' · ⚡ CLIP';
+          else if (routeStatus.status === 'ABOVE') statusTag = ' · ↕ OVR';
+          else if (routeStatus.status === 'BELOW') statusTag = ' · ↕ BLW';
+        }
+
         const labelIcon = L.divIcon({
           className: 'airspace-map-label-wrapper',
           html: `<div class="airspace-center-badge badge-${as.type.toLowerCase()}">
                    <span class="badge-id">${as.id.replace('_', ' ')}</span>
-                   <span class="badge-limits">${as.lowerLimitLabel}/${as.upperLimitLabel}</span>
+                   <span class="badge-limits">${as.lowerLimitLabel}/${as.upperLimitLabel}${statusTag}</span>
                  </div>`,
           iconSize: [80, 24],
           iconAnchor: [40, 12],

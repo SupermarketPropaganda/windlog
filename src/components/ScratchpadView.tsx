@@ -12,7 +12,7 @@ import { AircraftBar } from './AircraftBar';
 import { WindPanel } from './WindPanel';
 import { NavLogRow } from './NavLogRow';
 import { CoordPrompt } from './CoordPrompt';
-import { RouteMap } from './RouteMap';
+import { RouteMap, AirspaceFilterType } from './RouteMap';
 import { AltitudeProfile } from './AltitudeProfile';
 import { AirspaceAlertBanner } from './AirspaceAlertBanner';
 
@@ -75,6 +75,12 @@ const formatTime = (seconds: number): string => {
  */
 export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+
+  // Unified Airspace Filtering State shared between Tactical Map and Altitude Profile
+  const [showAirspaces, setShowAirspaces] = useState<boolean>(true);
+  const [airspaceFilter, setAirspaceFilter] = useState<AirspaceFilterType>('ALL');
+  const [showSectorLabels, setShowSectorLabels] = useState<boolean>(true);
+  const [onlyRouteAirspaces, setOnlyRouteAirspaces] = useState<boolean>(false);
 
   const hasWaypoints = props.resolvedWaypoints.length > 0;
   const fuelUnitLabel = props.profile.fuelUnit === 'gph' ? 'gal' : 'L';
@@ -254,6 +260,14 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
               onSelectLeg={props.onSelectLeg}
               isFullscreen={isMapFullscreen}
               onToggleFullscreen={setIsMapFullscreen}
+              showAirspaces={showAirspaces}
+              onToggleShowAirspaces={setShowAirspaces}
+              airspaceFilter={airspaceFilter}
+              onAirspaceFilterChange={setAirspaceFilter}
+              showSectorLabels={showSectorLabels}
+              onToggleSectorLabels={setShowSectorLabels}
+              onlyRouteAirspaces={onlyRouteAirspaces}
+              onToggleOnlyRouteAirspaces={setOnlyRouteAirspaces}
             />
 
             {props.navLog && props.navLog.legs.length > 0 && (
@@ -261,6 +275,10 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                 navLog={props.navLog}
                 activeLegIndex={props.activeLegIndex}
                 onSelectLeg={props.onSelectLeg}
+                showAirspaces={showAirspaces}
+                onToggleShowAirspaces={setShowAirspaces}
+                airspaceFilter={airspaceFilter}
+                onlyRouteAirspaces={onlyRouteAirspaces}
               />
             )}
           </div>
