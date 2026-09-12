@@ -74,8 +74,6 @@ const formatTime = (seconds: number): string => {
  * Main application screen composing all subcomponents in an iPad/PC responsive layout.
  */
 export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
-  const [showMap, setShowMap] = useState(true);
-  const [showProfile, setShowProfile] = useState(true);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
 
   const hasWaypoints = props.resolvedWaypoints.length > 0;
@@ -156,38 +154,6 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                 </button>
               </>
             )}
-
-            {hasWaypoints && (
-              <>
-                <button
-                  type="button"
-                  className={`route-action-btn ${showMap ? 'active-toggle' : ''}`}
-                  onClick={() => setShowMap(!showMap)}
-                  title="Toggle interactive map"
-                >
-                  🗺️ {showMap ? 'Hide Map' : 'Show Map'}
-                </button>
-                {!isMapFullscreen && (
-                  <button
-                    type="button"
-                    className="route-action-btn fullscreen-action-btn"
-                    onClick={() => setIsMapFullscreen(true)}
-                    title="Expand map to full screen"
-                    style={{ borderColor: '#38bdf8', color: '#38bdf8' }}
-                  >
-                    ⛶ Fullscreen
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className={`route-action-btn ${showProfile ? 'active-toggle' : ''}`}
-                  onClick={() => setShowProfile(!showProfile)}
-                  title="Toggle vertical altitude cross-section"
-                >
-                  ✈ {showProfile ? 'Hide Profile' : 'Show Profile'}
-                </button>
-              </>
-            )}
           </div>
         </div>
 
@@ -223,7 +189,7 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
       {/* Responsive Main Layout:
           - Desktop & iPad: 2 Columns (Left: NavLog & Summary, Right: Map & Vertical Profile)
           - Mobile: Single Column (NavLog & Summary, then Map, then Vertical Profile below) */}
-      <div className={`flight-dashboard-grid ${hasWaypoints && (showMap || showProfile) ? 'with-sidebar' : 'single-col'}`}>
+      <div className={`flight-dashboard-grid ${hasWaypoints ? 'with-sidebar' : 'single-col'}`}>
         {/* Left Column: NavLog Legs & Summary */}
         <div className="dashboard-left-col">
           <div className="navlog-list">
@@ -275,24 +241,22 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
         </div>
 
         {/* Right Column: Tactical Map + Vertical Altitude Profile directly below */}
-        {hasWaypoints && (showMap || showProfile) && (
+        {hasWaypoints && (
           <div className="dashboard-right-col">
             {props.navLog && props.navLog.legs.length > 0 && (
               <AirspaceAlertBanner navLog={props.navLog} />
             )}
 
-            {showMap && (
-              <RouteMap
-                navLog={props.navLog}
-                waypoints={props.resolvedWaypoints}
-                activeLegIndex={props.activeLegIndex}
-                onSelectLeg={props.onSelectLeg}
-                isFullscreen={isMapFullscreen}
-                onToggleFullscreen={setIsMapFullscreen}
-              />
-            )}
+            <RouteMap
+              navLog={props.navLog}
+              waypoints={props.resolvedWaypoints}
+              activeLegIndex={props.activeLegIndex}
+              onSelectLeg={props.onSelectLeg}
+              isFullscreen={isMapFullscreen}
+              onToggleFullscreen={setIsMapFullscreen}
+            />
 
-            {props.navLog && props.navLog.legs.length > 0 && showProfile && (
+            {props.navLog && props.navLog.legs.length > 0 && (
               <AltitudeProfile
                 navLog={props.navLog}
                 activeLegIndex={props.activeLegIndex}

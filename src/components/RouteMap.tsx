@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { NavLogSummary, Waypoint } from '../types';
@@ -14,7 +14,6 @@ import {
 
 export type MapLayerType = 'dark' | 'satellite' | 'terrain' | 'street';
 export type AirspaceFilterType = 'ALL' | 'CTR' | 'TMA' | 'SPECIAL' | 'ATZ';
-export type AirspaceAltitudeFilter = 'ALL' | 'VFR_LOW' | 'VFR_MID' | 'ROUTE';
 
 export interface RouteMapProps {
   navLog: NavLogSummary | null;
@@ -179,7 +178,6 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   const [activeLayer, setActiveLayer] = useState<MapLayerType>('dark');
   const [showAirspaces, setShowAirspaces] = useState<boolean>(true);
   const [airspaceFilter, setAirspaceFilter] = useState<AirspaceFilterType>('ALL');
-  const [altitudeFilter, setAltitudeFilter] = useState<AirspaceAltitudeFilter>('ALL');
   const [showSectorLabels, setShowSectorLabels] = useState<boolean>(true);
   const [onlyRouteAirspaces, setOnlyRouteAirspaces] = useState<boolean>(false);
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState<boolean>(false);
@@ -244,16 +242,6 @@ export const RouteMap: React.FC<RouteMapProps> = ({
     tileLayerRef.current = newTile;
   }, [activeLayer]);
 
-  // Determine route altitude range for altitude filtering
-  const routeAltRange = useMemo(() => {
-    if (!navLog || navLog.legs.length === 0) return { min: 0, max: 20000 };
-    const alts = navLog.legs.map((l) => l.altitude);
-    return {
-      min: Math.min(...alts),
-      max: Math.max(...alts),
-    };
-  }, [navLog]);
-
   // Render Airspace Polygons and Sector Badges
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -299,14 +287,6 @@ export const RouteMap: React.FC<RouteMapProps> = ({
         return false;
       if (airspaceFilter === 'ATZ' && as.type !== 'ATZ') return false;
 
-      if (altitudeFilter === 'VFR_LOW' && as.lowerLimitFt > 3500) return false;
-      if (altitudeFilter === 'VFR_MID' && as.lowerLimitFt > 6500) return false;
-      if (altitudeFilter === 'ROUTE') {
-        const matchesRoute =
-          as.lowerLimitFt <= routeAltRange.max + 1000 &&
-          as.upperLimitFt >= routeAltRange.min - 1000;
-        if (!matchesRoute) return false;
-      }
       return true;
     });
 
@@ -497,11 +477,9 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   }, [
     showAirspaces,
     airspaceFilter,
-    altitudeFilter,
     showSectorLabels,
     onlyRouteAirspaces,
     navLog,
-    routeAltRange,
   ]);
 
   // Update Route Polylines and Markers
@@ -689,59 +667,18 @@ export const RouteMap: React.FC<RouteMapProps> = ({
                 >
                   ATZ
                 </button>
+                <button
+                  type="button"
+                  className={`layer-btn ${showSectorLabels ? 'active' : ''}`}
+                  onClick={() => setShowSectorLabels(!showSectorLabels)}
+                  title="Toggle sector floor/ceiling labels"
+                >
+                  🏷️ Labels
+                </button>
               </>
             )}
           </div>
         </div>
-
-        {/* 3D Altitude Slicing & Offline Tool */}
-        {showAirspaces && (
-          <div className="map-layer-section">
-            <span className="map-layer-title">Altitude Filter:</span>
-            <div className="map-layer-buttons">
-              <button
-                type="button"
-                className={`layer-btn ${altitudeFilter === 'ALL' ? 'active' : ''}`}
-                onClick={() => setAltitudeFilter('ALL')}
-                title="Show all vertical levels"
-              >
-                All Alts
-              </button>
-              <button
-                type="button"
-                className={`layer-btn ${altitudeFilter === 'VFR_LOW' ? 'active' : ''}`}
-                onClick={() => setAltitudeFilter('VFR_LOW')}
-                title="Only airspaces with floors below 3,500 ft (Low-level VFR)"
-              >
-                &lt; 3.5k VFR
-              </button>
-              <button
-                type="button"
-                className={`layer-btn ${altitudeFilter === 'VFR_MID' ? 'active' : ''}`}
-                onClick={() => setAltitudeFilter('VFR_MID')}
-                title="Airspaces with floors below 6,500 ft"
-              >
-                &lt; 6.5k
-              </button>
-              <button
-                type="button"
-                className={`layer-btn ${altitudeFilter === 'ROUTE' ? 'active' : ''}`}
-                onClick={() => setAltitudeFilter('ROUTE')}
-                title="Filter to sectors affecting route cruise altitude ±1,000 ft"
-              >
-                Route ±1k
-              </button>
-              <button
-                type="button"
-                className={`layer-btn ${showSectorLabels ? 'active' : ''}`}
-                onClick={() => setShowSectorLabels(!showSectorLabels)}
-                title="Toggle sector floor/ceiling labels"
-              >
-                🏷️ Labels
-              </button>
-            </div>
-          </div>
-        )}
 
         <div className="map-layer-section">
           <div className="map-layer-buttons">
