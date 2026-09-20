@@ -43,12 +43,12 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   const [hoveredPoint, setHoveredPoint] = useState<TerrainSamplePoint | null>(null);
   const [hoveredSlice, setHoveredSlice] = useState<AirspaceVerticalSlice | null>(null);
 
-  const width = 800;
-  const height = 240;
-  const paddingLeft = 55;
+  const width = 960;
+  const height = 360;
+  const paddingLeft = 75;
   const paddingRight = 45;
-  const paddingTop = 25;
-  const paddingBottom = 40;
+  const paddingTop = 36;
+  const paddingBottom = 58;
 
   const chartWidth = width - paddingLeft - paddingRight;
   const chartHeight = height - paddingTop - paddingBottom;
@@ -98,19 +98,19 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
     });
   }, [allAirspaceSlices, airspaceFilter]);
 
-  // Find max altitude to scale Y axis (flight alt, airspace, terrain)
-  const maxAltInRoute = Math.max(...navLog.legs.map((l) => l.altitude), 3500);
+  // VFR Altitude Envelope Scaling:
+  // Strictly driven by planned flight altitudes and terrain elevation along the route.
+  // We do NOT scale up to high-altitude TMA ceilings (FL145/FL245), ensuring the VFR
+  // trajectory and terrain clearance are prominent, large, and readable.
+  const maxAltInRoute = Math.max(...navLog.legs.map((l) => l.altitude), 2000);
   const maxTerrainInRoute = showTerrain && terrainResult ? terrainResult.maxTerrainFt : 0;
-  const relevantAirspaceAlt = Math.max(
-    ...airspaceSlices.map((s) =>
-      s.status === 'PENETRATING' || s.status === 'CLIPPING'
-        ? s.upperLimitFt
-        : Math.min(s.upperLimitFt, 9500)
-    ),
-    0
-  );
-  const effectiveMaxAlt = Math.max(maxAltInRoute, maxTerrainInRoute, Math.min(relevantAirspaceAlt, 14500));
-  const yMaxAlt = Math.ceil((effectiveMaxAlt + 1500) / 2000) * 2000;
+  const flightCeiling = Math.max(maxAltInRoute, maxTerrainInRoute);
+  const yMaxAlt = Math.max(4000, Math.ceil((flightCeiling + 1800) / 1000) * 1000);
+
+  // Filter slices to those that enter our visible VFR vertical window (floor < yMaxAlt)
+  const visibleAirspaceSlices = useMemo(() => {
+    return airspaceSlices.filter((s) => s.lowerLimitFt < yMaxAlt);
+  }, [airspaceSlices, yMaxAlt]);
 
   const scaleX = (dist: number) => paddingLeft + (dist / totalDist) * chartWidth;
   const scaleY = (alt: number) => paddingTop + chartHeight - (alt / yMaxAlt) * chartHeight;
@@ -154,9 +154,10 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
     terrainPathD += ` L ${scaleX(totalDist)} ${scaleY(0)} Z`;
   }
 
-  // Grid lines for Y axis (every 2,000 ft)
+  // Grid lines for Y axis (every 1,000 ft up to 8,000 ft, every 2,000 ft above)
+  const tickStep = yMaxAlt <= 8000 ? 1000 : 2000;
   const yTicks: number[] = [];
-  for (let a = 2000; a <= yMaxAlt; a += 2000) {
+  for (let a = tickStep; a <= yMaxAlt; a += tickStep) {
     yTicks.push(a);
   }
 
@@ -275,11 +276,11 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
             <svg viewBox={`0 0 ${width} ${height}`} className="altitude-profile-svg">
               <defs>
                 <linearGradient id="terrainGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1e293b" stopOpacity="0.85" />
-                  <stop offset="100%" stopColor="#0a0f1d" stopOpacity="0.95" />
+                  <stop offset="0%" stopColor="#334155" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#0a0f1d" stopOpacity="0.98" />
                 </linearGradient>
                 <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="#38bdf8" floodOpacity="0.7" />
+                  <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#38bdf8" floodOpacity="0.8" />
                 </filter>
               </defs>
 
@@ -295,52 +296,58 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                       y2={y}
                       className="profile-grid-line"
                     />
-                    <text x={paddingLeft - 8} y={y + 3} className="profile-axis-text-y">
-                      {alt >= 10000 ? `FL${alt / 100}` : `${alt / 1000}k`}
+                    <text x={paddingLeft - 10} y={y + 4} className="profile-axis-text-y">
+                      {alt >= 10000 ? `FL${alt / 100}` : alt.toLocaleString()}
                     </text>
                   </g>
                 );
               })}
 
+              {/* Y-axis Unit Header */}
+              <text x={paddingLeft - 10} y={paddingTop - 12} className="profile-axis-unit-label">
+                FT MSL
+              </text>
+
               {/* Airspace Cross-Section Slices */}
               {showAirspaceSlices &&
-                airspaceSlices.map((slice, sIdx) => {
+                visibleAirspaceSlices.map((slice, sIdx) => {
                   const startX = scaleX(slice.startDistNm);
                   const endX = scaleX(slice.endDistNm);
-                  const rectWidth = Math.max(4, endX - startX);
+                  const rectWidth = Math.max(6, endX - startX);
+                  const isCappedAtTop = slice.upperLimitFt > yMaxAlt;
                   const clampedUpper = Math.min(slice.upperLimitFt, yMaxAlt);
                   const yTop = scaleY(clampedUpper);
-                  const yBottom = scaleY(slice.lowerLimitFt);
-                  const rectHeight = Math.max(4, yBottom - yTop);
+                  const yBottom = scaleY(Math.max(0, slice.lowerLimitFt));
+                  const rectHeight = Math.max(6, yBottom - yTop);
 
                   let fillColor = 'rgba(59, 130, 246, 0.08)';
                   let strokeColor = '#3b82f6';
-                  let strokeDash: string | undefined = '3,3';
+                  let strokeDash: string | undefined = '4,3';
 
                   if (slice.airspace.type === 'TMA') {
-                    fillColor = 'rgba(168, 85, 247, 0.08)';
+                    fillColor = 'rgba(168, 85, 247, 0.09)';
                     strokeColor = '#a855f7';
                   } else if (
                     slice.airspace.type === 'RESTRICTED' ||
                     slice.airspace.type === 'PROHIBITED'
                   ) {
-                    fillColor = 'rgba(239, 68, 68, 0.16)';
+                    fillColor = 'rgba(239, 68, 68, 0.18)';
                     strokeColor = '#ef4444';
-                    strokeDash = '4,2';
+                    strokeDash = '5,2';
                   } else if (slice.airspace.type === 'DANGER') {
-                    fillColor = 'rgba(245, 158, 11, 0.12)';
+                    fillColor = 'rgba(245, 158, 11, 0.14)';
                     strokeColor = '#f59e0b';
-                    strokeDash = '4,2';
+                    strokeDash = '5,2';
                   } else if (slice.airspace.type === 'ATZ') {
-                    fillColor = 'rgba(20, 184, 166, 0.10)';
+                    fillColor = 'rgba(20, 184, 166, 0.12)';
                     strokeColor = '#14b8a6';
                   }
 
                   if (slice.status === 'PENETRATING') {
                     fillColor =
                       slice.airspace.type === 'RESTRICTED' || slice.airspace.type === 'PROHIBITED'
-                        ? 'rgba(239, 68, 68, 0.28)'
-                        : 'rgba(249, 115, 22, 0.20)';
+                        ? 'rgba(239, 68, 68, 0.32)'
+                        : 'rgba(249, 115, 22, 0.24)';
                     strokeColor = '#f97316';
                     strokeDash = undefined;
                   }
@@ -359,33 +366,45 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                         height={rectHeight}
                         fill={fillColor}
                         stroke={strokeColor}
-                        strokeWidth={slice.status === 'PENETRATING' ? 1.5 : 1}
+                        strokeWidth={slice.status === 'PENETRATING' ? 2 : 1.5}
                         strokeDasharray={strokeDash}
-                        rx={2}
+                        rx={3}
                       />
-                      {rectWidth > 32 && (
+                      {isCappedAtTop && (
+                        <line
+                          x1={startX}
+                          y1={yTop}
+                          x2={startX + rectWidth}
+                          y2={yTop}
+                          stroke={strokeColor}
+                          strokeWidth="2"
+                          strokeDasharray="2,3"
+                        />
+                      )}
+                      {rectWidth > 36 && (
                         <text
-                          x={startX + 4}
-                          y={yTop + 11}
+                          x={startX + 6}
+                          y={yTop + 16}
                           fill={strokeColor}
-                          fontSize="8.5"
-                          fontFamily="monospace"
+                          fontSize="12"
+                          fontFamily="var(--font-mono, monospace)"
                           fontWeight="bold"
                         >
-                          {slice.airspace.name.length > 14 && rectWidth < 80
-                            ? slice.airspace.id
-                            : slice.airspace.name}
+                          {rectWidth < 85 ? slice.airspace.id : slice.airspace.name}
+                          {isCappedAtTop && ` (▲ ${slice.airspace.upperLimitLabel})`}
                         </text>
                       )}
-                      {rectWidth > 40 && (
+                      {rectWidth > 45 && rectHeight > 36 && (
                         <text
-                          x={startX + 4}
-                          y={yBottom - 4}
-                          fill="#94a3b8"
-                          fontSize="7.5"
-                          fontFamily="monospace"
+                          x={startX + 6}
+                          y={yBottom - 7}
+                          fill="#cbd5e1"
+                          fontSize="11"
+                          fontFamily="var(--font-mono, monospace)"
+                          fontWeight="600"
                         >
-                          {slice.airspace.lowerLimitLabel}
+                          Floor: {slice.airspace.lowerLimitLabel}
+                          {!isCappedAtTop && ` • Top: ${slice.airspace.upperLimitLabel}`}
                         </text>
                       )}
                     </g>
@@ -399,8 +418,8 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                   <path
                     d={terrainRidgeD}
                     fill="none"
-                    stroke="#64748b"
-                    strokeWidth="1.75"
+                    stroke="#94a3b8"
+                    strokeWidth="2.5"
                   />
                   {terrainResult?.samples.map((p, pIdx) => {
                     const px = scaleX(p.distNm);
@@ -413,15 +432,15 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                         onMouseEnter={() => setHoveredPoint(p)}
                         onMouseLeave={() => setHoveredPoint(null)}
                       >
-                        <circle cx={px} cy={py} r={7} fill="transparent" cursor="crosshair" />
+                        <circle cx={px} cy={py} r={8} fill="transparent" cursor="crosshair" />
                         {p.isWarning && (
                           <circle
                             cx={px}
                             cy={py}
-                            r={3}
+                            r={4}
                             fill="#ef4444"
                             stroke="#ffffff"
-                            strokeWidth={1}
+                            strokeWidth={1.5}
                           />
                         )}
                       </g>
@@ -447,9 +466,9 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                   y1={scaleY(wpt.alt)}
                   x2={wpt.x}
                   y2={scaleY(0)}
-                  stroke="rgba(148, 163, 184, 0.22)"
-                  strokeDasharray="3, 3"
-                  strokeWidth="1"
+                  stroke="rgba(148, 163, 184, 0.3)"
+                  strokeDasharray="4, 4"
+                  strokeWidth="1.5"
                 />
               ))}
 
@@ -475,7 +494,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                         x2={startX}
                         y2={legY}
                         className={`profile-cruise-line ${isActive ? 'active' : ''}`}
-                        strokeWidth={isActive ? 4 : 2.5}
+                        strokeWidth={isActive ? 5 : 3.5}
                       />
                     );
                   }
@@ -501,11 +520,11 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
 
                     {/* Altitude Pill above line */}
                     <rect
-                      x={(startX + endX) / 2 - 28}
-                      y={legY - 18}
-                      width={56}
-                      height={14}
-                      rx={3}
+                      x={(startX + endX) / 2 - 38}
+                      y={legY - 22}
+                      width={76}
+                      height={20}
+                      rx={4}
                       className={`profile-alt-badge-bg ${isActive ? 'active' : ''}`}
                     />
                     <text
@@ -513,7 +532,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                       y={legY - 7}
                       className={`profile-alt-badge-text ${isActive ? 'active' : ''}`}
                     >
-                      {leg.altitude.toLocaleString()} ft
+                      {leg.altitude.toLocaleString()} FT
                     </text>
                   </g>
                 );
@@ -525,10 +544,10 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                 return (
                   <polygon
                     key={`wpt-diamond-${idx}`}
-                    points={`${wpt.x},${y - 4.5} ${wpt.x + 4.5},${y} ${wpt.x},${y + 4.5} ${wpt.x - 4.5},${y}`}
+                    points={`${wpt.x},${y - 6.5} ${wpt.x + 6.5},${y} ${wpt.x},${y + 6.5} ${wpt.x - 6.5},${y}`}
                     fill="#38bdf8"
-                    stroke="#0f172a"
-                    strokeWidth="1.25"
+                    stroke="#090d16"
+                    strokeWidth="2"
                   />
                 );
               })}
@@ -540,15 +559,15 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                     x1={wpt.x}
                     y1={scaleY(0)}
                     x2={wpt.x}
-                    y2={scaleY(0) + 6}
+                    y2={scaleY(0) + 10}
                     className="wpt-tick-line"
                   />
-                  <circle cx={wpt.x} cy={scaleY(0)} r={2.5} className="wpt-tick-dot" />
-                  <text x={wpt.x} y={scaleY(0) + 18} className="wpt-tick-ident">
+                  <circle cx={wpt.x} cy={scaleY(0)} r={3.5} className="wpt-tick-dot" />
+                  <text x={wpt.x} y={scaleY(0) + 24} className="wpt-tick-ident">
                     {wpt.ident}
                   </text>
-                  <text x={wpt.x} y={scaleY(0) + 28} className="wpt-tick-dist">
-                    {wpt.dist.toFixed(0)}nm
+                  <text x={wpt.x} y={scaleY(0) + 40} className="wpt-tick-dist">
+                    {wpt.dist.toFixed(0)} NM
                   </text>
                 </g>
               ))}
