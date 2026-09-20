@@ -674,8 +674,8 @@ body, html {
   gap: 1rem;
 }
 
-/* Tactical Unified Flight Panel (Map + VSD Shelf) */
-.tactical-flight-panel {
+/* Tactical Panel Card (Tabbed Map / Vertical Profile) */
+.tactical-panel-card {
   border-radius: 0.5rem;
   overflow: visible;
   border: 1px solid var(--border-color);
@@ -685,17 +685,83 @@ body, html {
   flex-direction: column;
 }
 
-.tactical-flight-panel .route-map-container {
-  border: none;
+.tactical-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.6rem;
+  background-color: #0b0e17;
+  border-bottom: 1px solid var(--border-color);
   border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.tactical-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 0.375rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  font-family: var(--font-main);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.tactical-tab-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+}
+
+.tactical-tab-btn.active {
+  background-color: rgba(37, 99, 235, 0.16);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
+}
+
+.tactical-tab-icon {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.tactical-tab-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+}
+
+.tactical-tab-content {
+  width: 100%;
+}
+
+.tactical-panel-card .route-map-container {
+  border: none;
+  border-radius: 0 0 0.5rem 0.5rem;
   box-shadow: none;
 }
 
-.tactical-flight-panel .altitude-profile-container {
+.tactical-panel-card .altitude-profile-container {
   border: none;
-  border-top: 1px solid var(--border-color);
   border-radius: 0 0 0.5rem 0.5rem;
   box-shadow: none;
+}
+
+.tactical-panel-card .altitude-profile-container.vsd-docked-shelf {
+  border-top: none;
+}
+
+.tactical-profile-tab-pane {
+  width: 100%;
 }
 
 /* Route Map */
@@ -1222,7 +1288,7 @@ body, html {
 
 .altitude-profile-svg {
   width: 100%;
-  height: 155px;
+  height: 320px;
   display: block;
   background: #090d16;
 }

@@ -31,6 +31,7 @@ export interface RouteMapProps {
   onToggleSectorLabels?: (show: boolean) => void;
   onlyRouteAirspaces?: boolean;
   onToggleOnlyRouteAirspaces?: (onlyRoute: boolean) => void;
+  isVisible?: boolean;
 }
 
 const TILE_LAYERS: Record<
@@ -152,6 +153,7 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   onToggleSectorLabels,
   onlyRouteAirspaces: externalOnlyRouteAirspaces,
   onToggleOnlyRouteAirspaces,
+  isVisible = true,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -182,15 +184,15 @@ export const RouteMap: React.FC<RouteMapProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen]);
 
-  // When fullscreen state changes, invalidate map size so Leaflet recalculates viewport
+  // When fullscreen state changes or tab visibility changes, invalidate map size so Leaflet recalculates viewport
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (mapInstanceRef.current) {
+      if (mapInstanceRef.current && isVisible) {
         mapInstanceRef.current.invalidateSize();
       }
-    }, 150);
+    }, 120);
     return () => clearTimeout(timer);
-  }, [isFullscreen]);
+  }, [isFullscreen, isVisible]);
 
   const [activeLayer, setActiveLayer] = useState<MapLayerType>('dark');
 

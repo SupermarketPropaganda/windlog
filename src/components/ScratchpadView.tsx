@@ -75,6 +75,7 @@ const formatTime = (seconds: number): string => {
  */
 export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [rightPanelTab, setRightPanelTab] = useState<'map' | 'profile'>('map');
 
   // Unified Airspace Filtering State shared between Tactical Map and Altitude Profile
   const [showAirspaces, setShowAirspaces] = useState<boolean>(true);
@@ -246,42 +247,73 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
           )}
         </div>
 
-        {/* Right Column: Tactical Map + Vertical Altitude Profile directly below */}
+        {/* Right Column: Tactical Flight Panel with Tabbed Map / Profile View */}
         {hasWaypoints && (
           <div className="dashboard-right-col">
             {props.navLog && props.navLog.legs.length > 0 && (
               <AirspaceAlertBanner navLog={props.navLog} />
             )}
 
-            <div className="tactical-flight-panel">
-              <RouteMap
-                navLog={props.navLog}
-                waypoints={props.resolvedWaypoints}
-                activeLegIndex={props.activeLegIndex}
-                onSelectLeg={props.onSelectLeg}
-                isFullscreen={isMapFullscreen}
-                onToggleFullscreen={setIsMapFullscreen}
-                showAirspaces={showAirspaces}
-                onToggleShowAirspaces={setShowAirspaces}
-                airspaceFilter={airspaceFilter}
-                onAirspaceFilterChange={setAirspaceFilter}
-                showSectorLabels={showSectorLabels}
-                onToggleSectorLabels={setShowSectorLabels}
-                onlyRouteAirspaces={onlyRouteAirspaces}
-                onToggleOnlyRouteAirspaces={setOnlyRouteAirspaces}
-              />
+            <div className="tactical-panel-card">
+              <div className="tactical-tab-bar">
+                <button
+                  type="button"
+                  className={`tactical-tab-btn ${rightPanelTab === 'map' ? 'active' : ''}`}
+                  onClick={() => setRightPanelTab('map')}
+                  aria-label="Tactical Map View"
+                >
+                  <span className="tactical-tab-icon">🗺️</span>
+                  <span>Tactical Map</span>
+                </button>
+                {props.navLog && props.navLog.legs.length > 0 && (
+                  <button
+                    type="button"
+                    className={`tactical-tab-btn ${rightPanelTab === 'profile' ? 'active' : ''}`}
+                    onClick={() => setRightPanelTab('profile')}
+                    aria-label="Vertical Flight Profile"
+                  >
+                    <span className="tactical-tab-icon">📈</span>
+                    <span>Vertical Profile</span>
+                    <span className="tactical-tab-badge">{props.navLog.totalDistance.toFixed(0)} NM</span>
+                  </button>
+                )}
+              </div>
 
-              {props.navLog && props.navLog.legs.length > 0 && (
-                <AltitudeProfile
-                  navLog={props.navLog}
-                  activeLegIndex={props.activeLegIndex}
-                  onSelectLeg={props.onSelectLeg}
-                  showAirspaces={showAirspaces}
-                  onToggleShowAirspaces={setShowAirspaces}
-                  airspaceFilter={airspaceFilter}
-                  onlyRouteAirspaces={onlyRouteAirspaces}
-                />
-              )}
+              <div className="tactical-tab-content">
+                <div style={{ display: rightPanelTab === 'map' ? 'block' : 'none' }}>
+                  <RouteMap
+                    isVisible={rightPanelTab === 'map'}
+                    navLog={props.navLog}
+                    waypoints={props.resolvedWaypoints}
+                    activeLegIndex={props.activeLegIndex}
+                    onSelectLeg={props.onSelectLeg}
+                    isFullscreen={isMapFullscreen}
+                    onToggleFullscreen={setIsMapFullscreen}
+                    showAirspaces={showAirspaces}
+                    onToggleShowAirspaces={setShowAirspaces}
+                    airspaceFilter={airspaceFilter}
+                    onAirspaceFilterChange={setAirspaceFilter}
+                    showSectorLabels={showSectorLabels}
+                    onToggleSectorLabels={setShowSectorLabels}
+                    onlyRouteAirspaces={onlyRouteAirspaces}
+                    onToggleOnlyRouteAirspaces={setOnlyRouteAirspaces}
+                  />
+                </div>
+
+                {rightPanelTab === 'profile' && props.navLog && props.navLog.legs.length > 0 && (
+                  <div className="tactical-profile-tab-pane">
+                    <AltitudeProfile
+                      navLog={props.navLog}
+                      activeLegIndex={props.activeLegIndex}
+                      onSelectLeg={props.onSelectLeg}
+                      showAirspaces={showAirspaces}
+                      onToggleShowAirspaces={setShowAirspaces}
+                      airspaceFilter={airspaceFilter}
+                      onlyRouteAirspaces={onlyRouteAirspaces}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

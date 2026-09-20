@@ -44,7 +44,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   const [hoveredSlice, setHoveredSlice] = useState<AirspaceVerticalSlice | null>(null);
 
   const width = 800;
-  const height = 180;
+  const height = 240;
   const paddingLeft = 55;
   const paddingRight = 45;
   const paddingTop = 25;
