@@ -44,8 +44,6 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
 }) => {
   if (!navLog || navLog.legs.length === 0) return null;
 
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-
   const [internalShowAirspaces, setInternalShowAirspaces] = useState<boolean>(true);
   const showAirspaceSlices =
     externalShowAirspaces !== undefined ? externalShowAirspaces : internalShowAirspaces;
@@ -176,21 +174,10 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   }
 
   return (
-    <div className={`altitude-profile-container vsd-docked-shelf ${isCollapsed ? 'is-collapsed' : ''}`}>
+    <div className="altitude-profile-container vsd-docked-shelf">
       {/* Avionics Telemetry HUD Ribbon */}
       <div className="vsd-shelf-header">
         <div className="vsd-shelf-left">
-          <button
-            type="button"
-            className="vsd-collapse-btn"
-            onClick={() => setIsCollapsed((prev) => !prev)}
-            title={isCollapsed ? 'Expand Vertical Situation Display' : 'Collapse Vertical Situation Display'}
-          >
-            <span className="vsd-shelf-icon">✈</span>
-            <span className="vsd-shelf-title">VSD Profile</span>
-            <span className="vsd-shelf-caret">{isCollapsed ? '▲' : '▼'}</span>
-          </button>
-
           <div className="vsd-hud-chips">
             <span className="vsd-hud-chip" title="Total Route Distance">
               <span className="chip-dim">DIST</span> {navLog.totalDistance.toFixed(1)} NM
@@ -238,14 +225,11 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
         </div>
       </div>
 
-      {/* When expanded: Warnings, Floating Popover, and SVG Canvas */}
-      {!isCollapsed && (
-        <>
-          {showTerrain && terrainResult?.hasWarning && (
-            <div className="profile-terrain-warning-banner">
-              ⚠️ TERRAIN PROXIMITY ALERT: Route clearance drops to {terrainResult.minClearanceFt.toLocaleString()} ft AGL (&lt; 500 ft safety buffer). Verify Minimum Enroute Altitude (MEA).
-            </div>
-          )}
+      {showTerrain && terrainResult?.hasWarning && (
+        <div className="profile-terrain-warning-banner">
+          ⚠️ TERRAIN PROXIMITY ALERT: Route clearance drops to {terrainResult.minClearanceFt.toLocaleString()} ft AGL (&lt; 500 ft safety buffer). Verify Minimum Enroute Altitude (MEA).
+        </div>
+      )}
 
           <div
             className="profile-svg-wrapper"
@@ -724,8 +708,6 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
               ))}
             </svg>
           </div>
-        </>
-      )}
     </div>
   );
 };
