@@ -211,8 +211,26 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   const setOnlyRouteAirspaces = onToggleOnlyRouteAirspaces || setInternalOnlyRouteAirspaces;
 
   const [isOfflineModalOpen, setIsOfflineModalOpen] = useState<boolean>(false);
+  const [isAirspaceDropdownOpen, setIsAirspaceDropdownOpen] = useState<boolean>(false);
+  const airspaceDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  // Initialize Leaflet Map with Offline-Capable Tile Layer
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        airspaceDropdownRef.current &&
+        !airspaceDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsAirspaceDropdownOpen(false);
+      }
+    };
+    if (isAirspaceDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isAirspaceDropdownOpen]);
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -635,80 +653,129 @@ export const RouteMap: React.FC<RouteMapProps> = ({
           </div>
         </div>
 
-        {/* Airspace Type Filters */}
-        <div className="map-layer-section">
+        {/* Airspace Dropdown Menu */}
+        <div className="map-layer-section airspace-dropdown-section" ref={airspaceDropdownRef}>
           <span className="map-layer-title">Airspaces:</span>
-          <div className="map-layer-buttons">
+          <div className="airspace-dropdown-container">
             <button
               type="button"
-              className={`layer-btn ${showAirspaces ? 'active' : ''}`}
-              onClick={() => setShowAirspaces(!showAirspaces)}
-              title="Toggle all aeronautical airspaces"
+              className={`layer-btn airspace-trigger-btn ${showAirspaces ? 'active' : ''} ${isAirspaceDropdownOpen ? 'open' : ''}`}
+              onClick={() => setIsAirspaceDropdownOpen((prev) => !prev)}
+              title="Filter and configure airspace display"
             >
-              {showAirspaces ? '✓ Airspaces' : 'Airspaces'}
+              <span className="airspace-trigger-icon">{showAirspaces ? '🛡️' : '⚪'}</span>
+              <span className="airspace-trigger-label">
+                {!showAirspaces
+                  ? 'Off'
+                  : onlyRouteAirspaces
+                  ? `Route · ${airspaceFilter === 'ALL' ? 'All' : airspaceFilter}`
+                  : airspaceFilter === 'ALL'
+                  ? 'All Airspaces'
+                  : airspaceFilter}
+              </span>
+              <span className="airspace-trigger-arrow">{isAirspaceDropdownOpen ? '▲' : '▼'}</span>
             </button>
-            {showAirspaces && (
-              <>
+
+            {isAirspaceDropdownOpen && (
+              <div className="airspace-dropdown-menu">
+                <div className="airspace-menu-section-title">DISPLAY MODE</div>
                 <button
                   type="button"
-                  className={`layer-btn route-crossing-btn ${onlyRouteAirspaces ? 'active' : ''}`}
-                  onClick={() => setOnlyRouteAirspaces(!onlyRouteAirspaces)}
+                  className={`airspace-menu-item ${!showAirspaces ? 'selected' : ''}`}
+                  onClick={() => {
+                    setShowAirspaces(false);
+                    setIsAirspaceDropdownOpen(false);
+                  }}
+                >
+                  <span className="airspace-item-indicator">{!showAirspaces ? '●' : '○'}</span>
+                  <span className="airspace-item-text">Off / Hidden</span>
+                </button>
+                <button
+                  type="button"
+                  className={`airspace-menu-item ${showAirspaces && !onlyRouteAirspaces ? 'selected' : ''}`}
+                  onClick={() => {
+                    setShowAirspaces(true);
+                    setOnlyRouteAirspaces(false);
+                  }}
+                >
+                  <span className="airspace-item-indicator">{showAirspaces && !onlyRouteAirspaces ? '●' : '○'}</span>
+                  <span className="airspace-item-text">All Regional Airspaces</span>
+                </button>
+                <button
+                  type="button"
+                  className={`airspace-menu-item ${showAirspaces && onlyRouteAirspaces ? 'selected' : ''}`}
+                  onClick={() => {
+                    setShowAirspaces(true);
+                    setOnlyRouteAirspaces(true);
+                  }}
                   title={
                     navLog && navLog.legs.length > 0
-                      ? 'Only display airspaces that your current flight route penetrates or enters'
-                      : 'Requires an active flight route'
+                      ? 'Only display airspaces intersected by current route'
+                      : 'Requires an active route'
                   }
                 >
-                  {onlyRouteAirspaces ? '✈ Route Only (ON)' : '✈ Route Airspaces Only'}
+                  <span className="airspace-item-indicator">{showAirspaces && onlyRouteAirspaces ? '●' : '○'}</span>
+                  <span className="airspace-item-text">✈ Route Intersecting Only</span>
                 </button>
-                <button
-                  type="button"
-                  className={`layer-btn ${airspaceFilter === 'ALL' ? 'active' : ''}`}
-                  onClick={() => setAirspaceFilter('ALL')}
-                >
-                  All Types
-                </button>
-                <button
-                  type="button"
-                  className={`layer-btn ${airspaceFilter === 'CTR' ? 'active' : ''}`}
-                  onClick={() => setAirspaceFilter('CTR')}
-                  title="Filter to Control Zones only"
-                >
-                  CTR
-                </button>
-                <button
-                  type="button"
-                  className={`layer-btn ${airspaceFilter === 'TMA' ? 'active' : ''}`}
-                  onClick={() => setAirspaceFilter('TMA')}
-                  title="Filter to Terminal Control Areas only"
-                >
-                  TMA
-                </button>
-                <button
-                  type="button"
-                  className={`layer-btn ${airspaceFilter === 'SPECIAL' ? 'active' : ''}`}
-                  onClick={() => setAirspaceFilter('SPECIAL')}
-                  title="Filter to Restricted, Danger & Prohibited areas"
-                >
-                  LP-R/D/P
-                </button>
-                <button
-                  type="button"
-                  className={`layer-btn ${airspaceFilter === 'ATZ' ? 'active' : ''}`}
-                  onClick={() => setAirspaceFilter('ATZ')}
-                  title="Filter to Aerodrome Traffic Zones"
-                >
-                  ATZ
-                </button>
-                <button
-                  type="button"
-                  className={`layer-btn ${showSectorLabels ? 'active' : ''}`}
-                  onClick={() => setShowSectorLabels(!showSectorLabels)}
-                  title="Toggle sector floor/ceiling labels"
-                >
-                  🏷️ Labels
-                </button>
-              </>
+
+                {showAirspaces && (
+                  <>
+                    <div className="airspace-menu-divider" />
+                    <div className="airspace-menu-section-title">TYPE FILTER</div>
+                    <button
+                      type="button"
+                      className={`airspace-menu-item ${airspaceFilter === 'ALL' ? 'selected' : ''}`}
+                      onClick={() => setAirspaceFilter('ALL')}
+                    >
+                      <span className="airspace-item-check">{airspaceFilter === 'ALL' ? '✓' : ''}</span>
+                      <span className="airspace-item-text">All Types (CTR, TMA, R/D/P, ATZ)</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`airspace-menu-item ${airspaceFilter === 'CTR' ? 'selected' : ''}`}
+                      onClick={() => setAirspaceFilter('CTR')}
+                    >
+                      <span className="airspace-item-check">{airspaceFilter === 'CTR' ? '✓' : ''}</span>
+                      <span className="airspace-item-text">CTR · Control Zones</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`airspace-menu-item ${airspaceFilter === 'TMA' ? 'selected' : ''}`}
+                      onClick={() => setAirspaceFilter('TMA')}
+                    >
+                      <span className="airspace-item-check">{airspaceFilter === 'TMA' ? '✓' : ''}</span>
+                      <span className="airspace-item-text">TMA · Terminal Control Areas</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`airspace-menu-item ${airspaceFilter === 'SPECIAL' ? 'selected' : ''}`}
+                      onClick={() => setAirspaceFilter('SPECIAL')}
+                    >
+                      <span className="airspace-item-check">{airspaceFilter === 'SPECIAL' ? '✓' : ''}</span>
+                      <span className="airspace-item-text">LP-R/D/P · Restricted / Danger</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`airspace-menu-item ${airspaceFilter === 'ATZ' ? 'selected' : ''}`}
+                      onClick={() => setAirspaceFilter('ATZ')}
+                    >
+                      <span className="airspace-item-check">{airspaceFilter === 'ATZ' ? '✓' : ''}</span>
+                      <span className="airspace-item-text">ATZ · Aerodrome Traffic Zones</span>
+                    </button>
+
+                    <div className="airspace-menu-divider" />
+                    <div className="airspace-menu-section-title">ANNOTATIONS</div>
+                    <label className="airspace-menu-checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={showSectorLabels}
+                        onChange={(e) => setShowSectorLabels(e.target.checked)}
+                      />
+                      <span>🏷️ Floor &amp; Ceiling Labels</span>
+                    </label>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>

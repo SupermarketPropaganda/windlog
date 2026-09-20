@@ -30,6 +30,8 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
 }) => {
   if (!navLog || navLog.legs.length === 0) return null;
 
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+
   const [internalShowAirspaces, setInternalShowAirspaces] = useState<boolean>(true);
   const showAirspaceSlices =
     externalShowAirspaces !== undefined ? externalShowAirspaces : internalShowAirspaces;
@@ -39,7 +41,6 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   const [terrainResult, setTerrainResult] = useState<TerrainProfileResult | null>(null);
   const [isTerrainLoading, setIsTerrainLoading] = useState<boolean>(false);
   const [hoveredPoint, setHoveredPoint] = useState<TerrainSamplePoint | null>(null);
-
   const [hoveredSlice, setHoveredSlice] = useState<AirspaceVerticalSlice | null>(null);
 
   const width = 800;
@@ -97,7 +98,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
     });
   }, [allAirspaceSlices, airspaceFilter]);
 
-  // Find max altitude to scale Y axis (taking into account flight alt, airspace, and terrain)
+  // Find max altitude to scale Y axis (flight alt, airspace, terrain)
   const maxAltInRoute = Math.max(...navLog.legs.map((l) => l.altitude), 3500);
   const maxTerrainInRoute = showTerrain && terrainResult ? terrainResult.maxTerrainFt : 0;
   const relevantAirspaceAlt = Math.max(
@@ -135,25 +136,6 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
     });
   });
 
-  // Build SVG path for flight profile
-  let pathD = `M ${scaleX(0)} ${scaleY(0)} L ${scaleX(0)} ${scaleY(navLog.legs[0].altitude)}`;
-  let areaD = `M ${scaleX(0)} ${scaleY(0)} L ${scaleX(0)} ${scaleY(navLog.legs[0].altitude)}`;
-
-  let currentDist = 0;
-  navLog.legs.forEach((leg) => {
-    const startX = scaleX(currentDist);
-    const endX = scaleX(currentDist + leg.distance);
-    const legY = scaleY(leg.altitude);
-
-    pathD += ` L ${startX} ${legY} L ${endX} ${legY}`;
-    areaD += ` L ${startX} ${legY} L ${endX} ${legY}`;
-
-    currentDist += leg.distance;
-  });
-
-  pathD += ` L ${scaleX(totalDist)} ${scaleY(0)}`;
-  areaD += ` L ${scaleX(totalDist)} ${scaleY(0)} Z`;
-
   // Build SVG path for terrain elevation profile
   let terrainPathD = '';
   let terrainRidgeD = '';
@@ -179,321 +161,401 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   }
 
   return (
-    <div className="altitude-profile-container">
-      <div className="profile-header">
-        <span className="profile-title">✈ Vertical Flight Profile (Cross-Section)</span>
-        <div className="profile-controls">
-          <label className="profile-airspace-toggle">
-            <input
-              type="checkbox"
-              checked={showTerrain}
-              onChange={(e) => setShowTerrain(e.target.checked)}
-            />
-            <span>
-              ⛰️ Terrain{isTerrainLoading ? '...' : ''}
+    <div className={`altitude-profile-container vsd-docked-shelf ${isCollapsed ? 'is-collapsed' : ''}`}>
+      {/* Avionics Telemetry HUD Ribbon */}
+      <div className="vsd-shelf-header">
+        <div className="vsd-shelf-left">
+          <button
+            type="button"
+            className="vsd-collapse-btn"
+            onClick={() => setIsCollapsed((prev) => !prev)}
+            title={isCollapsed ? 'Expand Vertical Situation Display' : 'Collapse Vertical Situation Display'}
+          >
+            <span className="vsd-shelf-icon">✈</span>
+            <span className="vsd-shelf-title">VSD Profile</span>
+            <span className="vsd-shelf-caret">{isCollapsed ? '▲' : '▼'}</span>
+          </button>
+
+          <div className="vsd-hud-chips">
+            <span className="vsd-hud-chip" title="Total Route Distance">
+              <span className="chip-dim">DIST</span> {navLog.totalDistance.toFixed(1)} NM
             </span>
-          </label>
-          <label className="profile-airspace-toggle">
-            <input
-              type="checkbox"
-              checked={showAirspaceSlices}
-              onChange={(e) => setShowAirspaceSlices(e.target.checked)}
-            />
-            <span>
-              Airspaces{airspaceFilter && airspaceFilter !== 'ALL' ? ` (${airspaceFilter})` : ''} ({airspaceSlices.length})
+            <span className="vsd-hud-chip" title="Max Planned Cruise Altitude">
+              <span className="chip-dim">CRZ</span> {maxAltInRoute.toLocaleString()} FT
             </span>
-          </label>
-          <span className="profile-stats">
-            Dist: {navLog.totalDistance.toFixed(1)} nm • Cruise Max: {maxAltInRoute.toLocaleString()} ft
             {showTerrain && terrainResult && (
-              <> • Peak Ter: {terrainResult.maxTerrainFt.toLocaleString()} ft • Min Clr: {terrainResult.minClearanceFt.toLocaleString()} ft AGL</>
+              <>
+                <span className="vsd-hud-chip" title="Peak Terrain Elevation along Route">
+                  <span className="chip-dim">PEAK TER</span> {terrainResult.maxTerrainFt.toLocaleString()} FT
+                </span>
+                <span
+                  className={`vsd-hud-chip ${terrainResult.hasWarning ? 'chip-alert' : 'chip-safe'}`}
+                  title="Minimum Clearance Above Terrain"
+                >
+                  <span className="chip-dim">MIN CLR</span>{' '}
+                  {terrainResult.minClearanceFt >= 0
+                    ? `+${terrainResult.minClearanceFt.toLocaleString()}`
+                    : terrainResult.minClearanceFt.toLocaleString()}{' '}
+                  FT AGL {terrainResult.hasWarning ? '⚠️ LOW' : '· SAFE'}
+                </span>
+              </>
             )}
-          </span>
+          </div>
+        </div>
+
+        <div className="vsd-shelf-controls">
+          <button
+            type="button"
+            className={`vsd-toggle-pill ${showTerrain ? 'active' : ''}`}
+            onClick={() => setShowTerrain((prev) => !prev)}
+            title="Toggle Digital Elevation Terrain Profile"
+          >
+            ⛰️ Terrain{isTerrainLoading ? '...' : ''}
+          </button>
+          <button
+            type="button"
+            className={`vsd-toggle-pill ${showAirspaceSlices ? 'active' : ''}`}
+            onClick={() => setShowAirspaceSlices(!showAirspaceSlices)}
+            title="Toggle 2D Airspace Penetration Slices"
+          >
+            🛡️ Airspaces ({airspaceSlices.length})
+          </button>
         </div>
       </div>
 
-      {showTerrain && terrainResult?.hasWarning && (
-        <div className="profile-terrain-warning-banner">
-          ⚠️ TERRAIN PROXIMITY ALERT: Route clearance drops to {terrainResult.minClearanceFt.toLocaleString()} ft AGL (&lt; 500 ft safety buffer). Verify Minimum Enroute Altitude (MEA).
-        </div>
-      )}
-
-      {hoveredPoint && (
-        <div className="profile-airspace-hover-card">
-          <div className="hover-card-title">
-            ⛰️ <strong>Terrain Elevation &amp; Clearance</strong>
-          </div>
-          <div className="hover-card-limits">
-            Route Dist: <strong>{hoveredPoint.distNm.toFixed(1)} NM</strong> • Cruise: <strong>{hoveredPoint.cruiseAltFt.toLocaleString()} ft MSL</strong>
-          </div>
-          <div className="hover-card-limits">
-            Terrain Elevation: <strong>{hoveredPoint.elevationFt.toLocaleString()} ft MSL</strong>
-          </div>
-          <div className={`hover-card-status ${hoveredPoint.isWarning ? 'alert-pen' : ''}`}>
-            Clearance: <strong>{hoveredPoint.clearanceFt >= 0 ? `+${hoveredPoint.clearanceFt.toLocaleString()}` : hoveredPoint.clearanceFt.toLocaleString()} ft AGL</strong>
-            {hoveredPoint.isWarning && ' (⚠️ LOW CLEARANCE)'}
-          </div>
-        </div>
-      )}
-
-      {hoveredSlice && (
-        <div className="profile-airspace-hover-card">
-          <div className="hover-card-title">
-            <strong>{hoveredSlice.airspace.name}</strong> ({hoveredSlice.airspace.type} · Class {hoveredSlice.airspace.classification})
-          </div>
-          <div className="hover-card-limits">
-            Limits: <strong>{hoveredSlice.airspace.lowerLimitLabel} — {hoveredSlice.airspace.upperLimitLabel}</strong> • Route Dist: {hoveredSlice.startDistNm} to {hoveredSlice.endDistNm} NM
-          </div>
-          {hoveredSlice.airspace.frequency && (
-            <div className="hover-card-freq">
-              ATC: <strong>{hoveredSlice.airspace.frequency}</strong>
+      {/* When expanded: Warnings, Tooltip Cards, and SVG Canvas */}
+      {!isCollapsed && (
+        <>
+          {showTerrain && terrainResult?.hasWarning && (
+            <div className="profile-terrain-warning-banner">
+              ⚠️ TERRAIN PROXIMITY ALERT: Route clearance drops to {terrainResult.minClearanceFt.toLocaleString()} ft AGL (&lt; 500 ft safety buffer). Verify Minimum Enroute Altitude (MEA).
             </div>
           )}
-          {hoveredSlice.status === 'PENETRATING' && (
-            <div className="hover-card-status alert-pen">
-              ⚠️ Penetrating at cruise altitude {hoveredSlice.legAltitudeFt} ft MSL
+
+          {hoveredPoint && (
+            <div className="profile-airspace-hover-card">
+              <div className="hover-card-title">
+                ⛰️ <strong>Terrain Elevation &amp; Clearance</strong>
+              </div>
+              <div className="hover-card-limits">
+                Route Dist: <strong>{hoveredPoint.distNm.toFixed(1)} NM</strong> • Cruise: <strong>{hoveredPoint.cruiseAltFt.toLocaleString()} ft MSL</strong>
+              </div>
+              <div className="hover-card-limits">
+                Terrain Elevation: <strong>{hoveredPoint.elevationFt.toLocaleString()} ft MSL</strong>
+              </div>
+              <div className={`hover-card-status ${hoveredPoint.isWarning ? 'alert-pen' : ''}`}>
+                Clearance: <strong>{hoveredPoint.clearanceFt >= 0 ? `+${hoveredPoint.clearanceFt.toLocaleString()}` : hoveredPoint.clearanceFt.toLocaleString()} ft AGL</strong>
+                {hoveredPoint.isWarning && ' (⚠️ LOW CLEARANCE)'}
+              </div>
             </div>
           )}
-        </div>
-      )}
 
-      <div className="profile-svg-wrapper">
-        <svg viewBox={`0 0 ${width} ${height}`} className="altitude-profile-svg">
-          <defs>
-            <linearGradient id="profileGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
-            </linearGradient>
-            <linearGradient id="terrainGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#334155" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#0f172a" stopOpacity="0.95" />
-            </linearGradient>
-          </defs>
+          {hoveredSlice && (
+            <div className="profile-airspace-hover-card">
+              <div className="hover-card-title">
+                <strong>{hoveredSlice.airspace.name}</strong> ({hoveredSlice.airspace.type} · Class {hoveredSlice.airspace.classification})
+              </div>
+              <div className="hover-card-limits">
+                Limits: <strong>{hoveredSlice.airspace.lowerLimitLabel} — {hoveredSlice.airspace.upperLimitLabel}</strong> • Route Dist: {hoveredSlice.startDistNm} to {hoveredSlice.endDistNm} NM
+              </div>
+              {hoveredSlice.airspace.frequency && (
+                <div className="hover-card-freq">
+                  ATC: <strong>{hoveredSlice.airspace.frequency}</strong>
+                </div>
+              )}
+              {hoveredSlice.status === 'PENETRATING' && (
+                <div className="hover-card-status alert-pen">
+                  ⚠️ Penetrating at cruise altitude {hoveredSlice.legAltitudeFt} ft MSL
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Background Grid */}
-          {yTicks.map((alt) => {
-            const y = scaleY(alt);
-            return (
-              <g key={alt} className="grid-line-group">
-                <line
-                  x1={paddingLeft}
-                  y1={y}
-                  x2={width - paddingRight}
-                  y2={y}
-                  className="profile-grid-line"
-                />
-                <text x={paddingLeft - 8} y={y + 3} className="profile-axis-text-y">
-                  {alt >= 10000 ? `FL${alt / 100}` : `${alt / 1000}k`}
-                </text>
-              </g>
-            );
-          })}
+          <div className="profile-svg-wrapper">
+            <svg viewBox={`0 0 ${width} ${height}`} className="altitude-profile-svg">
+              <defs>
+                <linearGradient id="terrainGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#1e293b" stopOpacity="0.85" />
+                  <stop offset="100%" stopColor="#0a0f1d" stopOpacity="0.95" />
+                </linearGradient>
+                <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor="#38bdf8" floodOpacity="0.7" />
+                </filter>
+              </defs>
 
-          {/* Airspace Cross-Section Blocks */}
-          {showAirspaceSlices &&
-            airspaceSlices.map((slice, sIdx) => {
-              const startX = scaleX(slice.startDistNm);
-              const endX = scaleX(slice.endDistNm);
-              const rectWidth = Math.max(4, endX - startX);
-              const clampedUpper = Math.min(slice.upperLimitFt, yMaxAlt);
-              const yTop = scaleY(clampedUpper);
-              const yBottom = scaleY(slice.lowerLimitFt);
-              const rectHeight = Math.max(4, yBottom - yTop);
-
-              let fillColor = 'rgba(59, 130, 246, 0.10)';
-              let strokeColor = '#3b82f6';
-              let strokeDash: string | undefined = '3,3';
-
-              if (slice.airspace.type === 'TMA') {
-                fillColor = 'rgba(168, 85, 247, 0.10)';
-                strokeColor = '#a855f7';
-              } else if (
-                slice.airspace.type === 'RESTRICTED' ||
-                slice.airspace.type === 'PROHIBITED'
-              ) {
-                fillColor = 'rgba(239, 68, 68, 0.20)';
-                strokeColor = '#ef4444';
-                strokeDash = '4,2';
-              } else if (slice.airspace.type === 'DANGER') {
-                fillColor = 'rgba(245, 158, 11, 0.16)';
-                strokeColor = '#f59e0b';
-                strokeDash = '4,2';
-              } else if (slice.airspace.type === 'ATZ') {
-                fillColor = 'rgba(20, 184, 166, 0.12)';
-                strokeColor = '#14b8a6';
-              }
-
-              if (slice.status === 'PENETRATING') {
-                fillColor =
-                  slice.airspace.type === 'RESTRICTED' || slice.airspace.type === 'PROHIBITED'
-                    ? 'rgba(239, 68, 68, 0.35)'
-                    : 'rgba(249, 115, 22, 0.25)';
-                strokeColor = '#f97316';
-                strokeDash = undefined;
-              }
-
-              return (
-                <g
-                  key={`${slice.airspace.id}-${sIdx}`}
-                  className="profile-airspace-slice"
-                  onMouseEnter={() => setHoveredSlice(slice)}
-                  onMouseLeave={() => setHoveredSlice(null)}
-                >
-                  <rect
-                    x={startX}
-                    y={yTop}
-                    width={rectWidth}
-                    height={rectHeight}
-                    fill={fillColor}
-                    stroke={strokeColor}
-                    strokeWidth={slice.status === 'PENETRATING' ? 1.5 : 1}
-                    strokeDasharray={strokeDash}
-                    rx={2}
-                  />
-                  {rectWidth > 32 && (
-                    <text
-                      x={startX + 4}
-                      y={yTop + 11}
-                      fill={strokeColor}
-                      fontSize="8.5"
-                      fontFamily="monospace"
-                      fontWeight="bold"
-                    >
-                      {slice.airspace.name.length > 14 && rectWidth < 80
-                        ? slice.airspace.id
-                        : slice.airspace.name}
-                    </text>
-                  )}
-                  {rectWidth > 40 && (
-                    <text
-                      x={startX + 4}
-                      y={yBottom - 4}
-                      fill="#94a3b8"
-                      fontSize="7.5"
-                      fontFamily="monospace"
-                    >
-                      {slice.airspace.lowerLimitLabel}
-                    </text>
-                  )}
-                </g>
-              );
-            })}
-
-          {/* Area Fill */}
-          <path d={areaD} fill="url(#profileGradient)" />
-
-          {/* Digital Elevation Terrain Layer */}
-          {showTerrain && terrainPathD && (
-            <g className="profile-terrain-layer">
-              <path d={terrainPathD} fill="url(#terrainGradient)" />
-              <path
-                d={terrainRidgeD}
-                fill="none"
-                stroke="#64748b"
-                strokeWidth="1.75"
-              />
-              {terrainResult?.samples.map((p, pIdx) => {
-                const px = scaleX(p.distNm);
-                const py = scaleY(p.elevationFt);
-
+              {/* Background Altitude Grid Lines */}
+              {yTicks.map((alt) => {
+                const y = scaleY(alt);
                 return (
-                  <g
-                    key={`tp-${pIdx}`}
-                    className="profile-terrain-sample"
-                    onMouseEnter={() => setHoveredPoint(p)}
-                    onMouseLeave={() => setHoveredPoint(null)}
-                  >
-                    <circle cx={px} cy={py} r={7} fill="transparent" cursor="crosshair" />
-                    {p.isWarning && (
-                      <circle
-                        cx={px}
-                        cy={py}
-                        r={3}
-                        fill="#ef4444"
-                        stroke="#ffffff"
-                        strokeWidth={1}
-                      />
-                    )}
+                  <g key={alt} className="grid-line-group">
+                    <line
+                      x1={paddingLeft}
+                      y1={y}
+                      x2={width - paddingRight}
+                      y2={y}
+                      className="profile-grid-line"
+                    />
+                    <text x={paddingLeft - 8} y={y + 3} className="profile-axis-text-y">
+                      {alt >= 10000 ? `FL${alt / 100}` : `${alt / 1000}k`}
+                    </text>
                   </g>
                 );
               })}
-            </g>
-          )}
 
-          {/* Base Ground Line */}
-          <line
-            x1={paddingLeft}
-            y1={scaleY(0)}
-            x2={width - paddingRight}
-            y2={scaleY(0)}
-            className="profile-ground-line"
-          />
+              {/* Airspace Cross-Section Slices */}
+              {showAirspaceSlices &&
+                airspaceSlices.map((slice, sIdx) => {
+                  const startX = scaleX(slice.startDistNm);
+                  const endX = scaleX(slice.endDistNm);
+                  const rectWidth = Math.max(4, endX - startX);
+                  const clampedUpper = Math.min(slice.upperLimitFt, yMaxAlt);
+                  const yTop = scaleY(clampedUpper);
+                  const yBottom = scaleY(slice.lowerLimitFt);
+                  const rectHeight = Math.max(4, yBottom - yTop);
 
-          {/* Interactive Leg Blocks */}
-          {navLog.legs.map((leg, idx) => {
-            const startDist =
-              idx === 0 ? 0 : navLog.legs.slice(0, idx).reduce((acc, l) => acc + l.distance, 0);
-            const startX = scaleX(startDist);
-            const endX = scaleX(startDist + leg.distance);
-            const legY = scaleY(leg.altitude);
-            const isActive = activeLegIndex === idx;
+                  let fillColor = 'rgba(59, 130, 246, 0.08)';
+                  let strokeColor = '#3b82f6';
+                  let strokeDash: string | undefined = '3,3';
 
-            return (
-              <g
-                key={leg.id}
-                className={`profile-leg-segment ${isActive ? 'active' : ''}`}
-                onClick={() => onSelectLeg(idx)}
-              >
-                {/* Leg Cruise Line */}
-                <line
-                  x1={startX}
-                  y1={legY}
-                  x2={endX}
-                  y2={legY}
-                  className={`profile-cruise-line ${isActive ? 'active' : ''}`}
-                />
+                  if (slice.airspace.type === 'TMA') {
+                    fillColor = 'rgba(168, 85, 247, 0.08)';
+                    strokeColor = '#a855f7';
+                  } else if (
+                    slice.airspace.type === 'RESTRICTED' ||
+                    slice.airspace.type === 'PROHIBITED'
+                  ) {
+                    fillColor = 'rgba(239, 68, 68, 0.16)';
+                    strokeColor = '#ef4444';
+                    strokeDash = '4,2';
+                  } else if (slice.airspace.type === 'DANGER') {
+                    fillColor = 'rgba(245, 158, 11, 0.12)';
+                    strokeColor = '#f59e0b';
+                    strokeDash = '4,2';
+                  } else if (slice.airspace.type === 'ATZ') {
+                    fillColor = 'rgba(20, 184, 166, 0.10)';
+                    strokeColor = '#14b8a6';
+                  }
 
-                {/* Altitude Pill above line */}
-                <rect
-                  x={(startX + endX) / 2 - 28}
-                  y={legY - 18}
-                  width={56}
-                  height={14}
-                  rx={3}
-                  className={`profile-alt-badge-bg ${isActive ? 'active' : ''}`}
-                />
-                <text
-                  x={(startX + endX) / 2}
-                  y={legY - 7}
-                  className={`profile-alt-badge-text ${isActive ? 'active' : ''}`}
-                >
-                  {leg.altitude.toLocaleString()} ft
-                </text>
-              </g>
-            );
-          })}
+                  if (slice.status === 'PENETRATING') {
+                    fillColor =
+                      slice.airspace.type === 'RESTRICTED' || slice.airspace.type === 'PROHIBITED'
+                        ? 'rgba(239, 68, 68, 0.28)'
+                        : 'rgba(249, 115, 22, 0.20)';
+                    strokeColor = '#f97316';
+                    strokeDash = undefined;
+                  }
 
-          {/* Waypoint Ticks and Labels */}
-          {waypointPoints.map((wpt, idx) => (
-            <g key={idx} className="waypoint-tick-group">
+                  return (
+                    <g
+                      key={`${slice.airspace.id}-${sIdx}`}
+                      className="profile-airspace-slice"
+                      onMouseEnter={() => setHoveredSlice(slice)}
+                      onMouseLeave={() => setHoveredSlice(null)}
+                    >
+                      <rect
+                        x={startX}
+                        y={yTop}
+                        width={rectWidth}
+                        height={rectHeight}
+                        fill={fillColor}
+                        stroke={strokeColor}
+                        strokeWidth={slice.status === 'PENETRATING' ? 1.5 : 1}
+                        strokeDasharray={strokeDash}
+                        rx={2}
+                      />
+                      {rectWidth > 32 && (
+                        <text
+                          x={startX + 4}
+                          y={yTop + 11}
+                          fill={strokeColor}
+                          fontSize="8.5"
+                          fontFamily="monospace"
+                          fontWeight="bold"
+                        >
+                          {slice.airspace.name.length > 14 && rectWidth < 80
+                            ? slice.airspace.id
+                            : slice.airspace.name}
+                        </text>
+                      )}
+                      {rectWidth > 40 && (
+                        <text
+                          x={startX + 4}
+                          y={yBottom - 4}
+                          fill="#94a3b8"
+                          fontSize="7.5"
+                          fontFamily="monospace"
+                        >
+                          {slice.airspace.lowerLimitLabel}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+
+              {/* Digital Elevation Topographic Terrain Layer */}
+              {showTerrain && terrainPathD && (
+                <g className="profile-terrain-layer">
+                  <path d={terrainPathD} fill="url(#terrainGradient)" />
+                  <path
+                    d={terrainRidgeD}
+                    fill="none"
+                    stroke="#64748b"
+                    strokeWidth="1.75"
+                  />
+                  {terrainResult?.samples.map((p, pIdx) => {
+                    const px = scaleX(p.distNm);
+                    const py = scaleY(p.elevationFt);
+
+                    return (
+                      <g
+                        key={`tp-${pIdx}`}
+                        className="profile-terrain-sample"
+                        onMouseEnter={() => setHoveredPoint(p)}
+                        onMouseLeave={() => setHoveredPoint(null)}
+                      >
+                        <circle cx={px} cy={py} r={7} fill="transparent" cursor="crosshair" />
+                        {p.isWarning && (
+                          <circle
+                            cx={px}
+                            cy={py}
+                            r={3}
+                            fill="#ef4444"
+                            stroke="#ffffff"
+                            strokeWidth={1}
+                          />
+                        )}
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
+
+              {/* Base Ground Line */}
               <line
-                x1={wpt.x}
+                x1={paddingLeft}
                 y1={scaleY(0)}
-                x2={wpt.x}
-                y2={scaleY(0) + 6}
-                className="wpt-tick-line"
+                x2={width - paddingRight}
+                y2={scaleY(0)}
+                className="profile-ground-line"
               />
-              <circle cx={wpt.x} cy={scaleY(0)} r={3} className="wpt-tick-dot" />
-              <text x={wpt.x} y={scaleY(0) + 18} className="wpt-tick-ident">
-                {wpt.ident}
-              </text>
-              <text x={wpt.x} y={scaleY(0) + 28} className="wpt-tick-dist">
-                {wpt.dist.toFixed(0)}nm
-              </text>
-            </g>
-          ))}
-        </svg>
-      </div>
+
+              {/* Waypoint Vertical Drop Lines */}
+              {waypointPoints.map((wpt, idx) => (
+                <line
+                  key={`drop-${idx}`}
+                  x1={wpt.x}
+                  y1={scaleY(wpt.alt)}
+                  x2={wpt.x}
+                  y2={scaleY(0)}
+                  stroke="rgba(148, 163, 184, 0.22)"
+                  strokeDasharray="3, 3"
+                  strokeWidth="1"
+                />
+              ))}
+
+              {/* Flight Trajectory Segments & Altitude Badges */}
+              {navLog.legs.map((leg, idx) => {
+                const startDist =
+                  idx === 0 ? 0 : navLog.legs.slice(0, idx).reduce((acc, l) => acc + l.distance, 0);
+                const startX = scaleX(startDist);
+                const endX = scaleX(startDist + leg.distance);
+                const legY = scaleY(leg.altitude);
+                const isActive = activeLegIndex === idx;
+
+                // If previous leg had different altitude, draw step-climb/descent connector
+                let stepConnector = null;
+                if (idx > 0) {
+                  const prevAlt = navLog.legs[idx - 1].altitude;
+                  if (prevAlt !== leg.altitude) {
+                    const prevY = scaleY(prevAlt);
+                    stepConnector = (
+                      <line
+                        x1={startX}
+                        y1={prevY}
+                        x2={startX}
+                        y2={legY}
+                        className={`profile-cruise-line ${isActive ? 'active' : ''}`}
+                        strokeWidth={isActive ? 4 : 2.5}
+                      />
+                    );
+                  }
+                }
+
+                return (
+                  <g
+                    key={leg.id}
+                    className={`profile-leg-segment ${isActive ? 'active' : ''}`}
+                    onClick={() => onSelectLeg(idx)}
+                  >
+                    {stepConnector}
+
+                    {/* Flight Path Instrument Line */}
+                    <line
+                      x1={startX}
+                      y1={legY}
+                      x2={endX}
+                      y2={legY}
+                      className={`profile-cruise-line ${isActive ? 'active' : ''}`}
+                      filter={isActive ? 'url(#cyanGlow)' : undefined}
+                    />
+
+                    {/* Altitude Pill above line */}
+                    <rect
+                      x={(startX + endX) / 2 - 28}
+                      y={legY - 18}
+                      width={56}
+                      height={14}
+                      rx={3}
+                      className={`profile-alt-badge-bg ${isActive ? 'active' : ''}`}
+                    />
+                    <text
+                      x={(startX + endX) / 2}
+                      y={legY - 7}
+                      className={`profile-alt-badge-text ${isActive ? 'active' : ''}`}
+                    >
+                      {leg.altitude.toLocaleString()} ft
+                    </text>
+                  </g>
+                );
+              })}
+
+              {/* Waypoint Diamond Markers at Flight Alt */}
+              {waypointPoints.map((wpt, idx) => {
+                const y = scaleY(wpt.alt);
+                return (
+                  <polygon
+                    key={`wpt-diamond-${idx}`}
+                    points={`${wpt.x},${y - 4.5} ${wpt.x + 4.5},${y} ${wpt.x},${y + 4.5} ${wpt.x - 4.5},${y}`}
+                    fill="#38bdf8"
+                    stroke="#0f172a"
+                    strokeWidth="1.25"
+                  />
+                );
+              })}
+
+              {/* Waypoint Ticks and Labels at Ground */}
+              {waypointPoints.map((wpt, idx) => (
+                <g key={`ground-tick-${idx}`} className="waypoint-tick-group">
+                  <line
+                    x1={wpt.x}
+                    y1={scaleY(0)}
+                    x2={wpt.x}
+                    y2={scaleY(0) + 6}
+                    className="wpt-tick-line"
+                  />
+                  <circle cx={wpt.x} cy={scaleY(0)} r={2.5} className="wpt-tick-dot" />
+                  <text x={wpt.x} y={scaleY(0) + 18} className="wpt-tick-ident">
+                    {wpt.ident}
+                  </text>
+                  <text x={wpt.x} y={scaleY(0) + 28} className="wpt-tick-dist">
+                    {wpt.dist.toFixed(0)}nm
+                  </text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        </>
+      )}
     </div>
   );
 };
