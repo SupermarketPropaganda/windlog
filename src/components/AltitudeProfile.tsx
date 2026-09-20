@@ -20,6 +20,20 @@ export interface AltitudeProfileProps {
  * with real-time 3D controlled airspace penetration cross-sections and
  * digital elevation terrain profiling.
  */
+function getSliceShortName(name: string, w: number): string {
+  if (w < 45) return '';
+  if (w < 85) {
+    const m = name.match(/SECTOR\s*(\w+)/i);
+    if (m) return `S${m[1]}`;
+    if (name.includes('CTR')) return 'CTR';
+    return name.slice(0, 5);
+  }
+  if (w < 150) {
+    return name.replace(/LISBOA\s*TMA\s*SECTOR/i, 'TMA S').replace('PORTUGAL', '').trim();
+  }
+  return name;
+}
+
 export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   navLog,
   activeLegIndex,
@@ -40,8 +54,8 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   const [showTerrain, setShowTerrain] = useState<boolean>(true);
   const [terrainResult, setTerrainResult] = useState<TerrainProfileResult | null>(null);
   const [isTerrainLoading, setIsTerrainLoading] = useState<boolean>(false);
-  const [hoveredPoint, setHoveredPoint] = useState<TerrainSamplePoint | null>(null);
-  const [hoveredSlice, setHoveredSlice] = useState<AirspaceVerticalSlice | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<TerrainSamplePoint | null>(null);
+  const [selectedSlice, setSelectedSlice] = useState<AirspaceVerticalSlice | null>(null);
 
   const width = 960;
   const height = 360;
@@ -224,7 +238,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
         </div>
       </div>
 
-      {/* When expanded: Warnings, Tooltip Cards, and SVG Canvas */}
+      {/* When expanded: Warnings, Floating Popover, and SVG Canvas */}
       {!isCollapsed && (
         <>
           {showTerrain && terrainResult?.hasWarning && (
@@ -233,46 +247,122 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
             </div>
           )}
 
-          {hoveredPoint && (
-            <div className="profile-airspace-hover-card">
-              <div className="hover-card-title">
-                ⛰️ <strong>Terrain Elevation &amp; Clearance</strong>
-              </div>
-              <div className="hover-card-limits">
-                Route Dist: <strong>{hoveredPoint.distNm.toFixed(1)} NM</strong> • Cruise: <strong>{hoveredPoint.cruiseAltFt.toLocaleString()} ft MSL</strong>
-              </div>
-              <div className="hover-card-limits">
-                Terrain Elevation: <strong>{hoveredPoint.elevationFt.toLocaleString()} ft MSL</strong>
-              </div>
-              <div className={`hover-card-status ${hoveredPoint.isWarning ? 'alert-pen' : ''}`}>
-                Clearance: <strong>{hoveredPoint.clearanceFt >= 0 ? `+${hoveredPoint.clearanceFt.toLocaleString()}` : hoveredPoint.clearanceFt.toLocaleString()} ft AGL</strong>
-                {hoveredPoint.isWarning && ' (⚠️ LOW CLEARANCE)'}
-              </div>
-            </div>
-          )}
-
-          {hoveredSlice && (
-            <div className="profile-airspace-hover-card">
-              <div className="hover-card-title">
-                <strong>{hoveredSlice.airspace.name}</strong> ({hoveredSlice.airspace.type} · Class {hoveredSlice.airspace.classification})
-              </div>
-              <div className="hover-card-limits">
-                Limits: <strong>{hoveredSlice.airspace.lowerLimitLabel} — {hoveredSlice.airspace.upperLimitLabel}</strong> • Route Dist: {hoveredSlice.startDistNm} to {hoveredSlice.endDistNm} NM
-              </div>
-              {hoveredSlice.airspace.frequency && (
-                <div className="hover-card-freq">
-                  ATC: <strong>{hoveredSlice.airspace.frequency}</strong>
+          <div
+            className="profile-svg-wrapper"
+            style={{ position: 'relative' }}
+            onClick={() => {
+              setSelectedPoint(null);
+              setSelectedSlice(null);
+            }}
+          >
+            {/* Clean Floating Inspector Popover (Zero Layout Shift) */}
+            {selectedPoint && (
+              <div
+                className="profile-floating-inspector"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="inspector-header">
+                  <div className="inspector-title">
+                    <span className="inspector-icon">⛰️</span>
+                    <span>Terrain Elevation &amp; Clearance</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="inspector-close-btn"
+                    onClick={() => setSelectedPoint(null)}
+                    title="Close Inspector"
+                  >
+                    ✕
+                  </button>
                 </div>
-              )}
-              {hoveredSlice.status === 'PENETRATING' && (
-                <div className="hover-card-status alert-pen">
-                  ⚠️ Penetrating at cruise altitude {hoveredSlice.legAltitudeFt} ft MSL
-                </div>
-              )}
-            </div>
-          )}
 
-          <div className="profile-svg-wrapper">
+                <div className="inspector-grid">
+                  <div className="inspector-cell">
+                    <span className="cell-label">ROUTE DIST</span>
+                    <span className="cell-value">{selectedPoint.distNm.toFixed(1)} NM</span>
+                  </div>
+                  <div className="inspector-cell">
+                    <span className="cell-label">CRUISE ALT</span>
+                    <span className="cell-value">{selectedPoint.cruiseAltFt.toLocaleString()} FT</span>
+                  </div>
+                  <div className="inspector-cell">
+                    <span className="cell-label">TERRAIN ELEV</span>
+                    <span className="cell-value">{selectedPoint.elevationFt.toLocaleString()} FT</span>
+                  </div>
+                  <div className={`inspector-cell ${selectedPoint.isWarning ? 'cell-alert' : 'cell-safe'}`}>
+                    <span className="cell-label">CLEARANCE</span>
+                    <span className="cell-value">
+                      {selectedPoint.clearanceFt >= 0
+                        ? `+${selectedPoint.clearanceFt.toLocaleString()}`
+                        : selectedPoint.clearanceFt.toLocaleString()}{' '}
+                      FT AGL {selectedPoint.isWarning ? '⚠️ LOW' : '✓ SAFE'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedSlice && (
+              <div
+                className="profile-floating-inspector"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="inspector-header">
+                  <div className="inspector-title">
+                    <span className="inspector-icon">🛡️</span>
+                    <span>{selectedSlice.airspace.name}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="inspector-close-btn"
+                    onClick={() => setSelectedSlice(null)}
+                    title="Close Inspector"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="inspector-grid">
+                  <div className="inspector-cell">
+                    <span className="cell-label">TYPE &amp; CLASS</span>
+                    <span className="cell-value">
+                      {selectedSlice.airspace.type} · Class {selectedSlice.airspace.classification}
+                    </span>
+                  </div>
+                  <div className="inspector-cell">
+                    <span className="cell-label">LIMITS</span>
+                    <span className="cell-value">
+                      {selectedSlice.airspace.lowerLimitLabel} — {selectedSlice.airspace.upperLimitLabel}
+                    </span>
+                  </div>
+                  <div className="inspector-cell">
+                    <span className="cell-label">SECTOR DIST</span>
+                    <span className="cell-value">
+                      {selectedSlice.startDistNm.toFixed(1)} to {selectedSlice.endDistNm.toFixed(1)} NM
+                    </span>
+                  </div>
+                  {selectedSlice.airspace.frequency && (
+                    <div className="inspector-cell">
+                      <span className="cell-label">ATC FREQUENCY</span>
+                      <span className="cell-value val-accent">{selectedSlice.airspace.frequency}</span>
+                    </div>
+                  )}
+                  <div
+                    className={`inspector-cell cell-wide ${
+                      selectedSlice.status === 'PENETRATING' ? 'cell-alert' : 'cell-safe'
+                    }`}
+                  >
+                    <span className="cell-label">STATUS</span>
+                    <span className="cell-value">
+                      {selectedSlice.status === 'PENETRATING'
+                        ? `⚠️ Penetrating at cruise altitude (${selectedSlice.legAltitudeFt} FT) — Clearance Required`
+                        : `✓ Clear of airspace floor (cruising at ${selectedSlice.legAltitudeFt} FT)`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <svg viewBox={`0 0 ${width} ${height}`} className="altitude-profile-svg">
               <defs>
                 <linearGradient id="terrainGradient" x1="0" y1="0" x2="0" y2="1">
@@ -282,6 +372,19 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                 <filter id="cyanGlow" x="-20%" y="-20%" width="140%" height="140%">
                   <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#38bdf8" floodOpacity="0.8" />
                 </filter>
+                {visibleAirspaceSlices.map((slice, sIdx) => {
+                  const sX = scaleX(slice.startDistNm);
+                  const eX = scaleX(slice.endDistNm);
+                  const rW = Math.max(6, eX - sX);
+                  const cU = Math.min(slice.upperLimitFt, yMaxAlt);
+                  const yT = scaleY(cU);
+                  const yB = scaleY(Math.max(0, slice.lowerLimitFt));
+                  return (
+                    <clipPath key={`clip-${sIdx}`} id={`clip-as-${sIdx}`}>
+                      <rect x={sX + 2} y={yT} width={Math.max(0, rW - 4)} height={Math.max(4, yB - yT)} />
+                    </clipPath>
+                  );
+                })}
               </defs>
 
               {/* Background Altitude Grid Lines */}
@@ -319,6 +422,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                   const yTop = scaleY(clampedUpper);
                   const yBottom = scaleY(Math.max(0, slice.lowerLimitFt));
                   const rectHeight = Math.max(6, yBottom - yTop);
+                  const isSelected = selectedSlice?.airspace.id === slice.airspace.id;
 
                   let fillColor = 'rgba(59, 130, 246, 0.08)';
                   let strokeColor = '#3b82f6';
@@ -352,21 +456,32 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                     strokeDash = undefined;
                   }
 
+                  if (isSelected) {
+                    strokeColor = '#38bdf8';
+                    strokeDash = undefined;
+                  }
+
+                  const titleText = getSliceShortName(slice.airspace.name, rectWidth);
+
                   return (
                     <g
                       key={`${slice.airspace.id}-${sIdx}`}
-                      className="profile-airspace-slice"
-                      onMouseEnter={() => setHoveredSlice(slice)}
-                      onMouseLeave={() => setHoveredSlice(null)}
+                      className={`profile-airspace-slice ${isSelected ? 'is-selected' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedSlice(slice);
+                        setSelectedPoint(null);
+                      }}
+                      style={{ cursor: 'pointer' }}
                     >
                       <rect
                         x={startX}
                         y={yTop}
                         width={rectWidth}
                         height={rectHeight}
-                        fill={fillColor}
+                        fill={isSelected ? 'rgba(56, 189, 248, 0.22)' : fillColor}
                         stroke={strokeColor}
-                        strokeWidth={slice.status === 'PENETRATING' ? 2 : 1.5}
+                        strokeWidth={isSelected ? 3 : slice.status === 'PENETRATING' ? 2 : 1.5}
                         strokeDasharray={strokeDash}
                         rx={3}
                       />
@@ -377,21 +492,22 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                           x2={startX + rectWidth}
                           y2={yTop}
                           stroke={strokeColor}
-                          strokeWidth="2"
-                          strokeDasharray="2,3"
+                          strokeWidth="2.5"
+                          strokeDasharray="3,3"
                         />
                       )}
-                      {rectWidth > 36 && (
+                      {titleText && (
                         <text
                           x={startX + 6}
                           y={yTop + 16}
-                          fill={strokeColor}
+                          fill={isSelected ? '#ffffff' : strokeColor}
                           fontSize="12"
                           fontFamily="var(--font-mono, monospace)"
                           fontWeight="bold"
+                          clipPath={`url(#clip-as-${sIdx})`}
                         >
-                          {rectWidth < 85 ? slice.airspace.id : slice.airspace.name}
-                          {isCappedAtTop && ` (▲ ${slice.airspace.upperLimitLabel})`}
+                          {titleText}
+                          {isCappedAtTop && rectWidth >= 160 && ` (▲ ${slice.airspace.upperLimitLabel})`}
                         </text>
                       )}
                       {rectWidth > 45 && rectHeight > 36 && (
@@ -402,9 +518,9 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                           fontSize="11"
                           fontFamily="var(--font-mono, monospace)"
                           fontWeight="600"
+                          clipPath={`url(#clip-as-${sIdx})`}
                         >
-                          Floor: {slice.airspace.lowerLimitLabel}
-                          {!isCappedAtTop && ` • Top: ${slice.airspace.upperLimitLabel}`}
+                          FLR: {slice.airspace.lowerLimitLabel}
                         </text>
                       )}
                     </g>
@@ -424,28 +540,63 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                   {terrainResult?.samples.map((p, pIdx) => {
                     const px = scaleX(p.distNm);
                     const py = scaleY(p.elevationFt);
+                    const isSelected = selectedPoint?.distNm === p.distNm;
 
                     return (
                       <g
                         key={`tp-${pIdx}`}
                         className="profile-terrain-sample"
-                        onMouseEnter={() => setHoveredPoint(p)}
-                        onMouseLeave={() => setHoveredPoint(null)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedPoint(p);
+                          setSelectedSlice(null);
+                        }}
+                        style={{ cursor: 'pointer' }}
                       >
-                        <circle cx={px} cy={py} r={8} fill="transparent" cursor="crosshair" />
-                        {p.isWarning && (
-                          <circle
-                            cx={px}
-                            cy={py}
-                            r={4}
-                            fill="#ef4444"
-                            stroke="#ffffff"
-                            strokeWidth={1.5}
-                          />
-                        )}
+                        <circle cx={px} cy={py} r={10} fill="transparent" />
+                        <circle
+                          cx={px}
+                          cy={py}
+                          r={isSelected ? 5.5 : p.isWarning ? 4 : 2.5}
+                          fill={isSelected ? '#38bdf8' : p.isWarning ? '#ef4444' : '#64748b'}
+                          stroke={isSelected ? '#ffffff' : p.isWarning ? '#ffffff' : 'none'}
+                          strokeWidth={isSelected ? 2 : 1}
+                        />
                       </g>
                     );
                   })}
+                </g>
+              )}
+
+              {/* Selected Terrain Point Clearance Measurement Bracket */}
+              {selectedPoint && (
+                <g className="selected-terrain-indicator">
+                  <line
+                    x1={scaleX(selectedPoint.distNm)}
+                    y1={scaleY(selectedPoint.elevationFt)}
+                    x2={scaleX(selectedPoint.distNm)}
+                    y2={scaleY(selectedPoint.cruiseAltFt)}
+                    stroke="#38bdf8"
+                    strokeWidth="2"
+                    strokeDasharray="4, 3"
+                  />
+                  <circle
+                    cx={scaleX(selectedPoint.distNm)}
+                    cy={scaleY(selectedPoint.elevationFt)}
+                    r={9}
+                    stroke="#38bdf8"
+                    strokeWidth="2"
+                    fill="#0284c7"
+                    fillOpacity="0.4"
+                  />
+                  <circle
+                    cx={scaleX(selectedPoint.distNm)}
+                    cy={scaleY(selectedPoint.cruiseAltFt)}
+                    r={5}
+                    fill="#38bdf8"
+                    stroke="#090d16"
+                    strokeWidth="1.5"
+                  />
                 </g>
               )}
 
