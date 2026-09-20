@@ -1009,6 +1009,34 @@ body, html {
   text-anchor: middle;
 }
 
+/* Terrain Warning & Profiling */
+.profile-terrain-warning-banner {
+  background-color: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+}
+
+.profile-terrain-layer {
+  transition: opacity 0.2s ease;
+}
+
+.profile-terrain-sample {
+  cursor: crosshair;
+}
+
+.hover-card-status.clr-safe {
+  color: #10b981;
+}
+
 /* NavLog List & Rows */
 .navlog-list {
   display: flex;
@@ -4521,6 +4549,530 @@ body, html {
 .airspace-popup-advisory .advisory-text {
   color: #cbd5e1;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   LANDING PAGE (Minimalist Centered Cockpit)
+   ───────────────────────────────────────────────────────────── */
+.landing-page-root {
+  min-height: calc(100vh - 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.landing-center-box {
+  max-width: 480px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.landing-brand-emblem {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.4));
+}
+
+.landing-brand-title {
+  font-size: 3.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: #f8fafc;
+}
+
+.landing-brand-tagline {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-top: 0.25rem;
+  margin-bottom: 2.5rem;
+}
+
+.landing-actions-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.landing-primary-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 0.9rem 2.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.landing-primary-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+}
+
+.landing-secondary-btn {
+  background: rgba(30, 41, 59, 0.8);
+  color: #cbd5e1;
+  border: 1px solid #334155;
+  padding: 0.75rem 1.8rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.landing-secondary-btn:hover {
+  background: #334155;
+  color: #f8fafc;
+}
+
+.landing-welcome-pill {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid #334155;
+  padding: 0.4rem 1rem;
+  border-radius: 9999px;
+  margin-bottom: 0.5rem;
+}
+
+.landing-welcome-pill strong {
+  color: #38bdf8;
+}
+
+.landing-authenticated-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   AUTHENTICATION PAGE
+   ───────────────────────────────────────────────────────────── */
+.auth-page-container {
+  min-height: calc(100vh - 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.auth-card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 440px;
+  padding: 2rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+}
+
+.auth-brand-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-brand-logo {
+  font-size: 2.25rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.auth-brand-name {
+  font-size: 1.65rem;
+  font-weight: 700;
+  margin: 0;
+  color: #f9fafb;
+}
+
+.auth-brand-tag {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.auth-tab-bar {
+  display: flex;
+  background: #1f2937;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  gap: 0.25rem;
+}
+
+.auth-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 0;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.auth-tab.active {
+  background: #374151;
+  color: #f9fafb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.auth-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auth-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #d1d5db;
+}
+
+.auth-sub-link {
+  background: none;
+  border: none;
+  color: #38bdf8;
+  font-size: 0.75rem;
+  padding: 0;
+  cursor: pointer;
+}
+
+.auth-sub-link:hover {
+  text-decoration: underline;
+}
+
+.auth-input {
+  background: #1f2937;
+  border: 1px solid #374151;
+  color: #f9fafb;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.375rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+  width: 100%;
+}
+
+.auth-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.auth-password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-password-toggle-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.auth-password-toggle-btn:hover {
+  color: #f9fafb;
+}
+
+.auth-row-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.auth-primary-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.auth-primary-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.auth-primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-secondary-btn {
+  background: transparent;
+  color: #9ca3af;
+  border: 1px solid #374151;
+  padding: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.auth-secondary-btn:hover {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.auth-signout-btn {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.auth-signout-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.auth-feedback-banner {
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.375rem;
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
+.auth-feedback-banner.error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+}
+
+.auth-feedback-banner.success {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid #10b981;
+  color: #6ee7b7;
+}
+
+.auth-description-text {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+
+.auth-card-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #1f2937;
+  text-align: center;
+}
+
+.auth-link-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.auth-link-btn:hover {
+  color: #f9fafb;
+}
+
+/* Pilot Profile Card in AuthPage */
+.auth-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.auth-avatar-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #ffffff;
+  font-size: 1.35rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.auth-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+  color: #f9fafb;
+}
+
+.auth-card-email {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-top: 0.2rem;
+}
+
+.auth-profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.auth-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.75rem;
+  background: #1f2937;
+  border-radius: 0.375rem;
+  font-size: 0.85rem;
+}
+
+.auth-detail-label {
+  color: #9ca3af;
+}
+
+.auth-detail-value {
+  font-weight: 600;
+  color: #f9fafb;
+  font-family: var(--font-mono);
+}
+
+.auth-profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.auth-form-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SIDEBAR PILOT CARD (SideMenu)
+   ───────────────────────────────────────────────────────────── */
+.gemini-pilot-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  margin: 0.5rem 0.75rem 0.75rem;
+  background: #1e1e28;
+  border: 1px solid #2e303d;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.gemini-pilot-card:hover,
+.gemini-pilot-card.active {
+  background: #252636;
+  border-color: #3b82f6;
+}
+
+.gemini-pilot-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.gemini-pilot-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.gemini-pilot-name {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gemini-pilot-sub {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gemini-pilot-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+  flex-shrink: 0;
+}
+
 
 
 

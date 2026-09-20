@@ -1,6 +1,6 @@
 // ─── Navigation Views ───
 
-export type ActiveView = 'navlog' | 'mass-balance' | 'runway-wind';
+export type ActiveView = 'landing' | 'auth' | 'navlog' | 'mass-balance' | 'runway-wind';
 
 // ─── Waypoint Types ───
 

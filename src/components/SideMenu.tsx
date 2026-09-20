@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActiveView, NavLogSummary, MassBalanceResult, RunwayWindResult } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 export interface SideMenuProps {
   activeView: ActiveView;
@@ -28,6 +29,8 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   massBalanceResult,
   runwayWindResult,
 }) => {
+  const { user, isAuthenticated } = useAuth();
+
   const handleSelect = (view: ActiveView) => {
     onChangeView(view);
     // On mobile devices (< 980px), automatically collapse sidebar on selection
@@ -86,7 +89,12 @@ export const SideMenu: React.FC<SideMenuProps> = ({
       <aside className={`gemini-sidebar no-print ${isOpen ? 'open' : 'closed'}`}>
         {/* Header with Title and Collapse Button */}
         <div className="gemini-sidebar-header">
-          <div className="gemini-sidebar-brand">
+          <div
+            className="gemini-sidebar-brand clickable"
+            onClick={() => handleSelect('landing')}
+            title="Go to Home"
+            style={{ cursor: 'pointer' }}
+          >
             <span className="gemini-brand-icon">✈</span>
             <div className="gemini-brand-text">
               <span className="gemini-brand-title">WindLog</span>
@@ -117,9 +125,46 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           </button>
         </div>
 
+        {/* Pilot Account Card */}
+        <div
+          className={`gemini-pilot-card ${activeView === 'auth' ? 'active' : ''}`}
+          onClick={() => handleSelect('auth')}
+          title={isAuthenticated ? 'View Pilot Profile' : 'Sign In or Register'}
+        >
+          <div className="gemini-pilot-avatar">
+            {isAuthenticated ? (user?.displayName || user?.email || 'P')[0].toUpperCase() : '👤'}
+          </div>
+          <div className="gemini-pilot-meta">
+            <div className="gemini-pilot-name">
+              {isAuthenticated ? user?.displayName || user?.email : 'Sign In / Register'}
+            </div>
+            <div className="gemini-pilot-sub">
+              {isAuthenticated ? user?.pilotLicense || 'Active Pilot' : 'Sync Profile & Logs'}
+            </div>
+          </div>
+          {isAuthenticated && <span className="gemini-pilot-dot" />}
+        </div>
+
         {/* Navigation Section */}
         <nav className="gemini-sidebar-nav">
-          <div className="gemini-nav-section-title">FLIGHT TOOLS</div>
+          <div className="gemini-nav-section-title">NAVIGATION</div>
+
+          {/* Home / Landing */}
+          <button
+            type="button"
+            className={`gemini-nav-item ${activeView === 'landing' ? 'active' : ''}`}
+            onClick={() => handleSelect('landing')}
+          >
+            <span className="gemini-nav-icon">🏠</span>
+            <div className="gemini-nav-body">
+              <div className="gemini-nav-label">Home</div>
+              <div className="gemini-nav-hint">Landing &amp; Brand</div>
+            </div>
+          </button>
+
+          <div className="gemini-nav-section-title" style={{ marginTop: '0.75rem' }}>
+            FLIGHT TOOLS
+          </div>
 
           {/* 1. Flight Planner & NavLog */}
           <button

@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { NavLogSummary } from '../types';
 import { computeAirspaceProfileSlices, AirspaceVerticalSlice } from '../engine/airspace-engine';
 import { AirspaceFilterType } from './RouteMap';
+import { fetchTerrainProfile, TerrainProfileResult, TerrainSamplePoint } from '../engine/terrain-engine';
 
 export interface AltitudeProfileProps {
   navLog: NavLogSummary;
@@ -16,7 +17,8 @@ export interface AltitudeProfileProps {
 /**
  * 2D Vertical Altitude Profile (Side-view Cross Section)
  * Renders an SVG chart displaying route distance vs cruise altitude profile,
- * with real-time 3D controlled airspace penetration cross-sections.
+ * with real-time 3D controlled airspace penetration cross-sections and
+ * digital elevation terrain profiling.
  */
 export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   navLog,
@@ -33,6 +35,11 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
     externalShowAirspaces !== undefined ? externalShowAirspaces : internalShowAirspaces;
   const setShowAirspaceSlices = onToggleShowAirspaces || setInternalShowAirspaces;
 
+  const [showTerrain, setShowTerrain] = useState<boolean>(true);
+  const [terrainResult, setTerrainResult] = useState<TerrainProfileResult | null>(null);
+  const [isTerrainLoading, setIsTerrainLoading] = useState<boolean>(false);
+  const [hoveredPoint, setHoveredPoint] = useState<TerrainSamplePoint | null>(null);
+
   const [hoveredSlice, setHoveredSlice] = useState<AirspaceVerticalSlice | null>(null);
 
   const width = 800;
@@ -46,6 +53,26 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   const chartHeight = height - paddingTop - paddingBottom;
 
   const totalDist = Math.max(1, navLog.totalDistance);
+
+  // Fetch terrain digital elevation profile
+  useEffect(() => {
+    let isMounted = true;
+    setIsTerrainLoading(true);
+    fetchTerrainProfile(navLog.legs)
+      .then((res) => {
+        if (isMounted) setTerrainResult(res);
+      })
+      .catch((err) => {
+        console.warn('Failed to load terrain profile:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsTerrainLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [navLog.legs]);
 
   // Compute 2D vertical airspace slices
   const allAirspaceSlices = useMemo(() => {
@@ -70,8 +97,9 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
     });
   }, [allAirspaceSlices, airspaceFilter]);
 
-  // Find max altitude to scale Y axis (rounded up to next 2000ft)
+  // Find max altitude to scale Y axis (taking into account flight alt, airspace, and terrain)
   const maxAltInRoute = Math.max(...navLog.legs.map((l) => l.altitude), 3500);
+  const maxTerrainInRoute = showTerrain && terrainResult ? terrainResult.maxTerrainFt : 0;
   const relevantAirspaceAlt = Math.max(
     ...airspaceSlices.map((s) =>
       s.status === 'PENETRATING' || s.status === 'CLIPPING'
@@ -80,7 +108,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
     ),
     0
   );
-  const effectiveMaxAlt = Math.max(maxAltInRoute, Math.min(relevantAirspaceAlt, 14500));
+  const effectiveMaxAlt = Math.max(maxAltInRoute, maxTerrainInRoute, Math.min(relevantAirspaceAlt, 14500));
   const yMaxAlt = Math.ceil((effectiveMaxAlt + 1500) / 2000) * 2000;
 
   const scaleX = (dist: number) => paddingLeft + (dist / totalDist) * chartWidth;
@@ -126,6 +154,24 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   pathD += ` L ${scaleX(totalDist)} ${scaleY(0)}`;
   areaD += ` L ${scaleX(totalDist)} ${scaleY(0)} Z`;
 
+  // Build SVG path for terrain elevation profile
+  let terrainPathD = '';
+  let terrainRidgeD = '';
+  if (showTerrain && terrainResult && terrainResult.samples.length > 0) {
+    terrainPathD = `M ${scaleX(0)} ${scaleY(0)}`;
+    terrainResult.samples.forEach((p, idx) => {
+      const px = scaleX(p.distNm);
+      const py = scaleY(p.elevationFt);
+      terrainPathD += ` L ${px} ${py}`;
+      if (idx === 0) {
+        terrainRidgeD = `M ${px} ${py}`;
+      } else {
+        terrainRidgeD += ` L ${px} ${py}`;
+      }
+    });
+    terrainPathD += ` L ${scaleX(totalDist)} ${scaleY(0)} Z`;
+  }
+
   // Grid lines for Y axis (every 2,000 ft)
   const yTicks: number[] = [];
   for (let a = 2000; a <= yMaxAlt; a += 2000) {
@@ -140,6 +186,16 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
           <label className="profile-airspace-toggle">
             <input
               type="checkbox"
+              checked={showTerrain}
+              onChange={(e) => setShowTerrain(e.target.checked)}
+            />
+            <span>
+              ⛰️ Terrain{isTerrainLoading ? '...' : ''}
+            </span>
+          </label>
+          <label className="profile-airspace-toggle">
+            <input
+              type="checkbox"
               checked={showAirspaceSlices}
               onChange={(e) => setShowAirspaceSlices(e.target.checked)}
             />
@@ -148,10 +204,37 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
             </span>
           </label>
           <span className="profile-stats">
-            Total: {navLog.totalDistance.toFixed(1)} nm • Max Alt: {maxAltInRoute.toLocaleString()} ft MSL
+            Dist: {navLog.totalDistance.toFixed(1)} nm • Cruise Max: {maxAltInRoute.toLocaleString()} ft
+            {showTerrain && terrainResult && (
+              <> • Peak Ter: {terrainResult.maxTerrainFt.toLocaleString()} ft • Min Clr: {terrainResult.minClearanceFt.toLocaleString()} ft AGL</>
+            )}
           </span>
         </div>
       </div>
+
+      {showTerrain && terrainResult?.hasWarning && (
+        <div className="profile-terrain-warning-banner">
+          ⚠️ TERRAIN PROXIMITY ALERT: Route clearance drops to {terrainResult.minClearanceFt.toLocaleString()} ft AGL (&lt; 500 ft safety buffer). Verify Minimum Enroute Altitude (MEA).
+        </div>
+      )}
+
+      {hoveredPoint && (
+        <div className="profile-airspace-hover-card">
+          <div className="hover-card-title">
+            ⛰️ <strong>Terrain Elevation &amp; Clearance</strong>
+          </div>
+          <div className="hover-card-limits">
+            Route Dist: <strong>{hoveredPoint.distNm.toFixed(1)} NM</strong> • Cruise: <strong>{hoveredPoint.cruiseAltFt.toLocaleString()} ft MSL</strong>
+          </div>
+          <div className="hover-card-limits">
+            Terrain Elevation: <strong>{hoveredPoint.elevationFt.toLocaleString()} ft MSL</strong>
+          </div>
+          <div className={`hover-card-status ${hoveredPoint.isWarning ? 'alert-pen' : ''}`}>
+            Clearance: <strong>{hoveredPoint.clearanceFt >= 0 ? `+${hoveredPoint.clearanceFt.toLocaleString()}` : hoveredPoint.clearanceFt.toLocaleString()} ft AGL</strong>
+            {hoveredPoint.isWarning && ' (⚠️ LOW CLEARANCE)'}
+          </div>
+        </div>
+      )}
 
       {hoveredSlice && (
         <div className="profile-airspace-hover-card">
@@ -180,6 +263,10 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
             <linearGradient id="profileGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
               <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.02" />
+            </linearGradient>
+            <linearGradient id="terrainGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#334155" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#0f172a" stopOpacity="0.95" />
             </linearGradient>
           </defs>
 
@@ -294,6 +381,44 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
 
           {/* Area Fill */}
           <path d={areaD} fill="url(#profileGradient)" />
+
+          {/* Digital Elevation Terrain Layer */}
+          {showTerrain && terrainPathD && (
+            <g className="profile-terrain-layer">
+              <path d={terrainPathD} fill="url(#terrainGradient)" />
+              <path
+                d={terrainRidgeD}
+                fill="none"
+                stroke="#64748b"
+                strokeWidth="1.75"
+              />
+              {terrainResult?.samples.map((p, pIdx) => {
+                const px = scaleX(p.distNm);
+                const py = scaleY(p.elevationFt);
+
+                return (
+                  <g
+                    key={`tp-${pIdx}`}
+                    className="profile-terrain-sample"
+                    onMouseEnter={() => setHoveredPoint(p)}
+                    onMouseLeave={() => setHoveredPoint(null)}
+                  >
+                    <circle cx={px} cy={py} r={7} fill="transparent" cursor="crosshair" />
+                    {p.isWarning && (
+                      <circle
+                        cx={px}
+                        cy={py}
+                        r={3}
+                        fill="#ef4444"
+                        stroke="#ffffff"
+                        strokeWidth={1}
+                      />
+                    )}
+                  </g>
+                );
+              })}
+            </g>
+          )}
 
           {/* Base Ground Line */}
           <line

@@ -16,6 +16,9 @@ import { KneeboardModal } from './components/KneeboardModal';
 import { SideMenu } from './components/SideMenu';
 import { MassBalanceView } from './components/MassBalanceView';
 import { RunwayWindView } from './components/RunwayWindView';
+import { LandingPage } from './components/LandingPage';
+import { AuthPage } from './components/AuthPage';
+import { AuthProvider } from './context/AuthContext';
 import { WaypointDB, initWaypointDatabase } from './data/waypoint-db';
 import { searchOsmReportingPoint } from './data/osm-vrp';
 import { fetchWindsAloft, parseManualWind } from './data/winds-aloft';
@@ -94,9 +97,9 @@ function loadManualWind(): string {
   return getStorageItemSync<string>('windlog_manual_wind', '');
 }
 
-// ─── App Component ───
+// ─── Cockpit Core Component ───
 
-export default function App() {
+function CockpitApp() {
   const [db, setDb] = useState<WaypointDB | null>(null);
   const [dbReady, setDbReady] = useState(false);
 
@@ -111,7 +114,14 @@ export default function App() {
     }
   });
   const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
-  const [activeView, setActiveView] = useState<ActiveView>('navlog');
+  const [activeView, setActiveView] = useState<ActiveView>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      if (hash === '#landing' || hash === '#home') return 'landing';
+      if (hash === '#auth' || hash === '#login' || hash === '#signup') return 'auth';
+    }
+    return 'navlog';
+  });
   const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem('windlog_sidebar_open');
@@ -493,6 +503,14 @@ export default function App() {
 
       {/* Main Content Area (Shifts smoothly with sidebar) */}
       <main className="cockpit-main-content">
+        {activeView === 'landing' && (
+          <LandingPage onNavigate={setActiveView} />
+        )}
+
+        {activeView === 'auth' && (
+          <AuthPage onNavigate={setActiveView} />
+        )}
+
         {activeView === 'navlog' && (
           <ScratchpadView
             profile={profile}
@@ -554,5 +572,13 @@ export default function App() {
         />
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <CockpitApp />
+    </AuthProvider>
   );
 }
