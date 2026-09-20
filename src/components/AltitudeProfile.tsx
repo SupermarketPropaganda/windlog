@@ -49,9 +49,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
     externalShowAirspaces !== undefined ? externalShowAirspaces : internalShowAirspaces;
   const setShowAirspaceSlices = onToggleShowAirspaces || setInternalShowAirspaces;
 
-  const [showTerrain, setShowTerrain] = useState<boolean>(true);
   const [terrainResult, setTerrainResult] = useState<TerrainProfileResult | null>(null);
-  const [isTerrainLoading, setIsTerrainLoading] = useState<boolean>(false);
   const [selectedPoint, setSelectedPoint] = useState<TerrainSamplePoint | null>(null);
   const [selectedSlice, setSelectedSlice] = useState<AirspaceVerticalSlice | null>(null);
 
@@ -70,16 +68,12 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   // Fetch terrain digital elevation profile
   useEffect(() => {
     let isMounted = true;
-    setIsTerrainLoading(true);
     fetchTerrainProfile(navLog.legs)
       .then((res) => {
         if (isMounted) setTerrainResult(res);
       })
       .catch((err) => {
         console.warn('Failed to load terrain profile:', err);
-      })
-      .finally(() => {
-        if (isMounted) setIsTerrainLoading(false);
       });
 
     return () => {
@@ -115,7 +109,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   // We do NOT scale up to high-altitude TMA ceilings (FL145/FL245), ensuring the VFR
   // trajectory and terrain clearance are prominent, large, and readable.
   const maxAltInRoute = Math.max(...navLog.legs.map((l) => l.altitude), 2000);
-  const maxTerrainInRoute = showTerrain && terrainResult ? terrainResult.maxTerrainFt : 0;
+  const maxTerrainInRoute = terrainResult ? terrainResult.maxTerrainFt : 0;
   const flightCeiling = Math.max(maxAltInRoute, maxTerrainInRoute);
   const yMaxAlt = Math.max(4000, Math.ceil((flightCeiling + 1800) / 1000) * 1000);
 
@@ -151,7 +145,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
   // Build SVG path for terrain elevation profile
   let terrainPathD = '';
   let terrainRidgeD = '';
-  if (showTerrain && terrainResult && terrainResult.samples.length > 0) {
+  if (terrainResult && terrainResult.samples.length > 0) {
     terrainPathD = `M ${scaleX(0)} ${scaleY(0)}`;
     terrainResult.samples.forEach((p, idx) => {
       const px = scaleX(p.distNm);
@@ -185,7 +179,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
             <span className="vsd-hud-chip" title="Max Planned Cruise Altitude">
               <span className="chip-dim">CRZ</span> {maxAltInRoute.toLocaleString()} FT
             </span>
-            {showTerrain && terrainResult && (
+            {terrainResult && (
               <>
                 <span className="vsd-hud-chip" title="Peak Terrain Elevation along Route">
                   <span className="chip-dim">PEAK TER</span> {terrainResult.maxTerrainFt.toLocaleString()} FT
@@ -202,30 +196,19 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                 </span>
               </>
             )}
+            <button
+              type="button"
+              className={`vsd-toggle-pill ${showAirspaceSlices ? 'active' : ''}`}
+              onClick={() => setShowAirspaceSlices(!showAirspaceSlices)}
+              title="Toggle 2D Airspace Penetration Slices"
+            >
+              🛡️ Airspaces ({airspaceSlices.length})
+            </button>
           </div>
-        </div>
-
-        <div className="vsd-shelf-controls">
-          <button
-            type="button"
-            className={`vsd-toggle-pill ${showTerrain ? 'active' : ''}`}
-            onClick={() => setShowTerrain((prev) => !prev)}
-            title="Toggle Digital Elevation Terrain Profile"
-          >
-            ⛰️ Terrain{isTerrainLoading ? '...' : ''}
-          </button>
-          <button
-            type="button"
-            className={`vsd-toggle-pill ${showAirspaceSlices ? 'active' : ''}`}
-            onClick={() => setShowAirspaceSlices(!showAirspaceSlices)}
-            title="Toggle 2D Airspace Penetration Slices"
-          >
-            🛡️ Airspaces ({airspaceSlices.length})
-          </button>
         </div>
       </div>
 
-      {showTerrain && terrainResult?.hasWarning && (
+      {terrainResult?.hasWarning && (
         <div className="profile-terrain-warning-banner">
           ⚠️ TERRAIN PROXIMITY ALERT: Route clearance drops to {terrainResult.minClearanceFt.toLocaleString()} ft AGL (&lt; 500 ft safety buffer). Verify Minimum Enroute Altitude (MEA).
         </div>
@@ -512,7 +495,7 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                 })}
 
               {/* Digital Elevation Topographic Terrain Layer */}
-              {showTerrain && terrainPathD && (
+              {terrainPathD && (
                 <g className="profile-terrain-layer">
                   <path d={terrainPathD} fill="url(#terrainGradient)" />
                   <path
