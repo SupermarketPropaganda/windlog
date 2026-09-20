@@ -16,8 +16,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   // Sign In Form State
-  const [signInEmail, setSignInEmail] = useState('');
-  const [signInPassword, setSignInPassword] = useState('');
+  const [signInEmail, setSignInEmail] = useState('diogo@windlog.aero');
+  const [signInPassword, setSignInPassword] = useState('password123');
 
   // Sign Up Form State
   const [signUpEmail, setSignUpEmail] = useState('');
@@ -286,6 +286,35 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
         {/* 1. Sign In Form */}
         {currentTab === 'signin' && (
           <form onSubmit={handleSignInSubmit} className="auth-form">
+            <div className="auth-account-ready-card">
+              <div className="auth-ready-badge">
+                <span className="auth-ready-icon">✈</span>
+                <div className="auth-ready-meta">
+                  <div className="auth-ready-name">Pilot Account Ready: <strong>Diogo</strong></div>
+                  <div className="auth-ready-creds">
+                    <code>diogo@windlog.aero</code> • <code>password123</code>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="auth-quick-access-btn"
+                disabled={isLoading}
+                onClick={async () => {
+                  setSignInEmail('diogo@windlog.aero');
+                  setSignInPassword('password123');
+                  try {
+                    await signIn('diogo@windlog.aero', 'password123');
+                    onNavigate('navlog');
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+              >
+                ⚡ 1-Click Enter as Diogo
+              </button>
+            </div>
+
             <div className="auth-field">
               <label className="auth-label">Pilot Email</label>
               <input

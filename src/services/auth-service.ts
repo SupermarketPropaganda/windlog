@@ -94,6 +94,21 @@ function generateToken(userId: string): string {
   return `wlt_${userId}_${expiry}_${rand}`;
 }
 
+export const DEFAULT_PILOT_RECORD: StoredUserRecord = {
+  user: {
+    id: 'pilot_diogo_master',
+    email: 'diogo@windlog.aero',
+    displayName: 'Diogo',
+    pilotLicense: 'EASA PPL(A)',
+    homeBaseAirport: 'LPCS',
+    createdAt: '2026-09-20T12:00:00.000Z',
+    lastLoginAt: '2026-09-20T12:00:00.000Z',
+    emailVerified: true,
+  },
+  salt: 'diogo_pilot_salt_2026',
+  passwordHash: '43b1d2cc6df61bd7993579949c3b5013de9e19222f39083855ff009567c6a94c',
+};
+
 /**
  * Default Local Auth Provider implementation storing encrypted credentials in localStorage.
  * Ready to be swapped with Supabase, Firebase, or external API via setAuthProviderAdapter.
@@ -102,9 +117,14 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
   private getUsers(): Record<string, StoredUserRecord> {
     try {
       const data = safeStorage.getItem(STORAGE_USERS_KEY);
-      return data ? JSON.parse(data) : {};
+      const users: Record<string, StoredUserRecord> = data ? JSON.parse(data) : {};
+      if (!Object.values(users).some((r) => r.user.email.toLowerCase() === 'diogo@windlog.aero')) {
+        users['pilot_diogo_master'] = DEFAULT_PILOT_RECORD;
+        this.saveUsers(users);
+      }
+      return users;
     } catch {
-      return {};
+      return { pilot_diogo_master: DEFAULT_PILOT_RECORD };
     }
   }
 
