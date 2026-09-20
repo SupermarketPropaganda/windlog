@@ -18,7 +18,7 @@ import { MassBalanceView } from './components/MassBalanceView';
 import { RunwayWindView } from './components/RunwayWindView';
 import { LandingPage } from './components/LandingPage';
 import { AuthPage } from './components/AuthPage';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { WaypointDB, initWaypointDatabase } from './data/waypoint-db';
 import { searchOsmReportingPoint } from './data/osm-vrp';
 import { fetchWindsAloft, parseManualWind } from './data/winds-aloft';
@@ -97,9 +97,14 @@ function loadManualWind(): string {
   return getStorageItemSync<string>('windlog_manual_wind', '');
 }
 
-// ─── Cockpit Core Component ───
+// ─── Cockpit Suite (Authenticated Flight Environment) ───
 
-function CockpitApp() {
+interface CockpitSuiteProps {
+  activeView: ActiveView;
+  onChangeView: (view: ActiveView) => void;
+}
+
+function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   const [db, setDb] = useState<WaypointDB | null>(null);
   const [dbReady, setDbReady] = useState(false);
 
@@ -114,14 +119,6 @@ function CockpitApp() {
     }
   });
   const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
-  const [activeView, setActiveView] = useState<ActiveView>(() => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash;
-      if (hash === '#landing' || hash === '#home') return 'landing';
-      if (hash === '#auth' || hash === '#login' || hash === '#signup') return 'auth';
-    }
-    return 'navlog';
-  });
   const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem('windlog_sidebar_open');
@@ -490,7 +487,7 @@ function CockpitApp() {
       {/* Gemini-Style Persistent Fixed Side Menu */}
       <SideMenu
         activeView={activeView}
-        onChangeView={setActiveView}
+        onChangeView={onChangeView}
         isOpen={isSideMenuOpen}
         onToggle={handleToggleSidebar}
         onOpenKneeboard={() => setIsKneeboardOpen(true)}
@@ -503,12 +500,8 @@ function CockpitApp() {
 
       {/* Main Content Area (Shifts smoothly with sidebar) */}
       <main className="cockpit-main-content">
-        {activeView === 'landing' && (
-          <LandingPage onNavigate={setActiveView} />
-        )}
-
         {activeView === 'auth' && (
-          <AuthPage onNavigate={setActiveView} />
+          <AuthPage onNavigate={onChangeView} />
         )}
 
         {activeView === 'navlog' && (
@@ -542,7 +535,7 @@ function CockpitApp() {
         {activeView === 'mass-balance' && (
           <MassBalanceView
             navLogSummary={navLog}
-            onBackToNavLog={() => setActiveView('navlog')}
+            onBackToNavLog={() => onChangeView('navlog')}
           />
         )}
 
@@ -550,7 +543,7 @@ function CockpitApp() {
           <RunwayWindView
             routeWaypoints={resolvedWaypoints}
             navLogSummary={navLog}
-            onBackToNavLog={() => setActiveView('navlog')}
+            onBackToNavLog={() => onChangeView('navlog')}
             onResultChange={setRunwayWindResult}
           />
         )}
@@ -572,6 +565,77 @@ function CockpitApp() {
         />
       )}
     </div>
+  );
+}
+
+// ─── Top-Level Auth Gatekeeper ───
+
+function CockpitApp() {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [unauthView, setUnauthView] = useState<'landing' | 'auth'>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      if (hash === '#auth' || hash === '#login' || hash === '#signup') return 'auth';
+    }
+    return 'landing';
+  });
+  const [cockpitView, setCockpitView] = useState<ActiveView>('navlog');
+
+  // Handle URL hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#auth' || hash === '#login' || hash === '#signup') {
+        setUnauthView('auth');
+      } else if (hash === '#landing' || hash === '#home') {
+        setUnauthView('landing');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="db-loading-screen">
+        <div className="db-loading-spinner" />
+        <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.1rem' }}>
+          WindLog Flight Planning Suite
+        </div>
+      </div>
+    );
+  }
+
+  // Strictly gate unauthenticated visitors: full standalone Landing or Auth pages with NO sidebar
+  if (!isAuthenticated) {
+    if (unauthView === 'auth') {
+      return (
+        <AuthPage
+          onNavigate={(view) => {
+            if (view === 'landing') {
+              setUnauthView('landing');
+            }
+          }}
+        />
+      );
+    }
+    return (
+      <LandingPage
+        onNavigate={(view) => {
+          if (view === 'auth') {
+            setUnauthView('auth');
+          }
+        }}
+      />
+    );
+  }
+
+  // Authenticated pilots get access to the Cockpit Suite
+  return (
+    <CockpitSuite
+      activeView={cockpitView}
+      onChangeView={setCockpitView}
+    />
   );
 }
 

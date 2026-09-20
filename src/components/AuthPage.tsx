@@ -235,9 +235,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
             <button
               type="button"
               className="auth-link-btn"
-              onClick={() => onNavigate('landing')}
+              onClick={() => onNavigate('navlog')}
             >
-              ← Back to Landing
+              ← Back to Flight Planner
             </button>
           </div>
         </div>

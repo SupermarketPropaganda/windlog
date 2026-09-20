@@ -29,7 +29,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   massBalanceResult,
   runwayWindResult,
 }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, signOut } = useAuth();
 
   const handleSelect = (view: ActiveView) => {
     onChangeView(view);
@@ -51,6 +51,12 @@ export const SideMenu: React.FC<SideMenuProps> = ({
     if (window.innerWidth < 980) {
       onToggle();
     }
+  };
+
+  const handleSignOut = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await signOut();
+    onChangeView('landing');
   };
 
   return (
@@ -89,12 +95,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
       <aside className={`gemini-sidebar no-print ${isOpen ? 'open' : 'closed'}`}>
         {/* Header with Title and Collapse Button */}
         <div className="gemini-sidebar-header">
-          <div
-            className="gemini-sidebar-brand clickable"
-            onClick={() => handleSelect('landing')}
-            title="Go to Home"
-            style={{ cursor: 'pointer' }}
-          >
+          <div className="gemini-sidebar-brand">
             <span className="gemini-brand-icon">✈</span>
             <div className="gemini-brand-text">
               <span className="gemini-brand-title">WindLog</span>
@@ -125,46 +126,36 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           </button>
         </div>
 
-        {/* Pilot Account Card */}
+        {/* Authenticated Pilot Card with Sign Out */}
         <div
           className={`gemini-pilot-card ${activeView === 'auth' ? 'active' : ''}`}
           onClick={() => handleSelect('auth')}
-          title={isAuthenticated ? 'View Pilot Profile' : 'Sign In or Register'}
+          title="View / Edit Pilot Profile"
         >
           <div className="gemini-pilot-avatar">
-            {isAuthenticated ? (user?.displayName || user?.email || 'P')[0].toUpperCase() : '👤'}
+            {(user?.displayName || user?.email || 'P')[0].toUpperCase()}
           </div>
           <div className="gemini-pilot-meta">
             <div className="gemini-pilot-name">
-              {isAuthenticated ? user?.displayName || user?.email : 'Sign In / Register'}
+              {user?.displayName || user?.email}
             </div>
             <div className="gemini-pilot-sub">
-              {isAuthenticated ? user?.pilotLicense || 'Active Pilot' : 'Sync Profile & Logs'}
+              {user?.pilotLicense ? user.pilotLicense : 'PIC'}
             </div>
           </div>
-          {isAuthenticated && <span className="gemini-pilot-dot" />}
+          <button
+            type="button"
+            className="gemini-pilot-signout-btn"
+            onClick={handleSignOut}
+            title="Sign Out of Cockpit"
+          >
+            Sign Out
+          </button>
         </div>
 
         {/* Navigation Section */}
         <nav className="gemini-sidebar-nav">
-          <div className="gemini-nav-section-title">NAVIGATION</div>
-
-          {/* Home / Landing */}
-          <button
-            type="button"
-            className={`gemini-nav-item ${activeView === 'landing' ? 'active' : ''}`}
-            onClick={() => handleSelect('landing')}
-          >
-            <span className="gemini-nav-icon">🏠</span>
-            <div className="gemini-nav-body">
-              <div className="gemini-nav-label">Home</div>
-              <div className="gemini-nav-hint">Landing &amp; Brand</div>
-            </div>
-          </button>
-
-          <div className="gemini-nav-section-title" style={{ marginTop: '0.75rem' }}>
-            FLIGHT TOOLS
-          </div>
+          <div className="gemini-nav-section-title">FLIGHT TOOLS</div>
 
           {/* 1. Flight Planner & NavLog */}
           <button
@@ -248,6 +239,19 @@ export const SideMenu: React.FC<SideMenuProps> = ({
                 {runwayWindResult.crosswindStatus.toUpperCase()}
               </span>
             )}
+          </button>
+
+          {/* 4. Pilot Profile & Account */}
+          <button
+            type="button"
+            className={`gemini-nav-item ${activeView === 'auth' ? 'active' : ''}`}
+            onClick={() => handleSelect('auth')}
+          >
+            <span className="gemini-nav-icon">👤</span>
+            <div className="gemini-nav-body">
+              <div className="gemini-nav-label">Pilot Profile</div>
+              <div className="gemini-nav-hint">Credentials &amp; Settings</div>
+            </div>
           </button>
 
           <div className="gemini-nav-section-title" style={{ marginTop: '1rem' }}>
