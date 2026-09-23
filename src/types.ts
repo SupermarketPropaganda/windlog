@@ -1,6 +1,26 @@
 // ─── Navigation Views ───
 
-export type ActiveView = 'landing' | 'auth' | 'navlog' | 'mass-balance' | 'runway-wind';
+export type ActiveView = 'landing' | 'auth' | 'navlog' | 'mass-balance' | 'runway-wind' | 'saved-flights';
+
+// ─── Saved Flight Interface ───
+
+export interface SavedFlight {
+  id: string;
+  name: string;
+  routeInput: string;
+  departureTime: string | null; // ISO 8601 string or null for 'Now'
+  profile: AircraftProfile;
+  legAltitudeOverrides: Record<number, number>;
+  summary?: {
+    totalDistance: number;
+    totalEte: number;
+    totalFuel: number;
+    legsCount: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+  userId?: string;
+}
 
 // ─── Waypoint Types ───
 
@@ -74,6 +94,7 @@ export interface WindState {
   wind: Wind | null;
   lastUpdated: Date | null;
   source: string | null; // e.g. "Open-Meteo ECMWF" or "NOAA AWC" or "Manual"
+  forecastTime?: string | null; // formatted target departure time if scheduled
 }
 
 // ─── Waypoint Resolution ───

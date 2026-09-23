@@ -14,6 +14,7 @@ export interface SideMenuProps {
   navLogSummary: NavLogSummary | null;
   massBalanceResult?: MassBalanceResult | null;
   runwayWindResult?: RunwayWindResult | null;
+  savedFlightsCount?: number;
 }
 
 export const SideMenu: React.FC<SideMenuProps> = ({
@@ -28,6 +29,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   navLogSummary,
   massBalanceResult,
   runwayWindResult,
+  savedFlightsCount,
 }) => {
   const { user, signOut } = useAuth();
 
@@ -179,7 +181,29 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             )}
           </button>
 
-          {/* 2. Mass & Balance */}
+          {/* 2. Saved Flights */}
+          <button
+            type="button"
+            className={`gemini-nav-item ${activeView === 'saved-flights' ? 'active' : ''}`}
+            onClick={() => handleSelect('saved-flights')}
+          >
+            <span className="gemini-nav-icon">📁</span>
+            <div className="gemini-nav-body">
+              <div className="gemini-nav-label">Saved Flights</div>
+              <div className="gemini-nav-hint">
+                {savedFlightsCount !== undefined && savedFlightsCount > 0
+                  ? `${savedFlightsCount} route${savedFlightsCount === 1 ? '' : 's'} stored`
+                  : 'Route Library'}
+              </div>
+            </div>
+            {savedFlightsCount !== undefined && savedFlightsCount > 0 && (
+              <span className="gemini-nav-badge badge-blue">
+                {savedFlightsCount}
+              </span>
+            )}
+          </button>
+
+          {/* 3. Mass & Balance */}
           <button
             type="button"
             className={`gemini-nav-item ${activeView === 'mass-balance' ? 'active' : ''}`}

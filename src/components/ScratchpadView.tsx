@@ -55,6 +55,14 @@ export interface ScratchpadViewProps {
   onCoordConfirm: (w: Waypoint) => void;
   onCoordCancel: () => void;
 
+  /** Flight Departure Scheduling (Date and Hour) */
+  departureTime?: string | null;
+  onDepartureTimeChange?: (time: string | null) => void;
+
+  /** Flight Saving Handlers */
+  onSaveFlight?: () => void;
+  isFlightSaved?: boolean;
+
   /** Temporary toast message */
   toastMessage: string | null;
 }
@@ -103,6 +111,8 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
           onWindChange={props.onWindChange}
           onModeChange={props.onWindModeChange}
           isLoading={props.isWindLoading}
+          departureTime={props.departureTime}
+          onDepartureTimeChange={props.onDepartureTimeChange}
         />
       </div>
 
@@ -124,6 +134,17 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
           <div className="route-actions">
             {props.routeInput.trim().length > 0 && (
               <>
+                {props.onSaveFlight && (
+                  <button
+                    type="button"
+                    className={`route-action-btn ${props.isFlightSaved ? 'saved' : ''}`}
+                    title="Save flight to your library"
+                    onClick={props.onSaveFlight}
+                    style={{ borderColor: '#10b981', color: '#34d399' }}
+                  >
+                    💾 {props.isFlightSaved ? 'Saved ✓' : 'Save Flight'}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="route-action-btn"

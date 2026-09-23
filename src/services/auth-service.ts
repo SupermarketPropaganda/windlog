@@ -89,25 +89,10 @@ export const safeStorage = {
  * Generates a session token.
  */
 function generateToken(userId: string): string {
-  const rand = generateSalt(12);
+  const rand = generateSalt(16);
   const expiry = Date.now() + SESSION_DURATION_MS;
   return `wlt_${userId}_${expiry}_${rand}`;
 }
-
-export const DEFAULT_PILOT_RECORD: StoredUserRecord = {
-  user: {
-    id: 'pilot_diogo_master',
-    email: 'diogo@windlog.aero',
-    displayName: 'Diogo',
-    pilotLicense: 'EASA PPL(A)',
-    homeBaseAirport: 'LPCS',
-    createdAt: '2026-09-20T12:00:00.000Z',
-    lastLoginAt: '2026-09-20T12:00:00.000Z',
-    emailVerified: true,
-  },
-  salt: 'diogo_pilot_salt_2026',
-  passwordHash: '43b1d2cc6df61bd7993579949c3b5013de9e19222f39083855ff009567c6a94c',
-};
 
 /**
  * Default Local Auth Provider implementation storing encrypted credentials in localStorage.
@@ -118,13 +103,24 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
     try {
       const data = safeStorage.getItem(STORAGE_USERS_KEY);
       const users: Record<string, StoredUserRecord> = data ? JSON.parse(data) : {};
-      if (!Object.values(users).some((r) => r.user.email.toLowerCase() === 'diogo@windlog.aero')) {
-        users['pilot_diogo_master'] = DEFAULT_PILOT_RECORD;
+      // Purge any legacy demo or hardcoded pilot records if previously stored
+      let modified = false;
+      for (const k of Object.keys(users)) {
+        if (
+          k.includes('master') ||
+          k.includes('demo') ||
+          users[k]?.user?.email?.endsWith('@windlog.aero')
+        ) {
+          delete users[k];
+          modified = true;
+        }
+      }
+      if (modified) {
         this.saveUsers(users);
       }
       return users;
     } catch {
-      return { pilot_diogo_master: DEFAULT_PILOT_RECORD };
+      return {};
     }
   }
 
@@ -154,7 +150,8 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
       throw new Error('An account with this email already exists. Please sign in instead.');
     }
 
-    const userId = `pilot_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const entropy = generateSalt(16);
+    const userId = `pilot_${Date.now()}_${entropy}`;
     const salt = generateSalt(16);
     const passwordHash = await hashPassword(credentials.password, salt);
 
@@ -210,25 +207,21 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
   async resetPassword(email: string): Promise<{ success: boolean; message: string }> {
     const normalizedEmail = email.trim().toLowerCase();
     const users = this.getUsers();
-    const record = Object.values(users).find(
+    Object.values(users).find(
       (r) => r.user.email.toLowerCase() === normalizedEmail
     );
 
-    if (!record) {
-      // Return success for security so attackers cannot enumerate registered emails
-      return {
-        success: true,
-        message: 'If an account exists with this email, password reset instructions have been generated.',
-      };
-    }
-
+    // Uniform response prevents user enumeration attacks
     return {
       success: true,
-      message: `Password reset confirmation dispatched to ${normalizedEmail}.`,
+      message: 'If an account exists with this email, password reset instructions have been generated.',
     };
   }
 
   async updateProfile(userId: string, updates: Partial<User>): Promise<User> {
+    if (userId.startsWith('guest_')) {
+      throw new Error('Guest profiles cannot be modified in persistent database.');
+    }
     const users = this.getUsers();
     const record = users[userId];
     if (!record) throw new Error('User not found.');
@@ -391,6 +384,31 @@ class AuthService {
     return user;
   }
 
+  async signInAsGuest(): Promise<User> {
+    const entropy = generateSalt(16);
+    const guestId = `guest_${Date.now()}_${entropy}`;
+    const guestUser: User = {
+      id: guestId,
+      email: `guest_${entropy.substring(0, 8)}@cockpit.local`,
+      displayName: 'Guest Pilot',
+      pilotLicense: 'VFR Pilot',
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      emailVerified: true,
+    };
+    const token = generateToken(guestId);
+    const expiresAt = Date.now() + SESSION_DURATION_MS;
+
+    this.saveSession({
+      user: guestUser,
+      token,
+      expiresAt,
+      isAuthenticated: true,
+    });
+
+    return guestUser;
+  }
+
   async signOut(): Promise<void> {
     await this.adapter.signOut();
     this.saveSession({
@@ -409,7 +427,17 @@ class AuthService {
     if (!this.currentSession.user) {
       throw new Error('No pilot is currently signed in.');
     }
-    const updated = await this.adapter.updateProfile(this.currentSession.user.id, updates);
+    let updated: User;
+    if (this.currentSession.user.id.startsWith('guest_')) {
+      updated = {
+        ...this.currentSession.user,
+        ...updates,
+        id: this.currentSession.user.id,
+        email: this.currentSession.user.email,
+      };
+    } else {
+      updated = await this.adapter.updateProfile(this.currentSession.user.id, updates);
+    }
     this.saveSession({
       ...this.currentSession,
       user: updated,

@@ -9,15 +9,15 @@ export interface AuthPageProps {
 type AuthTab = 'signin' | 'signup' | 'forgot';
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
-  const { user, isAuthenticated, signIn, signUp, signOut, resetPassword, updateProfile, error, clearError, isLoading } =
+  const { user, isAuthenticated, signIn, signInAsGuest, signUp, signOut, resetPassword, updateProfile, error, clearError, isLoading } =
     useAuth();
 
   const [currentTab, setCurrentTab] = useState<AuthTab>('signin');
   const [showPassword, setShowPassword] = useState(false);
 
   // Sign In Form State
-  const [signInEmail, setSignInEmail] = useState('diogo@windlog.aero');
-  const [signInPassword, setSignInPassword] = useState('password123');
+  const [signInEmail, setSignInEmail] = useState('');
+  const [signInPassword, setSignInPassword] = useState('');
 
   // Sign Up Form State
   const [signUpEmail, setSignUpEmail] = useState('');
@@ -286,35 +286,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
         {/* 1. Sign In Form */}
         {currentTab === 'signin' && (
           <form onSubmit={handleSignInSubmit} className="auth-form">
-            <div className="auth-account-ready-card">
-              <div className="auth-ready-badge">
-                <span className="auth-ready-icon">✈</span>
-                <div className="auth-ready-meta">
-                  <div className="auth-ready-name">Pilot Account Ready: <strong>Diogo</strong></div>
-                  <div className="auth-ready-creds">
-                    <code>diogo@windlog.aero</code> • <code>password123</code>
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="auth-quick-access-btn"
-                disabled={isLoading}
-                onClick={async () => {
-                  setSignInEmail('diogo@windlog.aero');
-                  setSignInPassword('password123');
-                  try {
-                    await signIn('diogo@windlog.aero', 'password123');
-                    onNavigate('navlog');
-                  } catch (e) {
-                    console.error(e);
-                  }
-                }}
-              >
-                ⚡ 1-Click Enter as Diogo
-              </button>
-            </div>
-
             <div className="auth-field">
               <label className="auth-label">Pilot Email</label>
               <input
@@ -366,6 +337,26 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
               disabled={isLoading}
             >
               {isLoading ? 'Authenticating...' : 'Sign In to Cockpit'}
+            </button>
+
+            <div className="auth-guest-divider">
+              <span>or</span>
+            </div>
+
+            <button
+              type="button"
+              className="auth-guest-btn"
+              disabled={isLoading}
+              onClick={async () => {
+                try {
+                  await signInAsGuest();
+                  onNavigate('navlog');
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+            >
+              Continue as Guest Pilot ✈
             </button>
           </form>
         )}

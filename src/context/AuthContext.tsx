@@ -10,6 +10,7 @@ export interface AuthContextType {
   error: string | null;
   clearError: () => void;
   signIn: (email: string, password: string) => Promise<User>;
+  signInAsGuest: () => Promise<User>;
   signUp: (credentials: AuthCredentials) => Promise<User>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
@@ -41,6 +42,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return user;
     } catch (err: any) {
       const msg = err?.message || 'Failed to sign in. Please check your credentials.';
+      setError(msg);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const signInAsGuest = useCallback(async (): Promise<User> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const user = await authService.signInAsGuest();
+      return user;
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to initialize guest session.';
       setError(msg);
       throw err;
     } finally {
@@ -110,6 +126,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         error,
         clearError,
         signIn,
+        signInAsGuest,
         signUp,
         signOut,
         resetPassword,

@@ -198,12 +198,14 @@ const PRESSURE_LEVELS = [
 
 /**
  * Fetches winds aloft data from Open-Meteo for global locations (ECMWF & GFS models).
- * Interpolates wind direction and speed continuously for the exact requested cruising altitude.
+ * Interpolates wind direction and speed continuously for the exact requested cruising altitude
+ * and specific flight departure date & hour (up to 14-day forecasts).
  */
 export async function fetchOpenMeteoWinds(
   latitude: number,
   longitude: number,
-  altitudeFeet: number
+  altitudeFeet: number,
+  targetDate?: Date | string | null
 ): Promise<Wind | null> {
   const speedVars = PRESSURE_LEVELS.map((p) => `wind_speed_${p.hPa}hPa`).join(',');
   const dirVars = PRESSURE_LEVELS.map((p) => `wind_direction_${p.hPa}hPa`).join(',');
@@ -212,19 +214,50 @@ export async function fetchOpenMeteoWinds(
     const url =
       `https://api.open-meteo.com/v1/forecast` +
       `?latitude=${latitude}&longitude=${longitude}` +
-      `&hourly=${speedVars},${dirVars}`;
+      `&hourly=${speedVars},${dirVars}&forecast_days=14`;
 
     const response = await fetch(url);
     if (!response.ok) return null;
 
     const data = await response.json();
-    if (!data.hourly || !data.hourly.time) return null;
+    if (!data.hourly || !data.hourly.time || data.hourly.time.length === 0) return null;
 
-    // Find current forecast index
-    const now = new Date();
-    const currentHourStr = now.toISOString().substring(0, 14) + '00';
-    let index = data.hourly.time.findIndex((t: string) => t >= currentHourStr);
-    if (index === -1) index = 0;
+    // Find requested forecast index based on target departure date & hour
+    let targetTimeMs: number;
+    let targetHourPrefix: string;
+
+    if (targetDate) {
+      const d = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
+      if (!isNaN(d.getTime())) {
+        targetTimeMs = d.getTime();
+        targetHourPrefix = d.toISOString().substring(0, 13);
+      } else {
+        const now = new Date();
+        targetTimeMs = now.getTime();
+        targetHourPrefix = now.toISOString().substring(0, 13);
+      }
+    } else {
+      const now = new Date();
+      targetTimeMs = now.getTime();
+      targetHourPrefix = now.toISOString().substring(0, 13);
+    }
+
+    let index = data.hourly.time.findIndex((t: string) => t.startsWith(targetHourPrefix));
+    if (index === -1) {
+      // Find nearest hourly entry to target time
+      let closestIdx = 0;
+      let minDiff = Infinity;
+      for (let i = 0; i < data.hourly.time.length; i++) {
+        const tStr = data.hourly.time[i];
+        const tMs = new Date(tStr.endsWith('Z') ? tStr : tStr + 'Z').getTime();
+        const diff = Math.abs(tMs - targetTimeMs);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestIdx = i;
+        }
+      }
+      index = closestIdx;
+    }
 
     const windsAtLevels: { level: number; wind: Wind }[] = [];
 
@@ -270,20 +303,23 @@ export async function fetchOpenMeteoWinds(
 
 /**
  * Fetches winds aloft, using NOAA for US locations and Open-Meteo globally.
+ * Accepts optional targetDate to query forecasts for specific scheduled flight times.
  */
 export async function fetchWindsAloft(
   latitude: number,
   longitude: number,
-  altitudeFeet: number
+  altitudeFeet: number,
+  targetDate?: Date | string | null
 ): Promise<Wind | null> {
   const isUS = latitude >= 24 && latitude <= 50 && longitude >= -125 && longitude <= -66;
 
-  if (isUS) {
+  // Use NOAA only if current time and within US, otherwise use Open-Meteo hourly forecast
+  if (isUS && !targetDate) {
     const noaaWinds = await fetchNoaaWinds(latitude, longitude, altitudeFeet);
     if (noaaWinds) return noaaWinds;
   }
 
-  return fetchOpenMeteoWinds(latitude, longitude, altitudeFeet);
+  return fetchOpenMeteoWinds(latitude, longitude, altitudeFeet, targetDate);
 }
 
 /**

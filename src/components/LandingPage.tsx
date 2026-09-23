@@ -23,13 +23,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
 
         <div className="landing-actions-wrapper">
           {!isAuthenticated ? (
-            <button
-              type="button"
-              className="landing-primary-btn"
-              onClick={() => onNavigate('auth')}
-            >
-              Sign In / Sign Up
-            </button>
+            <div className="landing-unauth-actions">
+              <button
+                type="button"
+                className="landing-primary-btn"
+                onClick={() => onNavigate('auth')}
+              >
+                Sign In / Sign Up
+              </button>
+              <button
+                type="button"
+                className="landing-secondary-btn"
+                onClick={() => onNavigate('auth')}
+              >
+                Explore as Guest
+              </button>
+            </div>
           ) : (
             <div className="landing-authenticated-group">
               <div className="landing-welcome-pill">

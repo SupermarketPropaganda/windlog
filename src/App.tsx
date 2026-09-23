@@ -9,6 +9,7 @@ import {
   Waypoint,
   ActiveView,
   RunwayWindResult,
+  SavedFlight,
 } from './types';
 import { ScratchpadView } from './components/ScratchpadView';
 import { DisclaimerModal } from './components/DisclaimerModal';
@@ -16,12 +17,14 @@ import { KneeboardModal } from './components/KneeboardModal';
 import { SideMenu } from './components/SideMenu';
 import { MassBalanceView } from './components/MassBalanceView';
 import { RunwayWindView } from './components/RunwayWindView';
+import { SavedFlightsView } from './components/SavedFlightsView';
 import { LandingPage } from './components/LandingPage';
 import { AuthPage } from './components/AuthPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WaypointDB, initWaypointDatabase } from './data/waypoint-db';
 import { searchOsmReportingPoint } from './data/osm-vrp';
 import { fetchWindsAloft, parseManualWind } from './data/winds-aloft';
+import { getSavedFlightsSync, saveFlightRecord } from './data/saved-flights';
 import { CURRENT_LEGAL_VERSION } from './data/legal-terms';
 import { computeNavLog } from './engine/navlog-engine';
 import { parseRouteString } from './utils/route-parser';
@@ -132,6 +135,24 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   const [isKneeboardOpen, setIsKneeboardOpen] = useState<boolean>(false);
   const [dbProgress, setDbProgress] = useState<{ percent: number }>({ percent: 0 });
   const [airacReport] = useState(() => checkDatabaseAiracStatus(CURRENT_DATABASE_METADATA.airacCycle));
+
+  const { user } = useAuth();
+  const [departureTime, setDepartureTime] = useState<string | null>(() =>
+    getStorageItemSync<string | null>('windlog_departure_time', null)
+  );
+  const [savedFlightsCount, setSavedFlightsCount] = useState<number>(() =>
+    getSavedFlightsSync(user?.id).length
+  );
+
+  useEffect(() => {
+    setSavedFlightsCount(getSavedFlightsSync(user?.id).length);
+  }, [user?.id]);
+
+  const handleDepartureTimeChange = useCallback((time: string | null) => {
+    setDepartureTime(time);
+    setStorageItem('windlog_departure_time', time);
+    windCacheRef.current.clear();
+  }, []);
 
   // ─── Native shell & Storage initialization ───
   useEffect(() => {
@@ -348,6 +369,49 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
     );
   })();
 
+  // ─── Save & Load Flight Actions ───
+  const handleSaveFlight = useCallback(async () => {
+    if (!routeInput.trim()) {
+      setToastMessage('Please enter a route before saving.');
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+
+    const saved = await saveFlightRecord({
+      routeInput,
+      departureTime,
+      profile,
+      legAltitudeOverrides,
+      summary: navLog
+        ? {
+            totalDistance: navLog.totalDistance,
+            totalEte: navLog.totalEte,
+            totalFuel: navLog.totalFuel,
+            legsCount: navLog.legs.length,
+          }
+        : undefined,
+      userId: user?.id,
+    });
+
+    setSavedFlightsCount(getSavedFlightsSync(user?.id).length);
+    setToastMessage(`Flight "${saved.name}" saved!`);
+    setTimeout(() => setToastMessage(null), 3000);
+  }, [routeInput, departureTime, profile, legAltitudeOverrides, navLog, user?.id]);
+
+  const handleLoadSavedFlight = useCallback((flight: SavedFlight) => {
+    setRouteInput(flight.routeInput);
+    saveRouteInput(flight.routeInput);
+    setProfile(flight.profile);
+    saveProfile(flight.profile);
+    setLegAltitudeOverrides(flight.legAltitudeOverrides || {});
+    setDepartureTime(flight.departureTime);
+    setStorageItem('windlog_departure_time', flight.departureTime);
+    windCacheRef.current.clear();
+    onChangeView('navlog');
+    setToastMessage(`Flight "${flight.name}" loaded into cockpit!`);
+    setTimeout(() => setToastMessage(null), 3000);
+  }, [onChangeView]);
+
   // ─── Per-Leg Altitude Change Handler (Instant synchronous update) ───
   const handleLegAltitudeChange = useCallback((legIndex: number, newAlt: number) => {
     setLegAltitudeOverrides(prev => ({
@@ -406,18 +470,18 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
     let isMounted = true;
     setIsWindLoading(true);
 
-    // Fetch winds for each leg based on its specific altitude & coordinates
+    // Fetch winds for each leg based on its specific altitude & coordinates and departure schedule
     const fetchPromises = navLog.legs.map(async (leg) => {
       const midLat = (leg.from.latitude + leg.to.latitude) / 2;
       const midLon = (leg.from.longitude + leg.to.longitude) / 2;
-      const cacheKey = `${midLat.toFixed(2)}_${midLon.toFixed(2)}_${leg.altitude}`;
+      const cacheKey = `${midLat.toFixed(2)}_${midLon.toFixed(2)}_${leg.altitude}_${departureTime || 'live'}`;
 
       if (windCacheRef.current.has(cacheKey)) {
         return windCacheRef.current.get(cacheKey) || null;
       }
 
       try {
-        const wind = await fetchWindsAloft(midLat, midLon, leg.altitude);
+        const wind = await fetchWindsAloft(midLat, midLon, leg.altitude, departureTime);
         windCacheRef.current.set(cacheKey, wind);
         return wind;
       } catch {
@@ -434,7 +498,10 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
           ...prev,
           wind: firstValidWind,
           lastUpdated: new Date(),
-          source: firstValidWind ? 'Auto (Aloft per-leg)' : null,
+          source: firstValidWind
+            ? (departureTime ? 'Auto (Aloft forecast)' : 'Auto (Aloft per-leg)')
+            : null,
+          forecastTime: departureTime,
         }));
       })
       .finally(() => {
@@ -444,7 +511,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
     return () => {
       isMounted = false;
     };
-  }, [windState.mode, navLog?.legs.length, profile.cruiseAltitude, legAltitudeOverrides]);
+  }, [windState.mode, navLog?.legs.length, profile.cruiseAltitude, legAltitudeOverrides, departureTime]);
 
   // ─── Custom waypoint confirmation ───
   const handleCoordConfirm = useCallback((waypoint: Waypoint) => {
@@ -496,12 +563,20 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
         airacStatus={airacReport.status}
         navLogSummary={navLog}
         runwayWindResult={runwayWindResult}
+        savedFlightsCount={savedFlightsCount}
       />
 
       {/* Main Content Area (Shifts smoothly with sidebar) */}
       <main className="cockpit-main-content">
         {activeView === 'auth' && (
           <AuthPage onNavigate={onChangeView} />
+        )}
+
+        {activeView === 'saved-flights' && (
+          <SavedFlightsView
+            onLoadFlight={handleLoadSavedFlight}
+            onNavigate={onChangeView}
+          />
         )}
 
         {activeView === 'navlog' && (
@@ -529,6 +604,9 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
             coordPrompt={coordPrompt}
             onCoordConfirm={handleCoordConfirm}
             onCoordCancel={handleCoordCancel}
+            departureTime={departureTime}
+            onDepartureTimeChange={handleDepartureTimeChange}
+            onSaveFlight={handleSaveFlight}
           />
         )}
 
