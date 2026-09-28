@@ -622,7 +622,6 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
         {activeView === 'mass-balance' && (
           <MassBalanceView
             navLogSummary={navLog}
-            onBackToNavLog={() => onChangeView('navlog')}
           />
         )}
 
@@ -630,7 +629,6 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
           <RunwayWindView
             routeWaypoints={resolvedWaypoints}
             navLogSummary={navLog}
-            onBackToNavLog={() => onChangeView('navlog')}
             onResultChange={setRunwayWindResult}
           />
         )}

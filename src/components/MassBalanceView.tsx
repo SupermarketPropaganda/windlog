@@ -13,12 +13,11 @@ import { computeWeightAndBalance } from '../engine/mass-balance';
 
 export interface MassBalanceViewProps {
   navLogSummary: NavLogSummary | null;
-  onBackToNavLog: () => void;
+  onBackToNavLog?: () => void;
 }
 
 export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
   navLogSummary,
-  onBackToNavLog,
 }) => {
   // Available presets + saved custom profiles
   const [customProfiles, setCustomProfiles] = useState<MassBalanceProfile[]>(loadSavedCustomProfiles);
@@ -204,13 +203,6 @@ export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
       {/* Top Header & Preset Bar */}
       <div className="mb-header-card">
         <div className="mb-header-left">
-          <button
-            type="button"
-            className="btn btn-cancel mb-back-btn"
-            onClick={onBackToNavLog}
-          >
-            ← Back to Flight Plan
-          </button>
           <div>
             <h1 className="mb-title">⚖️ Mass &amp; Balance (Weight &amp; Balance)</h1>
             <div className="mb-subtitle">

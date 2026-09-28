@@ -230,16 +230,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
               </div>
             </form>
           )}
-
-          <div className="auth-card-footer">
-            <button
-              type="button"
-              className="auth-link-btn"
-              onClick={() => onNavigate('navlog')}
-            >
-              ← Back to Flight Planner
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -487,16 +477,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onNavigate }) => {
             </button>
           </form>
         )}
-
-        <div className="auth-card-footer">
-          <button
-            type="button"
-            className="auth-link-btn"
-            onClick={() => onNavigate('landing')}
-          >
-            ← Back to Landing
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -7,14 +7,13 @@ import { fetchAirportSurfaceWeather } from '../engine/surface-weather';
 export interface RunwayWindViewProps {
   routeWaypoints?: Waypoint[];
   navLogSummary: NavLogSummary | null;
-  onBackToNavLog: () => void;
+  onBackToNavLog?: () => void;
   onResultChange?: (res: RunwayWindResult) => void;
 }
 
 export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
   routeWaypoints = [],
   navLogSummary,
-  onBackToNavLog,
   onResultChange,
 }) => {
   // ─── Extract Route Airports ───
@@ -235,13 +234,6 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
       {/* Top Header Card */}
       <div className="rw-header-card">
         <div className="rw-header-left">
-          <button
-            type="button"
-            className="btn btn-cancel mb-back-btn"
-            onClick={onBackToNavLog}
-          >
-            ← Back to Flight Plan
-          </button>
           <div>
             <h1 className="rw-title">🛫 Runway Wind &amp; Crosswind Calculator</h1>
             <div className="rw-subtitle">
