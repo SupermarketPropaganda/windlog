@@ -280,37 +280,28 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             )}
           </button>
 
-          <div className="gemini-nav-section-title" style={{ marginTop: '1rem' }}>
-            DOCUMENTS &amp; LOGS
+          {/* Bottom Section: Documents & Logs */}
+          <div className="gemini-sidebar-bottom-section">
+            <div className="gemini-nav-section-title">DOCUMENTS &amp; LOGS</div>
+            <button
+              type="button"
+              className="gemini-doc-link-btn"
+              onClick={handleKneeboard}
+              title="Printable SOP Form 002 Kneeboard (PDF)"
+            >
+              <span>SOP Form 002</span>
+              <span className="gemini-doc-badge">PDF</span>
+            </button>
+            <button
+              type="button"
+              className="gemini-doc-link-btn"
+              onClick={handleLegal}
+              title="Legal Notice, PIC Disclaimer &amp; Terms"
+            >
+              <span>Legal &amp; Terms</span>
+              <span className="gemini-doc-badge">v2026.1</span>
+            </button>
           </div>
-
-          {/* 4. SOP Form 002 Kneeboard (PDF) */}
-          <button
-            type="button"
-            className="gemini-nav-item"
-            onClick={handleKneeboard}
-          >
-            <span className="gemini-nav-icon">📄</span>
-            <div className="gemini-nav-body">
-              <div className="gemini-nav-label">SOP Form 002</div>
-              <div className="gemini-nav-hint">Printable Kneeboard (PDF)</div>
-            </div>
-            <span className="gemini-nav-badge badge-outline">PDF</span>
-          </button>
-
-          {/* 5. Legal & Disclaimer */}
-          <button
-            type="button"
-            className="gemini-nav-item"
-            onClick={handleLegal}
-          >
-            <span className="gemini-nav-icon">⚖️</span>
-            <div className="gemini-nav-body">
-              <div className="gemini-nav-label">Legal &amp; Terms</div>
-              <div className="gemini-nav-hint">PIC Disclaimer &amp; EULA</div>
-            </div>
-            <span className="gemini-nav-badge badge-outline">v2026.1</span>
-          </button>
         </nav>
 
         {/* Footer */}

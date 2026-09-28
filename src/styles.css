@@ -2784,6 +2784,54 @@ body, html {
 .badge-red { background-color: #b91c1c; color: #ffffff; }
 .badge-outline { border: 1px solid #334155; color: #94a3b8; }
 
+/* Sidebar Bottom Section (Compact Documents & Logs) */
+.gemini-sidebar-bottom-section {
+  margin-top: auto;
+  padding-top: 0.65rem;
+  border-top: 1px solid #141c2c;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.gemini-doc-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.35rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  font-size: 0.775rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  width: 100%;
+}
+
+.gemini-doc-link-btn:hover {
+  background-color: #111724;
+  color: #f1f5f9;
+  border-color: #1e293b;
+}
+
+.gemini-doc-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  background-color: rgba(30, 41, 59, 0.6);
+  border: 1px solid #334155;
+  color: #94a3b8;
+}
+
+.gemini-doc-link-btn:hover .gemini-doc-badge {
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
 /* Sidebar Footer */
 .gemini-sidebar-footer {
   padding: 0.75rem 1rem;
