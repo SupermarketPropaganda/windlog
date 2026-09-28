@@ -14,6 +14,7 @@ export interface AuthContextType {
   signUp: (credentials: AuthCredentials) => Promise<User>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; message: string }>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<User>;
 }
 
@@ -105,6 +106,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     []
   );
 
+  const changePassword = useCallback(
+    async (oldPassword: string, newPassword: string): Promise<void> => {
+      setError(null);
+      try {
+        await authService.changePassword(oldPassword, newPassword);
+      } catch (err: any) {
+        const msg = err?.message || 'Failed to change password.';
+        setError(msg);
+        throw err;
+      }
+    },
+    []
+  );
+
   const updateProfile = useCallback(async (updates: Partial<User>): Promise<User> => {
     setError(null);
     try {
@@ -130,6 +145,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         signUp,
         signOut,
         resetPassword,
+        changePassword,
         updateProfile,
       }}
     >

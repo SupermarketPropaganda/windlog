@@ -84,7 +84,16 @@ function loadRouteInput(): string {
   if (shared?.route) {
     return shared.route;
   }
-  return getStorageItemSync<string>('windlog_route', '');
+  const saved = getStorageItemSync<string>('windlog_route', '');
+  if (saved && saved.trim().length > 0) {
+    return saved;
+  }
+  const autoFillHome = getStorageItemSync<boolean>('windlog_auto_home_base', false);
+  const homeBase = getStorageItemSync<string>('windlog_home_base', '');
+  if (autoFillHome && homeBase && homeBase.trim()) {
+    return `${homeBase.trim().toUpperCase()} `;
+  }
+  return '';
 }
 
 function saveRouteInput(s: string) {
@@ -233,8 +242,11 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   }, [routeInput]);
 
   const handleClearRoute = useCallback(() => {
-    setRouteInput('');
-    saveRouteInput('');
+    const autoFillHome = getStorageItemSync<boolean>('windlog_auto_home_base', false);
+    const homeBase = getStorageItemSync<string>('windlog_home_base', '');
+    const defaultRoute = autoFillHome && homeBase && homeBase.trim() ? `${homeBase.trim().toUpperCase()} ` : '';
+    setRouteInput(defaultRoute);
+    saveRouteInput(defaultRoute);
     setTokens([]);
     setResolvedWaypoints([]);
     setLegAltitudeOverrides({});
@@ -577,7 +589,11 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
       {/* Main Content Area (Shifts smoothly with sidebar) */}
       <main className="cockpit-main-content">
         {activeView === 'auth' && (
-          <AuthPage onNavigate={onChangeView} />
+          <AuthPage
+            onNavigate={onChangeView}
+            profile={profile}
+            onProfileChange={handleProfileChange}
+          />
         )}
 
         {activeView === 'saved-flights' && (

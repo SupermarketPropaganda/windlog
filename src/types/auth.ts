@@ -1,3 +1,15 @@
+export interface PilotPreferences {
+  homeBaseAirport?: string;
+  autoFillHomeBase?: boolean;
+  defaultAircraftModel?: string;
+  defaultCruiseAltitude?: number;
+  defaultTas?: number;
+  defaultFuelFlow?: number;
+  defaultFuelUnit?: 'gph' | 'lph';
+  altimeterUnit?: 'hPa' | 'inHg';
+  reserveFuelMinutes?: number;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -8,6 +20,7 @@ export interface User {
   createdAt: string;
   lastLoginAt: string;
   emailVerified: boolean;
+  preferences?: PilotPreferences;
 }
 
 export interface AuthSession {
@@ -23,6 +36,7 @@ export interface AuthCredentials {
   displayName?: string;
   pilotLicense?: string;
   homeBaseAirport?: string;
+  preferences?: PilotPreferences;
 }
 
 export interface AuthState {
@@ -40,3 +54,4 @@ export interface AuthProviderAdapter {
   changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void>;
   getCurrentSession(): Promise<AuthSession>;
 }
+

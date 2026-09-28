@@ -423,6 +423,16 @@ class AuthService {
     return this.adapter.resetPassword(email);
   }
 
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    if (!this.currentSession.user) {
+      throw new Error('No pilot is currently signed in.');
+    }
+    if (this.currentSession.user.id.startsWith('guest_')) {
+      throw new Error('Guest accounts do not have a password.');
+    }
+    await this.adapter.changePassword(this.currentSession.user.id, oldPassword, newPassword);
+  }
+
   async updateProfile(updates: Partial<User>): Promise<User> {
     if (!this.currentSession.user) {
       throw new Error('No pilot is currently signed in.');
