@@ -280,19 +280,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             )}
           </button>
 
-          {/* 4. Pilot Profile & Account */}
-          <button
-            type="button"
-            className={`gemini-nav-item ${activeView === 'auth' ? 'active' : ''}`}
-            onClick={() => handleSelect('auth')}
-          >
-            <span className="gemini-nav-icon">👤</span>
-            <div className="gemini-nav-body">
-              <div className="gemini-nav-label">Pilot Profile</div>
-              <div className="gemini-nav-hint">Credentials &amp; Settings</div>
-            </div>
-          </button>
-
           <div className="gemini-nav-section-title" style={{ marginTop: '1rem' }}>
             DOCUMENTS &amp; LOGS
           </div>
