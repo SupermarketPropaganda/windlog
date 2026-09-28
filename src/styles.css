@@ -5842,6 +5842,15 @@ body, html {
   letter-spacing: 0.05em;
 }
 
+.flight-time-field.flight-date-field {
+  cursor: pointer;
+}
+
+.flight-time-field.flight-date-field label {
+  cursor: pointer;
+  user-select: none;
+}
+
 .flight-date-input,
 .flight-hour-select {
   background: #11121d;
@@ -5849,15 +5858,35 @@ body, html {
   border-radius: 0.35rem;
   color: #ffffff;
   font-size: 0.85rem;
-  padding: 0.4rem 0.5rem;
+  padding: 0.45rem 0.6rem;
   font-family: var(--font-mono);
   outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.flight-date-input:hover,
+.flight-hour-select:hover {
+  border-color: #3b82f6;
 }
 
 .flight-date-input:focus,
 .flight-hour-select:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+}
+
+.flight-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(0.85);
+  padding: 0.2rem;
+  border-radius: 4px;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.flight-date-input::-webkit-calendar-picker-indicator:hover {
+  filter: invert(1);
+  transform: scale(1.15);
 }
 
 .flight-time-popover-footer {

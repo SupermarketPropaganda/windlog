@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { WindState, Wind, WindMode } from '../types';
 import { parseManualWind } from '../data/winds-aloft';
 
@@ -32,6 +32,24 @@ export const WindPanel: React.FC<WindPanelProps> = ({
     windState.wind ? `${windState.wind.direction}/${windState.wind.speed}` : ''
   );
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const handleOpenDatePicker = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    if (dateInputRef.current) {
+      try {
+        if (typeof (dateInputRef.current as any).showPicker === 'function') {
+          (dateInputRef.current as any).showPicker();
+        } else {
+          dateInputRef.current.focus();
+        }
+      } catch {
+        dateInputRef.current.focus();
+      }
+    }
+  };
 
   // Synchronize input value with external windState when not actively editing
   useEffect(() => {
@@ -193,14 +211,26 @@ export const WindPanel: React.FC<WindPanelProps> = ({
                 </div>
 
                 <div className="flight-time-fields">
-                  <div className="flight-time-field">
+                  <div
+                    className="flight-time-field flight-date-field"
+                    onClick={handleOpenDatePicker}
+                    title="Click anywhere to choose departure date"
+                  >
                     <label>Departure Date</label>
                     <input
+                      ref={dateInputRef}
                       type="date"
                       className="flight-date-input"
                       value={selectedDate}
                       min={minDateStr}
                       max={maxDateStr}
+                      onClick={handleOpenDatePicker}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleOpenDatePicker(e);
+                        }
+                      }}
                       onChange={(e) => {
                         setSelectedDate(e.target.value);
                         handleApplySchedule(e.target.value, selectedHour);
