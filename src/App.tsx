@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   AircraftProfile,
   Wind,
@@ -18,7 +18,6 @@ import { SideMenu } from './components/SideMenu';
 import { MassBalanceView } from './components/MassBalanceView';
 import { RunwayWindView } from './components/RunwayWindView';
 import { SavedFlightsView } from './components/SavedFlightsView';
-import { LandingPage } from './components/LandingPage';
 import { AuthPage } from './components/AuthPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { WaypointDB, initWaypointDatabase } from './data/waypoint-db';
@@ -123,10 +122,13 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   });
   const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 980) {
+      return true;
+    }
     try {
       const stored = localStorage.getItem('windlog_sidebar_open');
       if (stored !== null) return stored === 'true';
-      return typeof window !== 'undefined' && window.innerWidth >= 1280;
+      return false;
     } catch {
       return false;
     }
@@ -398,6 +400,12 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
     setTimeout(() => setToastMessage(null), 3000);
   }, [routeInput, departureTime, profile, legAltitudeOverrides, navLog, user?.id]);
 
+  const isFlightSaved = useMemo(() => {
+    if (!routeInput.trim()) return false;
+    const flights = getSavedFlightsSync(user?.id);
+    return flights.some(f => f.routeInput.trim().toUpperCase() === routeInput.trim().toUpperCase());
+  }, [routeInput, user?.id, savedFlightsCount]);
+
   const handleLoadSavedFlight = useCallback((flight: SavedFlight) => {
     setRouteInput(flight.routeInput);
     saveRouteInput(flight.routeInput);
@@ -607,6 +615,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
             departureTime={departureTime}
             onDepartureTimeChange={handleDepartureTimeChange}
             onSaveFlight={handleSaveFlight}
+            isFlightSaved={isFlightSaved}
           />
         )}
 
@@ -646,27 +655,35 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   );
 }
 
-// ─── Top-Level Auth Gatekeeper ───
+// ─── Top-Level Application Orchestrator ───
 
 function CockpitApp() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [unauthView, setUnauthView] = useState<'landing' | 'auth'>(() => {
+  const { isLoading } = useAuth();
+  const [cockpitView, setCockpitView] = useState<ActiveView>(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash;
       if (hash === '#auth' || hash === '#login' || hash === '#signup') return 'auth';
+      if (hash === '#saved-flights') return 'saved-flights';
+      if (hash === '#mass-balance') return 'mass-balance';
+      if (hash === '#runway-wind') return 'runway-wind';
     }
-    return 'landing';
+    return 'navlog';
   });
-  const [cockpitView, setCockpitView] = useState<ActiveView>('navlog');
 
-  // Handle URL hash changes
+  // Handle URL hash navigation
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash;
       if (hash === '#auth' || hash === '#login' || hash === '#signup') {
-        setUnauthView('auth');
-      } else if (hash === '#landing' || hash === '#home') {
-        setUnauthView('landing');
+        setCockpitView('auth');
+      } else if (hash === '#saved-flights') {
+        setCockpitView('saved-flights');
+      } else if (hash === '#mass-balance') {
+        setCockpitView('mass-balance');
+      } else if (hash === '#runway-wind') {
+        setCockpitView('runway-wind');
+      } else if (hash === '#navlog' || hash === '' || hash === '#') {
+        setCockpitView('navlog');
       }
     };
     window.addEventListener('hashchange', handleHashChange);
@@ -684,31 +701,7 @@ function CockpitApp() {
     );
   }
 
-  // Strictly gate unauthenticated visitors: full standalone Landing or Auth pages with NO sidebar
-  if (!isAuthenticated) {
-    if (unauthView === 'auth') {
-      return (
-        <AuthPage
-          onNavigate={(view) => {
-            if (view === 'landing') {
-              setUnauthView('landing');
-            }
-          }}
-        />
-      );
-    }
-    return (
-      <LandingPage
-        onNavigate={(view) => {
-          if (view === 'auth') {
-            setUnauthView('auth');
-          }
-        }}
-      />
-    );
-  }
-
-  // Authenticated pilots get access to the Cockpit Suite
+  // Load CockpitSuite directly with pinned fixed sidebar and full flight planning suite
   return (
     <CockpitSuite
       activeView={cockpitView}

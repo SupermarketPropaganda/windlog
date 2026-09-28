@@ -132,19 +132,25 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
           />
 
           <div className="route-actions">
+            {props.onSaveFlight && (
+              <button
+                type="button"
+                className={`route-action-btn ${props.isFlightSaved ? 'saved' : ''}`}
+                title={props.routeInput.trim().length > 0 ? "Save flight to your library" : "Enter a route to save"}
+                onClick={props.routeInput.trim().length > 0 ? props.onSaveFlight : undefined}
+                disabled={props.routeInput.trim().length === 0}
+                style={{
+                  borderColor: props.routeInput.trim().length > 0 ? '#10b981' : '#334155',
+                  color: props.routeInput.trim().length > 0 ? '#34d399' : '#64748b',
+                  cursor: props.routeInput.trim().length > 0 ? 'pointer' : 'not-allowed',
+                  opacity: props.routeInput.trim().length > 0 ? 1 : 0.6,
+                }}
+              >
+                💾 {props.isFlightSaved ? 'Saved ✓' : 'Save Flight'}
+              </button>
+            )}
             {props.routeInput.trim().length > 0 && (
               <>
-                {props.onSaveFlight && (
-                  <button
-                    type="button"
-                    className={`route-action-btn ${props.isFlightSaved ? 'saved' : ''}`}
-                    title="Save flight to your library"
-                    onClick={props.onSaveFlight}
-                    style={{ borderColor: '#10b981', color: '#34d399' }}
-                  >
-                    💾 {props.isFlightSaved ? 'Saved ✓' : 'Save Flight'}
-                  </button>
-                )}
                 <button
                   type="button"
                   className="route-action-btn"

@@ -2497,7 +2497,7 @@ body, html {
 }
 
 /* ==========================================================================
-   GEMINI-STYLE PERSISTENT COLLAPSIBLE SIDEBAR
+   FIXED / PINNED DESKTOP SIDE MENU & MOBILE OVERLAY DRAWER
    ========================================================================== */
 .cockpit-app-root {
   display: flex;
@@ -2509,19 +2509,42 @@ body, html {
 .cockpit-main-content {
   flex: 1;
   min-width: 0;
-  transition: margin-left 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Desktop (min-width: 980px): Permanently pinned, zero layout shifting */
 @media (min-width: 980px) {
-  .cockpit-app-root.sidebar-open .cockpit-main-content {
-    margin-left: 260px;
+  .cockpit-main-content {
+    margin-left: 260px !important;
+    transition: none !important;
   }
-  .cockpit-app-root.sidebar-closed .cockpit-main-content {
-    margin-left: 0;
+
+  .gemini-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 260px !important;
+    transform: none !important;
+    transition: none !important;
+    z-index: 900;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.45);
+    border-right: 1px solid #1a2234;
+  }
+
+  .gemini-sidebar-toggle-btn {
+    display: none !important;
+  }
+
+  .gemini-sidebar-collapse-btn {
+    display: none !important;
+  }
+
+  .gemini-sidebar-backdrop {
+    display: none !important;
   }
 }
 
-/* Floating Sidebar Toggle Button (When Collapsed) */
+/* Floating Sidebar Toggle Button (Mobile Only) */
 .gemini-sidebar-toggle-btn {
   position: fixed;
   top: 14px;
@@ -2554,6 +2577,10 @@ body, html {
 }
 
 @media (max-width: 979px) {
+  .cockpit-main-content {
+    margin-left: 0 !important;
+  }
+
   .gemini-sidebar-backdrop {
     display: block;
     position: fixed;
@@ -2579,14 +2606,30 @@ body, html {
   flex-direction: column;
   transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
 }
 
-.gemini-sidebar.closed {
-  transform: translateX(-100%);
+@media (max-width: 979px) {
+  .gemini-sidebar.closed {
+    transform: translateX(-100%);
+  }
+
+  .gemini-sidebar.open {
+    transform: translateX(0);
+  }
 }
 
-.gemini-sidebar.open {
-  transform: translateX(0);
+@media print {
+  .no-print,
+  .gemini-sidebar,
+  .gemini-sidebar-toggle-btn,
+  .gemini-sidebar-backdrop {
+    display: none !important;
+  }
+
+  .cockpit-main-content {
+    margin-left: 0 !important;
+  }
 }
 
 /* Sidebar Header */

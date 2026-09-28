@@ -58,12 +58,12 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   const handleSignOut = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await signOut();
-    onChangeView('landing');
+    onChangeView('navlog');
   };
 
   return (
     <>
-      {/* Floating Toggle Button when Sidebar is Collapsed (Gemini Style) */}
+      {/* Floating Toggle Button when Sidebar is Collapsed (Mobile Only) */}
       {!isOpen && (
         <button
           type="button"
@@ -93,9 +93,9 @@ export const SideMenu: React.FC<SideMenuProps> = ({
         <div className="gemini-sidebar-backdrop" onClick={onToggle} />
       )}
 
-      {/* Persistent Gemini-Style Sidebar Drawer */}
+      {/* Persistent Fixed Side Menu */}
       <aside className={`gemini-sidebar no-print ${isOpen ? 'open' : 'closed'}`}>
-        {/* Header with Title and Collapse Button */}
+        {/* Header with Title and Mobile Collapse Button */}
         <div className="gemini-sidebar-header">
           <div className="gemini-sidebar-brand">
             <span className="gemini-brand-icon">✈</span>
@@ -128,7 +128,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           </button>
         </div>
 
-        {/* Authenticated Pilot Card with Sign Out */}
+        {/* Pilot Profile Card with Sign Out / Sign In */}
         <div
           className={`gemini-pilot-card ${activeView === 'auth' ? 'active' : ''}`}
           onClick={() => handleSelect('auth')}
@@ -139,20 +139,35 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           </div>
           <div className="gemini-pilot-meta">
             <div className="gemini-pilot-name">
-              {user?.displayName || user?.email}
+              {user?.displayName || user?.email || 'Guest Pilot'}
             </div>
             <div className="gemini-pilot-sub">
-              {user?.pilotLicense ? user.pilotLicense : 'PIC'}
+              {user?.pilotLicense ? user.pilotLicense : 'VFR Pilot'}
             </div>
           </div>
-          <button
-            type="button"
-            className="gemini-pilot-signout-btn"
-            onClick={handleSignOut}
-            title="Sign Out of Cockpit"
-          >
-            Sign Out
-          </button>
+          {user && !user.id.startsWith('guest_') ? (
+            <button
+              type="button"
+              className="gemini-pilot-signout-btn"
+              onClick={handleSignOut}
+              title="Sign Out of Cockpit"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="gemini-pilot-signout-btn"
+              style={{ color: '#60a5fa', borderColor: 'rgba(59, 130, 246, 0.4)' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSelect('auth');
+              }}
+              title="Sign In or Register"
+            >
+              Sign In
+            </button>
+          )}
         </div>
 
         {/* Navigation Section */}
