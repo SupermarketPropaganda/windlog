@@ -628,8 +628,8 @@ export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
                 {envelopeSvgPath && (
                   <path
                     d={envelopeSvgPath}
-                    fill="rgba(37, 99, 235, 0.12)"
-                    stroke="#2563eb"
+                    fill="rgba(20, 184, 166, 0.12)"
+                    stroke="#14b8a6"
                     strokeWidth="2"
                   />
                 )}

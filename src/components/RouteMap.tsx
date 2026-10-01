@@ -575,7 +575,7 @@ export const RouteMap: React.FC<RouteMapProps> = ({
 
         // Leg Polyline
         const polyline = L.polyline([fromCoord, toCoord], {
-          color: isActive ? '#38bdf8' : '#3b82f6',
+          color: isActive ? '#38bdf8' : '#0284c7',
           weight: isActive ? 5 : 3.5,
           opacity: isActive ? 1.0 : 0.85,
           dashArray: isActive ? undefined : '6, 6',
@@ -597,7 +597,7 @@ export const RouteMap: React.FC<RouteMapProps> = ({
     } else if (latLngs.length > 1) {
       // Basic connecting line if navlog not calculated yet
       L.polyline(latLngs, {
-        color: '#3b82f6',
+        color: '#38bdf8',
         weight: 3,
         dashArray: '5, 5',
       }).addTo(routeGroup);

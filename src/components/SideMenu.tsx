@@ -182,7 +182,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             <button
               type="button"
               className="gemini-pilot-signout-btn"
-              style={{ color: '#60a5fa', borderColor: 'rgba(59, 130, 246, 0.4)' }}
+              style={{ color: '#2dd4bf', borderColor: 'rgba(45, 212, 191, 0.4)' }}
               onClick={(e) => {
                 e.stopPropagation();
                 window.location.hash = '#login';

@@ -1,16 +1,19 @@
 :root {
-  --bg-color: #0a0a0f;
-  --panel-bg: #14141c;
-  --panel-bg-hover: #1e1e28;
-  --text-primary: #f0f0f5;
-  --text-secondary: #9ca3af;
-  --border-color: #2e303d;
-  --accent-color: #3b82f6;
-  --accent-glow: rgba(59, 130, 246, 0.35);
+  --bg-color: #0c1017;
+  --panel-bg: #151c24;
+  --panel-bg-hover: #1c2532;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --accent-color: #14b8a6;
+  --accent-color-hover: #0d9488;
+  --accent-glow: rgba(45, 212, 191, 0.25);
+  --cyan-accent: #38bdf8;
+  --gold-accent: #f59e0b;
   --warning-color: #f59e0b;
   --success-color: #22c55e;
   --danger-color: #ef4444;
-  --fuel-color: #ec4899;
+  --fuel-color: #2dd4bf;
   --font-main: system-ui, -apple-system, sans-serif;
   --font-mono: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
 }
@@ -561,7 +564,7 @@ body, html {
 }
 
 .copy-freq-btn:hover {
-  background: #2563eb;
+  background: #14b8a6;
   color: #ffffff;
 }
 
@@ -718,10 +721,10 @@ body, html {
 }
 
 .tactical-tab-btn.active {
-  background-color: rgba(37, 99, 235, 0.18);
-  border-color: rgba(56, 189, 248, 0.45);
-  color: #38bdf8;
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.2);
+  background-color: rgba(20, 184, 166, 0.15);
+  border-color: rgba(45, 212, 191, 0.45);
+  color: #2dd4bf;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.2);
 }
 
 .tactical-tab-icon {
@@ -819,12 +822,12 @@ body, html {
 .layer-btn:hover {
   background-color: #222838;
   color: #ffffff;
-  border-color: #3b82f6;
+  border-color: #2dd4bf;
 }
 
 .layer-btn.active {
-  background-color: #2563eb;
-  border-color: #38bdf8;
+  background-color: #14b8a6;
+  border-color: #2dd4bf;
   color: #ffffff;
   font-weight: 700;
 }
@@ -862,9 +865,9 @@ body, html {
 }
 
 .airspace-trigger-btn.active {
-  background-color: rgba(37, 99, 235, 0.2);
-  border-color: #3b82f6;
-  color: #60a5fa;
+  background-color: rgba(20, 184, 166, 0.15);
+  border-color: #2dd4bf;
+  color: #2dd4bf;
 }
 
 .airspace-trigger-icon {
@@ -975,7 +978,7 @@ body, html {
 }
 
 .airspace-menu-checkbox-item input[type="checkbox"] {
-  accent-color: #3b82f6;
+  accent-color: #14b8a6;
   cursor: pointer;
 }
 
@@ -1062,10 +1065,10 @@ body, html {
 }
 
 .fullscreen-floating-exit-btn:hover {
-  background: #2563eb;
+  background: #14b8a6;
   color: #ffffff;
-  border-color: #60a5fa;
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
+  border-color: #2dd4bf;
+  box-shadow: 0 0 16px rgba(45, 212, 191, 0.5);
   transform: translateY(-1px);
 }
 
@@ -1093,7 +1096,7 @@ body, html {
 }
 
 .wpt-marker-airport {
-  background-color: #2563eb;
+  background-color: #0284c7;
   color: #ffffff;
 }
 
@@ -1278,9 +1281,9 @@ body, html {
 }
 
 .vsd-toggle-pill.active {
-  background: rgba(37, 99, 235, 0.2);
-  border-color: #3b82f6;
-  color: #60a5fa;
+  background: rgba(20, 184, 166, 0.15);
+  border-color: #2dd4bf;
+  color: #2dd4bf;
 }
 
 .profile-svg-wrapper {
@@ -1594,9 +1597,9 @@ body, html {
 }
 
 .alt-chip-btn {
-  background-color: rgba(59, 130, 246, 0.18);
-  border: 1px solid var(--accent-color);
-  color: #60a5fa;
+  background-color: rgba(20, 184, 166, 0.15);
+  border: 1px solid rgba(45, 212, 191, 0.4);
+  color: #2dd4bf;
   font-family: var(--font-mono);
   font-size: 0.8rem;
   font-weight: 600;
@@ -1654,12 +1657,12 @@ body, html {
 }
 
 .val-mh {
-  color: var(--accent-color);
+  color: var(--gold-accent, #f59e0b);
   font-size: 1.35rem;
 }
 
 .val-fuel {
-  color: var(--fuel-color);
+  color: var(--gold-accent, #f59e0b);
 }
 
 .val-warning {
@@ -1743,19 +1746,19 @@ body, html {
 .preset-pill:hover {
   background-color: #222838;
   color: #f1f5f9;
-  border-color: #3b82f6;
+  border-color: #2dd4bf;
 }
 
 .preset-pill.current {
-  background-color: #2563eb;
-  border-color: #38bdf8;
+  background-color: #14b8a6;
+  border-color: #2dd4bf;
   color: #ffffff;
   font-weight: 700;
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.4);
 }
 
 .preset-pill.suggested:not(.current) {
-  border-color: #60a5fa;
+  border-color: #2dd4bf;
   color: #e2e8f0;
 }
 
@@ -1790,7 +1793,7 @@ body, html {
 .alt-step-btn:hover {
   background-color: #222838;
   color: #ffffff;
-  border-color: #3b82f6;
+  border-color: #2dd4bf;
 }
 
 .alt-custom-form {
@@ -1812,11 +1815,11 @@ body, html {
 }
 
 .alt-custom-input:focus {
-  border-color: #3b82f6;
+  border-color: #2dd4bf;
 }
 
 .alt-custom-set-btn {
-  background-color: #2563eb;
+  background-color: #14b8a6;
   color: #ffffff;
   border: none;
   padding: 0.35rem 0.85rem;
@@ -1828,7 +1831,7 @@ body, html {
 }
 
 .alt-custom-set-btn:hover {
-  background-color: #1d4ed8;
+  background-color: #0d9488;
 }
 
 /* Math Details Breakdown */
@@ -2128,7 +2131,7 @@ body, html {
 }
 
 .disclaimer-accept-btn {
-  background-color: #2563eb;
+  background-color: #14b8a6;
   color: #ffffff;
   font-size: 0.95rem;
   font-weight: 700;
@@ -2137,11 +2140,11 @@ body, html {
   border: none;
   cursor: pointer;
   transition: all 0.15s;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4);
 }
 
 .disclaimer-accept-btn:hover {
-  background-color: #1d4ed8;
+  background-color: #0d9488;
   transform: translateY(-1px);
 }
 
@@ -2269,7 +2272,7 @@ body, html {
 }
 
 .sop-subhead-row th {
-  background-color: #3b82f6;
+  background-color: #0f766e;
   color: #ffffff;
   font-weight: 700;
   font-size: 8.5px;
@@ -2431,7 +2434,7 @@ body, html {
 }
 
 .fuel-mgmt-table th {
-  background-color: #3b82f6;
+  background-color: #0f766e;
   color: #ffffff;
   font-weight: 700;
   font-size: 8px;
@@ -2528,7 +2531,7 @@ body, html {
     transition: none !important;
     z-index: 900;
     box-shadow: 2px 0 16px rgba(0, 0, 0, 0.45);
-    border-right: 1px solid #1a2234;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .gemini-sidebar-toggle-btn {
@@ -2566,7 +2569,7 @@ body, html {
 
 .gemini-sidebar-toggle-btn:hover {
   background-color: #1e293b;
-  border-color: #3b82f6;
+  border-color: #2dd4bf;
   color: #ffffff;
   transform: scale(1.05);
 }
@@ -2599,8 +2602,8 @@ body, html {
   left: 0;
   bottom: 0;
   width: 260px;
-  background-color: #0a0d14;
-  border-right: 1px solid #1a2234;
+  background-color: #0f141c;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 999;
   display: flex;
   flex-direction: column;
@@ -2638,7 +2641,7 @@ body, html {
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem 1rem;
-  border-bottom: 1px solid #1a2234;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   height: 58px;
 }
 
@@ -2650,8 +2653,8 @@ body, html {
 
 .gemini-brand-icon {
   font-size: 1.15rem;
-  background-color: #1e3a8a;
-  color: #38bdf8;
+  background-color: rgba(20, 184, 166, 0.18);
+  color: #2dd4bf;
   width: 28px;
   height: 28px;
   display: flex;
@@ -2739,9 +2742,9 @@ body, html {
 }
 
 .gemini-nav-item.active {
-  background-color: #151e30;
-  border-color: rgba(59, 130, 246, 0.4);
-  color: #60a5fa;
+  background-color: rgba(20, 184, 166, 0.12);
+  border-color: rgba(45, 212, 191, 0.35);
+  color: #2dd4bf;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -2768,7 +2771,7 @@ body, html {
 }
 
 .gemini-nav-item.active .gemini-nav-hint {
-  color: #93c5fd;
+  color: #5eead4;
 }
 
 .gemini-nav-badge {
@@ -2778,7 +2781,7 @@ body, html {
   border-radius: 4px;
 }
 
-.badge-blue { background-color: #1d4ed8; color: #ffffff; }
+.badge-blue { background-color: #0284c7; color: #ffffff; }
 .badge-green { background-color: #15803d; color: #ffffff; }
 .badge-amber { background-color: #b45309; color: #ffffff; }
 .badge-red { background-color: #b91c1c; color: #ffffff; }
@@ -2835,11 +2838,11 @@ body, html {
 /* Sidebar Footer */
 .gemini-sidebar-footer {
   padding: 0.75rem 1rem;
-  border-top: 1px solid #1a2234;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  background-color: #070a0f;
+  background-color: #0c1017;
 }
 
 .gemini-footer-status {
@@ -3141,7 +3144,7 @@ body, html {
 
 .station-slider {
   flex: 1;
-  accent-color: #2563eb;
+  accent-color: #14b8a6;
 }
 
 .station-num-input-wrap {
@@ -3266,8 +3269,8 @@ body, html {
 }
 
 .mb-tile.highlight-tile {
-  border-color: #2563eb;
-  background-color: #111827;
+  border-color: #14b8a6;
+  background-color: rgba(20, 184, 166, 0.08);
 }
 
 .mb-tile-label {
@@ -3330,7 +3333,7 @@ body, html {
   height: 10px;
   border-radius: 2px;
 }
-.box-normal { background-color: rgba(37, 99, 235, 0.4); border: 1px solid #2563eb; }
+.box-normal { background-color: rgba(20, 184, 166, 0.3); border: 1px solid #14b8a6; }
 .box-utility { background-color: rgba(245, 158, 11, 0.4); border: 1px dashed #f59e0b; }
 
 .legend-dot {
@@ -3460,9 +3463,9 @@ body, html {
 }
 
 .rw-airport-pill.active {
-  background-color: #1e2e4a;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
+  background-color: rgba(20, 184, 166, 0.15);
+  border-color: #2dd4bf;
+  box-shadow: 0 0 0 1px #2dd4bf;
 }
 
 .pill-role {
@@ -3635,9 +3638,9 @@ body, html {
 }
 
 .rw-runway-choice-card.selected {
-  background-color: #18263f;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
+  background-color: rgba(20, 184, 166, 0.15);
+  border-color: #2dd4bf;
+  box-shadow: 0 0 0 1px #2dd4bf;
 }
 
 .rw-runway-choice-card.is-best {
@@ -3801,8 +3804,8 @@ body, html {
 }
 
 .rw-pill-btn.active {
-  background-color: #2563eb;
-  border-color: #3b82f6;
+  background-color: #14b8a6;
+  border-color: #2dd4bf;
   color: #ffffff;
 }
 
@@ -4054,9 +4057,9 @@ body, html {
 }
 
 .legal-tab-btn.active {
-  background-color: #1e3a8a;
-  border-color: #3b82f6;
-  color: #ffffff;
+  background-color: rgba(20, 184, 166, 0.15);
+  border-color: #2dd4bf;
+  color: #2dd4bf;
 }
 
 .legal-print-btn {
@@ -4171,7 +4174,7 @@ body, html {
   margin-top: 0.2rem;
   width: 17px;
   height: 17px;
-  accent-color: #2563eb;
+  accent-color: #14b8a6;
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -4315,7 +4318,7 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid #14b8a6;
   transition: background 0.15s ease;
 }
 
@@ -4797,7 +4800,7 @@ body, html {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #38bdf8, #2563eb);
+  background: linear-gradient(90deg, #14b8a6, #2dd4bf);
   transition: width 0.15s ease;
 }
 
@@ -4877,13 +4880,13 @@ body, html {
 }
 
 .download-pack-btn.primary {
-  background-color: #2563eb;
-  border-color: #3b82f6;
+  background-color: #14b8a6;
+  border-color: #2dd4bf;
   color: #ffffff;
 }
 
 .download-pack-btn.primary:hover:not(:disabled) {
-  background-color: #1d4ed8;
+  background-color: #0d9488;
 }
 
 .download-pack-btn:disabled {
@@ -4913,8 +4916,8 @@ body, html {
 }
 
 .modal-done-btn {
-  background-color: #2563eb;
-  border: 1px solid #3b82f6;
+  background-color: #14b8a6;
+  border: 1px solid #2dd4bf;
   color: #ffffff;
   padding: 0.45rem 1.25rem;
   border-radius: 4px;
@@ -4924,7 +4927,7 @@ body, html {
 }
 
 .modal-done-btn:hover {
-  background-color: #1d4ed8;
+  background-color: #0d9488;
 }
 
 /* ==========================================================================
@@ -4950,7 +4953,7 @@ body, html {
 }
 
 .profile-airspace-toggle input[type="checkbox"] {
-  accent-color: #3b82f6;
+  accent-color: #14b8a6;
   cursor: pointer;
 }
 
@@ -5192,7 +5195,7 @@ body, html {
 }
 
 .landing-primary-btn {
-  background: #2563eb;
+  background: #14b8a6;
   color: #ffffff;
   border: none;
   padding: 0.9rem 2.2rem;
@@ -5201,7 +5204,7 @@ body, html {
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.35);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -5209,9 +5212,9 @@ body, html {
 }
 
 .landing-primary-btn:hover {
-  background: #1d4ed8;
+  background: #0d9488;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 6px 20px rgba(20, 184, 166, 0.45);
 }
 
 .landing-secondary-btn {
@@ -5376,8 +5379,8 @@ body, html {
 
 .auth-quick-access-btn {
   width: 100%;
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
-  border: 1px solid #38bdf8;
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
+  border: 1px solid #2dd4bf;
   color: #ffffff;
   font-weight: 700;
   font-size: 0.8rem;
@@ -5385,12 +5388,12 @@ body, html {
   border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.35);
 }
 
 .auth-quick-access-btn:hover {
-  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.5);
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.5);
   transform: translateY(-1px);
 }
 
@@ -5438,8 +5441,8 @@ body, html {
 }
 
 .auth-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
+  border-color: #2dd4bf;
+  box-shadow: 0 0 0 1px #2dd4bf;
 }
 
 .auth-password-input-group {
@@ -5471,7 +5474,7 @@ body, html {
 }
 
 .auth-primary-btn {
-  background: #2563eb;
+  background: #14b8a6;
   color: #ffffff;
   border: none;
   padding: 0.75rem;
@@ -5485,7 +5488,7 @@ body, html {
 }
 
 .auth-primary-btn:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: #0d9488;
 }
 
 .auth-primary-btn:disabled {
@@ -5692,16 +5695,16 @@ body, html {
 }
 
 .profile-save-btn {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  background: #14b8a6;
+  border: 1px solid #2dd4bf;
   color: #ffffff;
-  border: 1px solid #38bdf8;
   font-weight: 700;
   font-size: 0.85rem;
   padding: 0.6rem 1.25rem;
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.35);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -5709,8 +5712,8 @@ body, html {
 }
 
 .profile-save-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
-  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.5);
+  background: #0d9488;
+  box-shadow: 0 6px 18px rgba(20, 184, 166, 0.5);
   transform: translateY(-1px);
 }
 
@@ -5936,7 +5939,7 @@ body, html {
 }
 
 .profile-segment-btn.active {
-  background: #2563eb;
+  background: #14b8a6;
   color: #ffffff;
   font-weight: 700;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
@@ -5972,7 +5975,7 @@ body, html {
   margin-top: 0.2rem;
   width: 1.1rem;
   height: 1.1rem;
-  accent-color: #2563eb;
+  accent-color: #14b8a6;
   cursor: pointer;
 }
 
@@ -6142,7 +6145,7 @@ body, html {
 }
 
 .profile-guest-tab.active {
-  background: #2563eb;
+  background: #14b8a6;
   color: #ffffff;
   font-weight: 700;
 }
@@ -6197,9 +6200,9 @@ body, html {
 }
 
 .auth-mode-tab.active {
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  background: #14b8a6;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.35);
   font-weight: 700;
 }
 
@@ -6239,13 +6242,13 @@ body, html {
   height: 52px;
   margin: 0 auto 0.75rem auto;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: 0 4px 14px rgba(20, 184, 166, 0.4);
+  border: 1px solid rgba(45, 212, 191, 0.3);
 }
 
 .auth-airplane-logo.register {
@@ -6466,8 +6469,8 @@ body, html {
   gap: 0.75rem;
   padding: 0.75rem 0.875rem;
   margin: 0.5rem 0.75rem 0.75rem;
-  background: #1e1e28;
-  border: 1px solid #2e303d;
+  background: #151c24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -6476,8 +6479,8 @@ body, html {
 
 .gemini-pilot-card:hover,
 .gemini-pilot-card.active {
-  background: #252636;
-  border-color: #3b82f6;
+  background: #1b2430;
+  border-color: rgba(45, 212, 191, 0.35);
 }
 
 .gemini-pilot-avatar {
@@ -6571,14 +6574,14 @@ body, html {
 }
 
 .flight-time-trigger-btn:hover {
-  border-color: #3b82f6;
+  border-color: #2dd4bf;
   background: #1a1c2b;
 }
 
 .flight-time-trigger-btn.is-scheduled {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.12);
-  color: #93c5fd;
+  border-color: rgba(45, 212, 191, 0.4);
+  background: rgba(20, 184, 166, 0.12);
+  color: #2dd4bf;
 }
 
 .dropdown-caret {
@@ -6596,7 +6599,7 @@ body, html {
   border-radius: 0.5rem;
   padding: 1rem;
   width: 270px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(59, 130, 246, 0.15);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(45, 212, 191, 0.15);
 }
 
 .flight-time-popover-header {
@@ -6672,13 +6675,13 @@ body, html {
 
 .flight-date-input:hover,
 .flight-hour-select:hover {
-  border-color: #3b82f6;
+  border-color: #2dd4bf;
 }
 
 .flight-date-input:focus,
 .flight-hour-select:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+  border-color: #2dd4bf;
+  box-shadow: 0 0 6px rgba(45, 212, 191, 0.4);
 }
 
 .flight-date-input::-webkit-calendar-picker-indicator {
@@ -6719,7 +6722,7 @@ body, html {
 }
 
 .time-apply-btn {
-  background: #2563eb;
+  background: #14b8a6;
   color: #ffffff;
   border: none;
   font-size: 0.75rem;
@@ -6731,7 +6734,7 @@ body, html {
 }
 
 .time-apply-btn:hover {
-  background: #1d4ed8;
+  background: #0d9488;
 }
 
 /* ─── Saved Flights View ─── */
@@ -6758,8 +6761,8 @@ body, html {
 
 .saved-flights-icon-badge {
   font-size: 1.75rem;
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: rgba(20, 184, 166, 0.15);
+  border: 1px solid rgba(45, 212, 191, 0.3);
   width: 48px;
   height: 48px;
   border-radius: 0.6rem;
@@ -6786,7 +6789,7 @@ body, html {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: #2563eb;
+  background: #14b8a6;
   color: #ffffff;
   border: none;
   border-radius: 0.45rem;
@@ -6798,8 +6801,8 @@ body, html {
 }
 
 .saved-flights-new-btn:hover {
-  background: #1d4ed8;
-  box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+  background: #0d9488;
+  box-shadow: 0 0 10px rgba(45, 212, 191, 0.4);
 }
 
 .saved-flights-controls-bar {
@@ -6882,7 +6885,7 @@ body, html {
 }
 
 .saved-flight-card:hover {
-  border-color: #3b82f6;
+  border-color: #14b8a6;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
@@ -6934,7 +6937,7 @@ body, html {
 
 .saved-flight-edit-input {
   background: #11121d;
-  border: 1px solid #3b82f6;
+  border: 1px solid #14b8a6;
   color: #ffffff;
   border-radius: 0.35rem;
   padding: 0.25rem 0.5rem;
@@ -6985,8 +6988,8 @@ body, html {
   font-size: 0.625rem;
   font-weight: 800;
   letter-spacing: 0.05em;
-  background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+  background: rgba(20, 184, 166, 0.2);
+  color: #2dd4bf;
   padding: 0.15rem 0.35rem;
   border-radius: 3px;
 }
@@ -7047,9 +7050,9 @@ body, html {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  background: #1e3a8a;
-  color: #bfdbfe;
-  border: 1px solid #2563eb;
+  background: rgba(20, 184, 166, 0.15);
+  color: #5eead4;
+  border: 1px solid rgba(45, 212, 191, 0.4);
   border-radius: 0.35rem;
   padding: 0.45rem 0.75rem;
   font-size: 0.8rem;
@@ -7059,9 +7062,9 @@ body, html {
 }
 
 .saved-flight-load-btn:hover {
-  background: #2563eb;
+  background: #14b8a6;
   color: #ffffff;
-  box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 0 10px rgba(45, 212, 191, 0.4);
 }
 
 .saved-flight-share-btn,
@@ -7081,7 +7084,7 @@ body, html {
 
 .saved-flight-share-btn:hover {
   color: #ffffff;
-  border-color: #3b82f6;
+  border-color: #2dd4bf;
 }
 
 .saved-flight-delete-btn {
@@ -7123,7 +7126,7 @@ body, html {
 }
 
 .empty-action-btn {
-  background: #2563eb;
+  background: #14b8a6;
   color: #ffffff;
   border: none;
   border-radius: 0.45rem;
@@ -7135,7 +7138,7 @@ body, html {
 }
 
 .empty-action-btn:hover {
-  background: #1d4ed8;
+  background: #0d9488;
 }
 
 /* ─── Auth Guest Access & Landing Actions ─── */
@@ -7177,7 +7180,7 @@ body, html {
 .auth-guest-btn:hover {
   background: #1a1c2b;
   color: #ffffff;
-  border-color: #3b82f6;
+  border-color: #2dd4bf;
 }
 
 .landing-unauth-actions {
@@ -8122,15 +8125,15 @@ body, html {
 }
 
 .route-chip.airport {
-  background: rgba(20, 184, 166, 0.15);
-  border: 1px solid rgba(20, 184, 166, 0.4);
-  color: #2dd4bf;
+  background: #18262f;
+  border: 1px solid #2a4f54;
+  color: #99f6e4;
 }
 
 .route-chip.waypoint {
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  color: #38bdf8;
+  background: #18262f;
+  border: 1px solid #2a4f54;
+  color: #99f6e4;
 }
 
 .route-chip-remove-btn {
@@ -8169,11 +8172,11 @@ body, html {
 }
 
 .route-btn-save {
-  background: #14b8a6;
-  border: 1px solid #2dd4bf;
-  color: #ffffff;
+  background: #2dd4bf;
+  border: 1px solid #5eead4;
+  color: #042f2e;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 800;
   padding: 0.45rem 0.95rem;
   border-radius: 0.45rem;
   cursor: pointer;
@@ -8184,19 +8187,20 @@ body, html {
 }
 
 .route-btn-save:hover:not(:disabled) {
-  background: #0d9488;
-  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.35);
+  background: #5eead4;
+  box-shadow: 0 2px 10px rgba(45, 212, 191, 0.4);
 }
 
 .route-btn-save.saved {
-  background: #059669;
-  border-color: #10b981;
+  background: #10b981;
+  border-color: #34d399;
+  color: #ffffff;
 }
 
 .route-btn-share {
-  background: #121620;
-  border: 1px solid rgba(45, 212, 191, 0.35);
-  color: #2dd4bf;
+  background: #182029;
+  border: 1px solid #283544;
+  color: #e2e8f0;
   font-size: 0.82rem;
   font-weight: 700;
   padding: 0.45rem 0.85rem;
@@ -8206,16 +8210,17 @@ body, html {
 }
 
 .route-btn-share:hover:not(:disabled) {
-  background: rgba(45, 212, 191, 0.15);
+  background: #222d3a;
+  border-color: #3b4d63;
   color: #ffffff;
 }
 
 .route-btn-kneeboard {
-  background: linear-gradient(135deg, #d97706, #b45309);
-  border: 1px solid rgba(245, 158, 11, 0.6);
-  color: #ffffff;
+  background: #eab308;
+  border: 1px solid #facc15;
+  color: #1c1917;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 800;
   padding: 0.45rem 0.95rem;
   border-radius: 0.45rem;
   cursor: pointer;
@@ -8223,17 +8228,17 @@ body, html {
   align-items: center;
   gap: 0.35rem;
   transition: all 0.15s ease;
-  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+  box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);
 }
 
 .route-btn-kneeboard:hover {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+  background: #facc15;
+  box-shadow: 0 4px 14px rgba(234, 179, 8, 0.45);
 }
 
 .route-btn-secondary {
-  background: #121620;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #182029;
+  border: 1px solid #283544;
   color: #94a3b8;
   font-size: 0.82rem;
   font-weight: 600;
@@ -8244,9 +8249,9 @@ body, html {
 }
 
 .route-btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
+  background: #222d3a;
+  border-color: #3b4d63;
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .route-btn-save:disabled,

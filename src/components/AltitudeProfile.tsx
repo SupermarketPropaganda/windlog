@@ -391,8 +391,8 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                   const rectHeight = Math.max(6, yBottom - yTop);
                   const isSelected = selectedSlice?.airspace.id === slice.airspace.id;
 
-                  let fillColor = 'rgba(59, 130, 246, 0.08)';
-                  let strokeColor = '#3b82f6';
+                  let fillColor = 'rgba(56, 189, 248, 0.08)';
+                  let strokeColor = '#38bdf8';
                   let strokeDash: string | undefined = '4,3';
 
                   if (slice.airspace.type === 'TMA') {
