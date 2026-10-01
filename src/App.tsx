@@ -20,6 +20,9 @@ import { RunwayWindView } from './components/RunwayWindView';
 import { SavedFlightsView } from './components/SavedFlightsView';
 import { AuthPage } from './components/AuthPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { AdProvider, useAdBreak } from './context/AdContext';
+import { AdInterstitialModal } from './components/ads/AdInterstitialModal';
+import { WindLogProModal } from './components/ads/WindLogProModal';
 import { WaypointDB, initWaypointDatabase } from './data/waypoint-db';
 import { searchOsmReportingPoint } from './data/osm-vrp';
 import { fetchWindsAloft, parseManualWind } from './data/winds-aloft';
@@ -148,6 +151,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   const [airacReport] = useState(() => checkDatabaseAiracStatus(CURRENT_DATABASE_METADATA.airacCycle));
 
   const { user } = useAuth();
+  const { triggerAdBreak } = useAdBreak();
   const [departureTime, setDepartureTime] = useState<string | null>(() =>
     getStorageItemSync<string | null>('windlog_departure_time', null)
   );
@@ -391,26 +395,33 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
       return;
     }
 
-    const saved = await saveFlightRecord({
-      routeInput,
-      departureTime,
-      profile,
-      legAltitudeOverrides,
-      summary: navLog
-        ? {
-            totalDistance: navLog.totalDistance,
-            totalEte: navLog.totalEte,
-            totalFuel: navLog.totalFuel,
-            legsCount: navLog.legs.length,
-          }
-        : undefined,
-      userId: user?.id,
-    });
+    triggerAdBreak({
+      placement: 'save_flight',
+      title: 'Archiving Flight to Hangar',
+      subtitle: 'Saving waypoints, leg fuel burns, and wind calculations',
+      onComplete: async () => {
+        const saved = await saveFlightRecord({
+          routeInput,
+          departureTime,
+          profile,
+          legAltitudeOverrides,
+          summary: navLog
+            ? {
+                totalDistance: navLog.totalDistance,
+                totalEte: navLog.totalEte,
+                totalFuel: navLog.totalFuel,
+                legsCount: navLog.legs.length,
+              }
+            : undefined,
+          userId: user?.id,
+        });
 
-    setSavedFlightsCount(getSavedFlightsSync(user?.id).length);
-    setToastMessage(`Flight "${saved.name}" saved!`);
-    setTimeout(() => setToastMessage(null), 3000);
-  }, [routeInput, departureTime, profile, legAltitudeOverrides, navLog, user?.id]);
+        setSavedFlightsCount(getSavedFlightsSync(user?.id).length);
+        setToastMessage(`Flight "${saved.name}" saved!`);
+        setTimeout(() => setToastMessage(null), 3000);
+      },
+    });
+  }, [routeInput, departureTime, profile, legAltitudeOverrides, navLog, user?.id, triggerAdBreak]);
 
   const isFlightSaved = useMemo(() => {
     if (!routeInput.trim()) return false;
@@ -665,6 +676,10 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
           isReadOnly={isLegalModalOpen && !showDisclaimer}
         />
       )}
+
+      {/* Duolingo-style Pre-Flight Clearance & Super Pro Modals */}
+      <AdInterstitialModal />
+      <WindLogProModal />
     </div>
   );
 }
@@ -727,7 +742,9 @@ function CockpitApp() {
 export default function App() {
   return (
     <AuthProvider>
-      <CockpitApp />
+      <AdProvider>
+        <CockpitApp />
+      </AdProvider>
     </AuthProvider>
   );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActiveView, NavLogSummary, MassBalanceResult, RunwayWindResult } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useAdBreak } from '../context/AdContext';
 
 export interface SideMenuProps {
   activeView: ActiveView;
@@ -32,6 +33,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   savedFlightsCount,
 }) => {
   const { user, signOut } = useAuth();
+  const { isPro, openProModal } = useAdBreak();
 
   const handleSelect = (view: ActiveView) => {
     onChangeView(view);
@@ -147,6 +149,21 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           <div className="gemini-pilot-meta">
             <div className="gemini-pilot-name">
               {user?.displayName || user?.email || 'Guest Pilot'}
+              {isPro && (
+                <span
+                  style={{
+                    marginLeft: '0.4rem',
+                    fontSize: '0.62rem',
+                    padding: '0.1rem 0.35rem',
+                    borderRadius: '4px',
+                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                    color: '#f59e0b',
+                    fontWeight: 800,
+                  }}
+                >
+                  PRO
+                </span>
+              )}
             </div>
             <div className="gemini-pilot-sub">
               {user?.pilotLicense ? user.pilotLicense : 'Click to Sign In / Settings'}
@@ -291,6 +308,21 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           {/* Bottom Section: Documents & Logs */}
           <div className="gemini-sidebar-bottom-section">
             <div className="gemini-nav-section-title">DOCUMENTS &amp; LOGS</div>
+            <button
+              type="button"
+              className="gemini-doc-link-btn"
+              onClick={openProModal}
+              title="WindLog Flight Deck Pro"
+              style={{ color: '#f59e0b' }}
+            >
+              <span>⭐ Flight Deck Pro</span>
+              <span
+                className="gemini-doc-badge"
+                style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }}
+              >
+                {isPro ? 'ACTIVE' : 'UPGRADE'}
+              </span>
+            </button>
             <button
               type="button"
               className="gemini-doc-link-btn"

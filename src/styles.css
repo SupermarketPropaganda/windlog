@@ -7187,6 +7187,655 @@ body, html {
   justify-content: center;
 }
 
+/* ==========================================================================
+   DUOLINGO-STYLE PRE-FLIGHT CLEARANCE AD INTERSTITIAL & PRO UPSELL
+   ========================================================================== */
+
+.ad-interstitial-overlay,
+.pro-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(5, 7, 15, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: adModalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes adModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ad-interstitial-card {
+  background: radial-gradient(circle at 50% 0%, #151928 0%, #0d101d 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 35px rgba(56, 189, 248, 0.12);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  color: #f1f5f9;
+  position: relative;
+  overflow: hidden;
+}
+
+.ad-card-top-rail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.75rem;
+}
+
+.ad-dispatch-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.ad-pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #38bdf8;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: adDotBlink 1.5s infinite;
+}
+
+@keyframes adDotBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+
+.ad-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.25rem 0.65rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ad-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.ad-action-header {
+  text-align: center;
+}
+
+.ad-action-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 0.35rem 0;
+  line-height: 1.3;
+}
+
+.ad-action-subtitle {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* ─── Circular Timer ─── */
+.ad-timer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0;
+}
+
+.ad-timer-ring-wrapper {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ad-timer-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.ad-timer-bg-circle {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+}
+
+.ad-timer-progress-circle {
+  fill: none;
+  stroke: #38bdf8;
+  transition: stroke-dashoffset 0.85s linear;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+}
+
+.ad-timer-number-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ad-timer-number {
+  font-size: 1.85rem;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #f8fafc;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+}
+
+.ad-timer-check {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #10b981;
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+}
+
+.ad-timer-status-text {
+  font-size: 0.825rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.ad-status-ready {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.ad-status-waiting {
+  color: #94a3b8;
+}
+
+/* ─── Sponsor Card ─── */
+.ad-sponsor-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.85rem;
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: all 0.25s ease;
+}
+
+.ad-sponsor-card.pro-highlight {
+  background: radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.ad-sponsor-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ad-sponsor-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.ad-sponsor-brand-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.ad-sponsor-body {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.ad-sponsor-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ad-sponsor-icon {
+  font-size: 1.5rem;
+}
+
+.ad-sponsor-content {
+  flex: 1;
+}
+
+.ad-sponsor-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.3rem 0;
+}
+
+.ad-sponsor-tagline {
+  font-size: 0.825rem;
+  color: #cbd5e1;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+}
+
+.ad-sponsor-perks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ad-perk-item {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ad-perk-check {
+  color: #10b981;
+  font-weight: bold;
+}
+
+.ad-sponsor-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ad-sponsor-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.825rem;
+  font-weight: 700;
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.ad-sponsor-cta-btn.partner {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.ad-sponsor-cta-btn.partner:hover {
+  background: rgba(56, 189, 248, 0.22);
+  color: #ffffff;
+}
+
+.ad-sponsor-cta-btn.pro {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0f172a;
+  border: none;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+}
+
+.ad-sponsor-cta-btn.pro:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
+}
+
+/* ─── Proceed Action Button ─── */
+.ad-primary-action-wrap {
+  margin-top: 0.25rem;
+}
+
+.ad-proceed-btn {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.ad-proceed-btn.disabled {
+  background: #1e293b;
+  color: #64748b;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.ad-proceed-btn.ready {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+  cursor: pointer;
+}
+
+.ad-proceed-btn.ready:hover {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55);
+}
+
+.ad-proceed-btn.pulse {
+  animation: adBtnPulse 1.8s infinite;
+}
+
+@keyframes adBtnPulse {
+  0%, 100% {
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(16, 185, 129, 0.7);
+  }
+}
+
+/* ─── Super Duolingo Pro Banner ─── */
+.ad-pro-footer-banner {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px dashed rgba(245, 158, 11, 0.35);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+}
+
+.ad-pro-crown {
+  font-size: 1.1rem;
+}
+
+.ad-pro-text {
+  flex: 1;
+}
+
+.ad-pro-link-btn {
+  background: none;
+  border: none;
+  color: #f59e0b;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.78rem;
+}
+
+.ad-pro-link-btn:hover {
+  color: #fbbf24;
+}
+
+/* ==========================================================================
+   WINDLOG PRO UPSELL MODAL ("SUPER DUOLINGO" SUITE)
+   ========================================================================== */
+
+.pro-modal-card {
+  background: radial-gradient(circle at 50% 0%, #171d31 0%, #0a0d18 100%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 1.15rem;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(245, 158, 11, 0.15);
+  padding: 1.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  color: #f1f5f9;
+  position: relative;
+  overflow: hidden;
+}
+
+.pro-modal-top-rail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pro-pill-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.pro-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-size: 0.875rem;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pro-close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.pro-hero-section {
+  text-align: center;
+}
+
+.pro-crown-avatar {
+  font-size: 2.75rem;
+  margin-bottom: 0.35rem;
+  filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.5));
+}
+
+.pro-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 0.4rem 0;
+  letter-spacing: -0.01em;
+}
+
+.pro-subtitle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin: 0 auto;
+  max-width: 480px;
+  line-height: 1.45;
+}
+
+.pro-status-banner {
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.825rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.pro-status-banner.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.pro-status-banner.inactive {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.pro-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.pro-benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .pro-benefits-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pro-benefit-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.pro-benefit-icon {
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.pro-benefit-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 0.2rem 0;
+}
+
+.pro-benefit-desc {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.pro-action-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.5rem;
+}
+
+.pro-primary-cta-btn {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 0.65rem;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: none;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0f172a;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.45);
+}
+
+.pro-primary-cta-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(245, 158, 11, 0.6);
+}
+
+.pro-primary-cta-btn.pro-active {
+  background: #1e293b;
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: none;
+}
+
+.pro-disclaimer-text {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-align: center;
+  margin: 0;
+}
+
+/* ─── Hangar Pro Badge Button in Saved Flights View ─── */
+.hangar-pro-badge-btn {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #f59e0b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.hangar-pro-badge-btn:hover {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: #f59e0b;
+  color: #ffffff;
+}
+
+.hangar-pro-badge-btn.pro {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+
+
 
 
 

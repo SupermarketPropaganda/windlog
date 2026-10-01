@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { NavLogSummary, AircraftProfile } from '../types';
+import { useAdBreak } from '../context/AdContext';
 
 export interface KneeboardModalProps {
   navLog: NavLogSummary | null;
@@ -43,8 +44,17 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
   const totalFuelRequired =
     tripFuel + alternateFuel + taxiFuel + contingencyFuel + holdingFuel;
 
+  const { triggerAdBreak } = useAdBreak();
+
   const handlePrint = () => {
-    window.print();
+    triggerAdBreak({
+      placement: 'pdf_export',
+      title: 'Compiling Official VFR NavLog Document',
+      subtitle: 'Formatting A4 landscape SOP Form 002 for flight dispatch',
+      onComplete: () => {
+        window.print();
+      },
+    });
   };
 
   const legs = navLog?.legs || [];
