@@ -131,7 +131,14 @@ export const SideMenu: React.FC<SideMenuProps> = ({
         {/* Pilot Profile Card with Sign Out / Sign In */}
         <div
           className={`gemini-pilot-card ${activeView === 'auth' ? 'active' : ''}`}
-          onClick={() => handleSelect('auth')}
+          onClick={() => {
+            if (!user || user.id.startsWith('guest_')) {
+              window.location.hash = '#login';
+            } else {
+              window.location.hash = '#profile';
+            }
+            handleSelect('auth');
+          }}
           title="View / Edit Pilot Profile"
         >
           <div className="gemini-pilot-avatar">
@@ -142,7 +149,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
               {user?.displayName || user?.email || 'Guest Pilot'}
             </div>
             <div className="gemini-pilot-sub">
-              {user?.pilotLicense ? user.pilotLicense : 'VFR Pilot'}
+              {user?.pilotLicense ? user.pilotLicense : 'Click to Sign In / Settings'}
             </div>
           </div>
           {user && !user.id.startsWith('guest_') ? (
@@ -161,6 +168,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
               style={{ color: '#60a5fa', borderColor: 'rgba(59, 130, 246, 0.4)' }}
               onClick={(e) => {
                 e.stopPropagation();
+                window.location.hash = '#login';
                 handleSelect('auth');
               }}
               title="Sign In or Register"

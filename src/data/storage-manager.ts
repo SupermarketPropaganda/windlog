@@ -104,6 +104,8 @@ export async function initStorage(): Promise<void> {
         'windlog_legal_version_accepted',
         'windlog_legal_timestamp',
         'windlog_osm_vrp_cache',
+        'windlog_auth_users',
+        'windlog_auth_session',
       ];
 
       for (const key of legacyKeys) {

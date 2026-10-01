@@ -20,6 +20,7 @@ export interface User {
   createdAt: string;
   lastLoginAt: string;
   emailVerified: boolean;
+  isAnonymous?: boolean;
   preferences?: PilotPreferences;
 }
 
@@ -50,6 +51,7 @@ export interface AuthProviderAdapter {
   signIn(email: string, password: string): Promise<User>;
   signOut(): Promise<void>;
   resetPassword(email: string): Promise<{ success: boolean; message: string }>;
+  resetPasswordWithNew?(email: string, newPassword: string): Promise<{ success: boolean; message: string }>;
   updateProfile(userId: string, updates: Partial<User>): Promise<User>;
   changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void>;
   getCurrentSession(): Promise<AuthSession>;

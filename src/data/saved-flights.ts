@@ -141,3 +141,26 @@ export function getSavedFlightById(id: string): SavedFlight | null {
   const current = getSavedFlightsSync();
   return current.find((f) => f && f.id === id) || null;
 }
+
+/**
+ * Migrates unassigned or guest flights to an authenticated user ID.
+ * Returns the number of flights migrated.
+ */
+export async function migrateGuestFlightsToUser(userId: string): Promise<number> {
+  if (!userId || userId.startsWith('guest_')) return 0;
+  const current = getSavedFlightsSync();
+  let count = 0;
+  const updated = current.map((f) => {
+    if (f && (!f.userId || f.userId === 'guest' || f.userId.startsWith('guest'))) {
+      count++;
+      return { ...f, userId };
+    }
+    return f;
+  });
+
+  if (count > 0) {
+    await setStorageItem(STORAGE_SAVED_FLIGHTS_KEY, updated);
+  }
+  return count;
+}
+

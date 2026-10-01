@@ -1,4 +1,6 @@
 import { User, AuthSession, AuthCredentials, AuthProviderAdapter } from '../types/auth';
+import { migrateGuestFlightsToUser } from '../data/saved-flights';
+import { setStorageItem } from '../data/storage-manager';
 
 const STORAGE_USERS_KEY = 'windlog_auth_users';
 const STORAGE_SESSION_KEY = 'windlog_auth_session';
@@ -164,6 +166,8 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
       createdAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
       emailVerified: true,
+      isAnonymous: false,
+      preferences: credentials.preferences,
     };
 
     users[userId] = {
@@ -194,6 +198,7 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
 
     // Update lastLoginAt
     record.user.lastLoginAt = new Date().toISOString();
+    record.user.isAnonymous = false;
     users[record.user.id] = record;
     this.saveUsers(users);
 
@@ -215,6 +220,34 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
     return {
       success: true,
       message: 'If an account exists with this email, password reset instructions have been generated.',
+    };
+  }
+
+  async resetPasswordWithNew(email: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes('@') || !normalizedEmail.includes('.')) {
+      throw new Error('Please enter a valid email address.');
+    }
+    if (!newPassword || newPassword.length < 6) {
+      throw new Error('New password must be at least 6 characters long.');
+    }
+    const users = this.getUsers();
+    const record = Object.values(users).find(
+      (r) => r.user.email.toLowerCase() === normalizedEmail
+    );
+    if (!record) {
+      throw new Error('No pilot account found matching this email address.');
+    }
+
+    const newSalt = generateSalt(16);
+    record.salt = newSalt;
+    record.passwordHash = await hashPassword(newPassword, newSalt);
+    users[record.user.id] = record;
+    this.saveUsers(users);
+
+    return {
+      success: true,
+      message: 'Password reset successfully. You may now sign in with your new credentials.',
     };
   }
 
@@ -311,7 +344,11 @@ class AuthService {
     this.initSession();
   }
 
-  private async initSession(): Promise<void> {
+  async init(): Promise<void> {
+    await this.initSession();
+  }
+
+  async initSession(): Promise<void> {
     try {
       this.currentSession = await this.adapter.getCurrentSession();
     } catch {
@@ -366,10 +403,21 @@ class AuthService {
       isAuthenticated: true,
     });
 
+    try {
+      await migrateGuestFlightsToUser(user.id);
+    } catch (e) {
+      console.warn('Flight migration notice:', e);
+    }
+
     return user;
   }
 
-  async signIn(email: string, password: string): Promise<User> {
+  async signIn(
+    emailOrCreds: string | { email: string; password: string },
+    maybePassword?: string
+  ): Promise<User> {
+    const email = typeof emailOrCreds === 'string' ? emailOrCreds : emailOrCreds.email;
+    const password = typeof emailOrCreds === 'string' ? (maybePassword || '') : emailOrCreds.password;
     const user = await this.adapter.signIn(email, password);
     const token = generateToken(user.id);
     const expiresAt = Date.now() + SESSION_DURATION_MS;
@@ -380,6 +428,41 @@ class AuthService {
       expiresAt,
       isAuthenticated: true,
     });
+
+    try {
+      await migrateGuestFlightsToUser(user.id);
+    } catch (e) {
+      console.warn('Flight migration notice:', e);
+    }
+
+    // Restore pilot preferences to local cockpit defaults
+    if (user.preferences) {
+      try {
+        if (user.preferences.homeBaseAirport) {
+          setStorageItem('windlog_home_base', user.preferences.homeBaseAirport);
+        }
+        if (user.preferences.autoFillHomeBase !== undefined) {
+          setStorageItem('windlog_auto_home_base', user.preferences.autoFillHomeBase);
+        }
+        if (user.preferences.altimeterUnit) {
+          setStorageItem('windlog_altimeter_unit', user.preferences.altimeterUnit);
+        }
+        if (user.preferences.reserveFuelMinutes) {
+          setStorageItem('windlog_reserve_fuel_mins', user.preferences.reserveFuelMinutes);
+        }
+        if (user.preferences.defaultAircraftModel) {
+          setStorageItem('windlog_profile', {
+            aircraftModel: user.preferences.defaultAircraftModel,
+            cruiseAltitude: user.preferences.defaultCruiseAltitude || 4500,
+            tas: user.preferences.defaultTas || 105,
+            fuelFlow: user.preferences.defaultFuelFlow || 8.5,
+            fuelUnit: user.preferences.defaultFuelUnit || 'gph',
+          });
+        }
+      } catch (e) {
+        console.warn('Preferences restore notice:', e);
+      }
+    }
 
     return user;
   }
@@ -395,6 +478,7 @@ class AuthService {
       createdAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
       emailVerified: true,
+      isAnonymous: true,
     };
     const token = generateToken(guestId);
     const expiresAt = Date.now() + SESSION_DURATION_MS;
@@ -421,6 +505,13 @@ class AuthService {
 
   async resetPassword(email: string): Promise<{ success: boolean; message: string }> {
     return this.adapter.resetPassword(email);
+  }
+
+  async resetPasswordWithNew(email: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    if (this.adapter.resetPasswordWithNew) {
+      return this.adapter.resetPasswordWithNew(email, newPassword);
+    }
+    throw new Error('Password reset with new password is not supported by current provider.');
   }
 
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
