@@ -1,20 +1,20 @@
 :root {
-  --bg-color: #0c1017;
-  --panel-bg: #151c24;
-  --panel-bg-hover: #1c2532;
+  --bg-color: #1e2126;
+  --panel-bg: #252930;
+  --panel-bg-hover: #2c313a;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --border-color: rgba(255, 255, 255, 0.08);
-  --accent-color: #14b8a6;
-  --accent-color-hover: #0d9488;
-  --accent-glow: rgba(45, 212, 191, 0.25);
+  --accent-color: #56978f;
+  --accent-color-hover: #48827b;
+  --accent-glow: rgba(86, 151, 143, 0.25);
   --cyan-accent: #38bdf8;
-  --gold-accent: #f59e0b;
-  --warning-color: #f59e0b;
+  --gold-accent: #c2a667;
+  --warning-color: #c2a667;
   --success-color: #22c55e;
   --danger-color: #ef4444;
-  --fuel-color: #2dd4bf;
-  --font-main: system-ui, -apple-system, sans-serif;
+  --fuel-color: #56978f;
+  --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
@@ -271,7 +271,7 @@ body, html {
 .mode-btn.active {
   background-color: var(--accent-color);
   color: #ffffff;
-  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.4);
 }
 
 /* Route Section */
@@ -331,9 +331,9 @@ body, html {
 }
 
 .route-action-btn.active-toggle {
-  background-color: rgba(59, 130, 246, 0.2);
+  background-color: rgba(45, 212, 191, 0.2);
   border-color: var(--accent-color);
-  color: #60a5fa;
+  color: var(--accent-color);
 }
 
 /* ==========================================================================
@@ -378,8 +378,8 @@ body, html {
 }
 
 .airspace-alert-banner.airspace-banner-caution {
-  background-color: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.35);
+  background-color: rgba(45, 212, 191, 0.12);
+  border-color: rgba(45, 212, 191, 0.35);
 }
 
 .airspace-banner-summary {
@@ -424,7 +424,7 @@ body, html {
 }
 
 .airspace-banner-warning .banner-text strong {
-  color: #facc15;
+  color: var(--warning-color);
 }
 
 .banner-subtext {
@@ -474,11 +474,11 @@ body, html {
 }
 
 .conflict-item.conflict-critical {
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--danger-color);
 }
 
 .conflict-item.conflict-warning {
-  border-left: 3px solid #eab308;
+  border-left: 3px solid var(--warning-color);
 }
 
 .conflict-header {
@@ -499,7 +499,7 @@ body, html {
 
 .conflict-badge.badge-ctr {
   background: rgba(14, 165, 233, 0.2);
-  color: #38bdf8;
+  color: var(--accent-color);
 }
 
 .conflict-badge.badge-tma {
@@ -531,7 +531,7 @@ body, html {
 .conflict-leg {
   margin-left: auto;
   font-size: 0.725rem;
-  color: #38bdf8;
+  color: var(--accent-color);
   font-family: var(--font-mono);
 }
 
@@ -556,7 +556,7 @@ body, html {
 .copy-freq-btn {
   background: #1e293b;
   border: 1px solid #334155;
-  color: #38bdf8;
+  color: var(--accent-color);
   font-size: 0.675rem;
   padding: 0.1rem 0.35rem;
   border-radius: 3px;
@@ -575,21 +575,21 @@ body, html {
 
 /* Map Route Airspaces Only button */
 .layer-btn.route-crossing-btn {
-  border-color: rgba(56, 189, 248, 0.45);
-  color: #38bdf8;
+  border-color: rgba(45, 212, 191, 0.45);
+  color: var(--accent-color);
   font-weight: 700;
 }
 
 .layer-btn.route-crossing-btn:hover {
-  background-color: rgba(56, 189, 248, 0.15);
-  border-color: #38bdf8;
+  background-color: rgba(45, 212, 191, 0.15);
+  border-color: var(--accent-color);
 }
 
 .layer-btn.route-crossing-btn.active {
-  background-color: #0284c7;
-  border-color: #38bdf8;
+  background-color: #0d9488;
+  border-color: var(--accent-color);
   color: #ffffff;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.4);
 }
 
 .route-tokens {
@@ -634,7 +634,7 @@ body, html {
 }
 
 .token-alt {
-  color: #38bdf8;
+  color: var(--accent-color);
   font-size: 0.75rem;
   margin-left: 0.25rem;
 }
@@ -738,9 +738,9 @@ body, html {
   font-weight: 700;
   padding: 0.15rem 0.5rem;
   border-radius: 12px;
-  background-color: rgba(56, 189, 248, 0.14);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  color: #38bdf8;
+  background-color: rgba(45, 212, 191, 0.14);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  color: var(--accent-color);
 }
 
 .tactical-tab-content {
@@ -861,7 +861,7 @@ body, html {
 .airspace-trigger-btn.open {
   background-color: #222838;
   color: #ffffff;
-  border-color: #38bdf8;
+  border-color: var(--accent-color);
 }
 
 .airspace-trigger-btn.active {
@@ -927,14 +927,14 @@ body, html {
 }
 
 .airspace-menu-item:hover {
-  background-color: rgba(56, 189, 248, 0.12);
+  background-color: rgba(45, 212, 191, 0.12);
   color: #ffffff;
 }
 
 .airspace-menu-item.selected {
-  color: #38bdf8;
+  color: var(--accent-color);
   font-weight: 600;
-  background-color: rgba(56, 189, 248, 0.08);
+  background-color: rgba(45, 212, 191, 0.08);
 }
 
 .airspace-item-indicator {
@@ -945,14 +945,14 @@ body, html {
 }
 
 .airspace-menu-item.selected .airspace-item-indicator {
-  color: #38bdf8;
+  color: var(--accent-color);
 }
 
 .airspace-item-check {
   font-size: 0.75rem;
   width: 1rem;
   text-align: center;
-  color: #38bdf8;
+  color: var(--accent-color);
   font-weight: 700;
 }
 
@@ -1045,21 +1045,21 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .fullscreen-toggle-btn {
-  border-color: rgba(56, 189, 248, 0.4);
-  color: #38bdf8;
+  border-color: rgba(45, 212, 191, 0.4);
+  color: var(--accent-color);
   font-weight: 700;
 }
 
 .fullscreen-toggle-btn:hover,
 .fullscreen-toggle-btn.active {
-  background-color: #0284c7;
-  border-color: #38bdf8;
+  background-color: #0d9488;
+  border-color: var(--accent-color);
   color: #ffffff;
 }
 
 .fullscreen-action-btn {
-  border-color: rgba(56, 189, 248, 0.5);
-  color: #38bdf8;
+  border-color: rgba(45, 212, 191, 0.5);
+  color: var(--accent-color);
 }
 
 .fullscreen-floating-exit-btn {
@@ -1069,7 +1069,7 @@ body.map-fullscreen .tactical-panel-card {
   z-index: 10002;
   background: rgba(15, 23, 42, 0.92);
   backdrop-filter: blur(8px);
-  border: 1px solid #38bdf8;
+  border: 1px solid var(--accent-color);
   color: #f8fafc;
   padding: 0.5rem 1rem;
   border-radius: 6px;
@@ -1115,7 +1115,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .wpt-marker-airport {
-  background-color: #0284c7;
+  background-color: #0d9488;
   color: #ffffff;
 }
 
@@ -1135,7 +1135,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .wpt-pin.is-dest {
-  border: 2px solid #ef4444;
+  border: 2px solid var(--danger-color);
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
 }
 
@@ -1144,8 +1144,8 @@ body.map-fullscreen .tactical-panel-card {
   align-items: center;
   gap: 4px;
   background-color: rgba(15, 23, 42, 0.9);
-  border: 1px solid #38bdf8;
-  color: #38bdf8;
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
   padding: 2px 7px;
   border-radius: 12px;
   font-family: var(--font-mono);
@@ -1221,13 +1221,13 @@ body.map-fullscreen .tactical-panel-card {
 
 .vsd-collapse-btn:hover {
   background: rgba(255, 255, 255, 0.12);
-  border-color: #38bdf8;
-  color: #38bdf8;
+  border-color: var(--accent-color);
+  color: var(--accent-color);
 }
 
 .vsd-shelf-icon {
   font-size: 0.85rem;
-  color: #38bdf8;
+  color: var(--accent-color);
 }
 
 .vsd-shelf-title {
@@ -1346,7 +1346,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .profile-cruise-line {
-  stroke: #38bdf8;
+  stroke: var(--accent-color);
   stroke-width: 3.5;
   cursor: pointer;
   transition: stroke 0.15s, stroke-width 0.15s;
@@ -1359,7 +1359,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .profile-alt-badge-bg {
   fill: #0b1329;
-  stroke: #38bdf8;
+  stroke: var(--accent-color);
   stroke-width: 1.5;
 }
 
@@ -1384,7 +1384,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .wpt-tick-dot {
-  fill: #38bdf8;
+  fill: var(--accent-color);
 }
 
 .wpt-tick-ident {
@@ -1407,8 +1407,8 @@ body.map-fullscreen .tactical-panel-card {
 /* Terrain Warning & Profiling */
 .profile-terrain-warning-banner {
   background-color: rgba(239, 68, 68, 0.15);
-  border-top: 1px solid #ef4444;
-  border-bottom: 1px solid #ef4444;
+  border-top: 1px solid var(--danger-color);
+  border-bottom: 1px solid var(--danger-color);
   color: #fca5a5;
   font-size: 0.75rem;
   font-weight: 600;
@@ -1437,10 +1437,10 @@ body.map-fullscreen .tactical-panel-card {
   max-width: 440px;
   background: rgba(10, 15, 29, 0.94);
   backdrop-filter: blur(16px);
-  border: 1px solid #38bdf8;
+  border: 1px solid var(--accent-color);
   border-radius: 8px;
   padding: 0.75rem 1rem;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 16px rgba(56, 189, 248, 0.2);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.8), 0 0 16px rgba(45, 212, 191, 0.2);
   animation: inspectorFadeIn 0.15s ease-out;
   pointer-events: auto;
 }
@@ -1495,7 +1495,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .inspector-close-btn:hover {
   background: rgba(239, 68, 68, 0.3);
-  border-color: #ef4444;
+  border-color: var(--danger-color);
   color: #ffffff;
 }
 
@@ -1535,7 +1535,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .cell-value.val-accent {
-  color: #38bdf8;
+  color: var(--accent-color);
 }
 
 .inspector-cell.cell-safe {
@@ -1676,12 +1676,12 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .val-mh {
-  color: var(--gold-accent, #f59e0b);
+  color: var(--gold-accent, var(--warning-color));
   font-size: 1.35rem;
 }
 
 .val-fuel {
-  color: var(--gold-accent, #f59e0b);
+  color: var(--gold-accent, var(--warning-color));
 }
 
 .val-warning {
@@ -2063,7 +2063,7 @@ body.map-fullscreen .tactical-panel-card {
 /* Aviation Disclaimer Modal */
 .disclaimer-modal {
   background-color: #11141d;
-  border: 1px solid #f59e0b;
+  border: 1px solid var(--warning-color);
   border-radius: 0.75rem;
   padding: 1.5rem 1.75rem;
   width: 100%;
@@ -2098,7 +2098,7 @@ body.map-fullscreen .tactical-panel-card {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #f59e0b;
+  color: var(--warning-color);
   font-weight: 700;
 }
 
@@ -2621,7 +2621,7 @@ body.map-fullscreen .tactical-panel-card {
   left: 0;
   bottom: 0;
   width: 260px;
-  background-color: #0f141c;
+  background-color: var(--bg-color);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 999;
   display: flex;
@@ -2756,14 +2756,14 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .gemini-nav-item:hover {
-  background-color: #111724;
+  background-color: #262c33;
   color: #ffffff;
 }
 
 .gemini-nav-item.active {
-  background-color: rgba(20, 184, 166, 0.12);
-  border-color: rgba(45, 212, 191, 0.35);
-  color: #2dd4bf;
+  background-color: #2c383b;
+  border-color: #56978f;
+  color: #ccfbf1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
@@ -2800,7 +2800,7 @@ body.map-fullscreen .tactical-panel-card {
   border-radius: 4px;
 }
 
-.badge-blue { background-color: #0284c7; color: #ffffff; }
+.badge-teal { background-color: rgba(45, 212, 191, 0.2); color: #2dd4bf; }
 .badge-green { background-color: #15803d; color: #ffffff; }
 .badge-amber { background-color: #b45309; color: #ffffff; }
 .badge-red { background-color: #b91c1c; color: #ffffff; }
@@ -3114,7 +3114,7 @@ body.map-fullscreen .tactical-panel-card {
   padding: 0.35rem 0.5rem;
   font-family: var(--font-mono);
   font-size: 0.85rem;
-  color: #38bdf8;
+  color: var(--accent-color);
   font-weight: 700;
 }
 
@@ -3353,7 +3353,7 @@ body.map-fullscreen .tactical-panel-card {
   border-radius: 2px;
 }
 .box-normal { background-color: rgba(20, 184, 166, 0.3); border: 1px solid #14b8a6; }
-.box-utility { background-color: rgba(245, 158, 11, 0.4); border: 1px dashed #f59e0b; }
+.box-utility { background-color: rgba(245, 158, 11, 0.4); border: 1px dashed var(--warning-color); }
 
 .legend-dot {
   width: 8px;
@@ -3361,7 +3361,7 @@ body.map-fullscreen .tactical-panel-card {
   border-radius: 50%;
 }
 .dot-tow { background-color: #22c55e; }
-.dot-lw { background-color: #eab308; }
+.dot-lw { background-color: var(--warning-color); }
 .dot-zfw { background-color: #94a3b8; }
 
 .envelope-svg-wrapper {
@@ -3445,9 +3445,9 @@ body.map-fullscreen .tactical-panel-card {
 
 .rw-active-badge {
   font-size: 0.725rem;
-  background-color: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #60a5fa;
+  background-color: rgba(45, 212, 191, 0.15);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  color: var(--accent-color);
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
   font-weight: 700;
@@ -3514,7 +3514,7 @@ body.map-fullscreen .tactical-panel-card {
 /* Live METAR Banner */
 .rw-metar-banner {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85));
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  border: 1px solid rgba(45, 212, 191, 0.3);
   border-radius: 0.6rem;
   padding: 0.75rem 1rem;
   display: flex;
@@ -3536,7 +3536,7 @@ body.map-fullscreen .tactical-panel-card {
   align-items: center;
   gap: 0.45rem;
   font-size: 0.8rem;
-  color: #38bdf8;
+  color: var(--accent-color);
 }
 
 .pulse-dot {
@@ -3581,9 +3581,9 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .cat-mvfr {
-  background-color: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  background-color: rgba(45, 212, 191, 0.2);
+  color: var(--accent-color);
+  border: 1px solid rgba(45, 212, 191, 0.4);
 }
 
 .cat-ifr {
@@ -3729,9 +3729,82 @@ body.map-fullscreen .tactical-panel-card {
   margin-top: 0.15rem;
 }
 
-.rw-custom-heading-wrap {
-  border-top: 1px solid #1e293b;
-  padding-top: 0.6rem;
+.rw-step1-metrics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rw-step1-metric-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background-color: #1e2126;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.6rem;
+}
+
+.rw-sublabel {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.rw-step1-val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+  font-family: var(--font-mono);
+}
+
+.rw-recip-summary-card {
+  margin-top: 0.5rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+}
+
+.rw-max-demo-card {
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.rw-max-demo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rw-max-demo-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: #f8fafc;
+}
+
+.rw-weather-amber-banner {
+  background-color: #3a3020;
+  border: 1px solid #685226;
+  color: #fde047;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .badge-live {
@@ -3828,7 +3901,7 @@ body.map-fullscreen .tactical-panel-card {
   color: #ffffff;
 }
 
-.rw-reciprocal-card {
+.rw-reciprocal-report { background-color: #0c1017; border-left: 4px solid var(--accent-color); padding: 1rem; } .rw-reciprocal-card {
   border-color: #334155;
 }
 
@@ -3931,7 +4004,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .metric-gust {
   font-size: 0.775rem;
-  color: #f59e0b;
+  color: var(--warning-color);
   font-family: var(--font-mono);
 }
 
@@ -4039,7 +4112,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .legal-ver-badge {
   background-color: #1e3a8a;
-  color: #38bdf8;
+  color: var(--accent-color);
   padding: 0.1rem 0.4rem;
   border-radius: 3px;
   font-weight: 700;
@@ -4152,7 +4225,7 @@ body.map-fullscreen .tactical-panel-card {
 .legal-section-title {
   font-size: 0.9rem;
   font-weight: 800;
-  color: #38bdf8;
+  color: var(--accent-color);
   margin: 0 0 0.5rem 0;
   letter-spacing: 0.02em;
 }
@@ -4244,15 +4317,15 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .layer-btn.offline-cache-trigger-btn {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(59, 130, 246, 0.2));
-  border-color: rgba(56, 189, 248, 0.4);
-  color: #38bdf8;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(45, 212, 191, 0.2));
+  border-color: rgba(45, 212, 191, 0.4);
+  color: var(--accent-color);
   font-weight: 600;
 }
 
 .layer-btn.offline-cache-trigger-btn:hover {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(59, 130, 246, 0.35));
-  border-color: #38bdf8;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(45, 212, 191, 0.35));
+  border-color: var(--accent-color);
 }
 
 /* Airspace Leaflet Popups & Column Inspector */
@@ -4316,7 +4389,7 @@ body.map-fullscreen .tactical-panel-card {
 .column-coords {
   font-family: var(--font-mono, monospace);
   font-size: 0.7rem;
-  color: #38bdf8;
+  color: var(--accent-color);
   padding-right: 1.25rem;
 }
 
@@ -4346,7 +4419,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .column-sector-card.card-ctr {
-  border-left-color: #38bdf8;
+  border-left-color: var(--accent-color);
 }
 
 .column-sector-card.card-tma {
@@ -4359,11 +4432,11 @@ body.map-fullscreen .tactical-panel-card {
 
 .column-sector-card.card-restricted,
 .column-sector-card.card-prohibited {
-  border-left-color: #ef4444;
+  border-left-color: var(--danger-color);
 }
 
 .column-sector-card.card-danger {
-  border-left-color: #f59e0b;
+  border-left-color: var(--warning-color);
 }
 
 .sector-card-top {
@@ -4396,9 +4469,9 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .sector-badge.badge-ctr {
-  background-color: rgba(56, 189, 248, 0.2);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  background-color: rgba(45, 212, 191, 0.2);
+  color: var(--accent-color);
+  border: 1px solid rgba(45, 212, 191, 0.4);
 }
 
 .sector-badge.badge-tma {
@@ -4456,7 +4529,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .sector-advisory-row .advisory-title {
   font-weight: 700;
-  color: #38bdf8;
+  color: var(--accent-color);
   margin-right: 0.25rem;
 }
 
@@ -4570,7 +4643,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .airspace-popup-alert.alert-clip {
   background-color: rgba(234, 179, 8, 0.2);
-  color: #facc15;
+  color: var(--warning-color);
   border: 1px solid rgba(234, 179, 8, 0.5);
 }
 
@@ -4613,8 +4686,8 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .airspace-alert-banner.airspace-banner-caution {
-  background-color: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.35);
+  background-color: rgba(45, 212, 191, 0.12);
+  border-color: rgba(45, 212, 191, 0.35);
 }
 
 .airspace-banner-summary {
@@ -4651,7 +4724,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .airspace-banner-warning .banner-text strong {
-  color: #facc15;
+  color: var(--warning-color);
 }
 
 .banner-subtext {
@@ -4692,11 +4765,11 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .conflict-item.conflict-critical {
-  border-left: 4px solid #ef4444;
+  border-left: 4px solid var(--danger-color);
 }
 
 .conflict-item.conflict-warning {
-  border-left: 4px solid #eab308;
+  border-left: 4px solid var(--warning-color);
 }
 
 .conflict-header {
@@ -4723,7 +4796,7 @@ body.map-fullscreen .tactical-panel-card {
 .conflict-leg {
   margin-left: auto;
   font-size: 0.725rem;
-  color: #38bdf8;
+  color: var(--accent-color);
   font-family: var(--font-mono);
 }
 
@@ -4775,7 +4848,7 @@ body.map-fullscreen .tactical-panel-card {
 .offline-storage-metric .metric-val {
   font-size: 1rem;
   font-weight: 800;
-  color: #38bdf8;
+  color: var(--accent-color);
   font-family: var(--font-mono);
 }
 
@@ -4804,7 +4877,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .progress-percent {
   font-weight: 800;
-  color: #38bdf8;
+  color: var(--accent-color);
   font-family: var(--font-mono);
 }
 
@@ -4843,7 +4916,7 @@ body.map-fullscreen .tactical-panel-card {
   border-radius: 0.375rem;
   padding: 0.5rem 0.75rem;
   font-size: 0.775rem;
-  color: #38bdf8;
+  color: var(--accent-color);
   margin-bottom: 0.85rem;
 }
 
@@ -4925,7 +4998,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .clear-cache-btn:hover:not(:disabled) {
   background-color: rgba(239, 68, 68, 0.15);
-  border-color: #ef4444;
+  border-color: var(--danger-color);
   color: #f87171;
 }
 
@@ -4991,7 +5064,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .hover-card-title {
-  color: #38bdf8;
+  color: var(--accent-color);
 }
 
 .hover-card-limits {
@@ -5037,13 +5110,13 @@ body.map-fullscreen .tactical-panel-card {
   justify-content: center;
   background: rgba(11, 17, 30, 0.85);
   backdrop-filter: blur(4px);
-  border: 1px solid rgba(59, 130, 246, 0.6);
+  border: 1px solid rgba(45, 212, 191, 0.6);
   border-radius: 4px;
   padding: 1px 4px;
   font-family: var(--font-mono, monospace);
   font-size: 8px;
   line-height: 1.1;
-  color: #38bdf8;
+  color: var(--accent-color);
   pointer-events: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
   text-align: center;
@@ -5086,7 +5159,7 @@ body.map-fullscreen .tactical-panel-card {
   margin-left: 0.5rem;
   background: #1e293b;
   border: 1px solid #334155;
-  color: #38bdf8;
+  color: var(--accent-color);
   padding: 0.15rem 0.45rem;
   border-radius: 3px;
   font-size: 0.675rem;
@@ -5102,7 +5175,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .conflict-advisory {
   background: rgba(15, 23, 42, 0.7);
-  border-left: 3px solid #38bdf8;
+  border-left: 3px solid var(--accent-color);
   padding: 0.35rem 0.55rem;
   border-radius: 0 4px 4px 0;
   font-size: 0.75rem;
@@ -5111,7 +5184,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .conflict-advisory .advisory-title {
-  color: #38bdf8;
+  color: var(--accent-color);
   font-weight: 700;
 }
 
@@ -5136,7 +5209,7 @@ body.map-fullscreen .tactical-panel-card {
 .penetration-tag.alert-clip {
   background: rgba(234, 179, 8, 0.2);
   border: 1px solid rgba(234, 179, 8, 0.5);
-  color: #facc15;
+  color: var(--warning-color);
 }
 
 .airspace-popup-advisory {
@@ -5152,7 +5225,7 @@ body.map-fullscreen .tactical-panel-card {
 .airspace-popup-advisory .advisory-title {
   display: block;
   font-weight: 700;
-  color: #38bdf8;
+  color: var(--accent-color);
   margin-bottom: 0.15rem;
 }
 
@@ -5184,7 +5257,7 @@ body.map-fullscreen .tactical-panel-card {
   font-size: 3.5rem;
   margin-bottom: 0.5rem;
   line-height: 1;
-  filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.4));
+  filter: drop-shadow(0 0 16px rgba(45, 212, 191, 0.4));
 }
 
 .landing-brand-title {
@@ -5264,7 +5337,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .landing-welcome-pill strong {
-  color: #38bdf8;
+  color: var(--accent-color);
 }
 
 .landing-authenticated-group {
@@ -5357,8 +5430,8 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .auth-account-ready-card {
-  background: rgba(56, 189, 248, 0.08);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.25);
   border-radius: 0.5rem;
   padding: 0.75rem;
   display: flex;
@@ -5374,7 +5447,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .auth-ready-icon {
   font-size: 1.25rem;
-  color: #38bdf8;
+  color: var(--accent-color);
 }
 
 .auth-ready-name {
@@ -5390,7 +5463,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .auth-ready-creds code {
-  color: #38bdf8;
+  color: var(--accent-color);
   background: rgba(15, 23, 42, 0.6);
   padding: 0.1rem 0.3rem;
   border-radius: 3px;
@@ -5437,7 +5510,7 @@ body.map-fullscreen .tactical-panel-card {
 .auth-sub-link {
   background: none;
   border: none;
-  color: #38bdf8;
+  color: var(--accent-color);
   font-size: 0.75rem;
   padding: 0;
   cursor: pointer;
@@ -5560,7 +5633,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .auth-feedback-banner.error {
   background: rgba(239, 68, 68, 0.15);
-  border: 1px solid #ef4444;
+  border: 1px solid var(--danger-color);
   color: #fca5a5;
 }
 
@@ -5635,15 +5708,15 @@ body.map-fullscreen .tactical-panel-card {
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #2dd4bf 0%, #0d9488 100%);
   color: #ffffff;
   font-size: 1.4rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
-  border: 2px solid rgba(56, 189, 248, 0.3);
+  box-shadow: 0 4px 14px rgba(45, 212, 191, 0.3);
+  border: 2px solid rgba(20, 184, 166, 0.5);
   flex-shrink: 0;
 }
 
@@ -5678,9 +5751,9 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .profile-status-badge.cloud {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .profile-status-badge.guest {
@@ -5776,7 +5849,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .profile-signout-btn:hover {
   background: rgba(239, 68, 68, 0.25);
-  border-color: #ef4444;
+  border-color: var(--danger-color);
 }
 
 /* 4-Card Dashboard Grid */
@@ -5898,8 +5971,8 @@ body.map-fullscreen .tactical-panel-card {
 
 .profile-input:focus,
 .profile-select:focus {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.2);
   background: #1f2a42;
 }
 
@@ -6027,9 +6100,9 @@ body.map-fullscreen .tactical-panel-card {
 .profile-fixed-badge {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.1);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: var(--accent-color);
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.25);
   padding: 0.35rem 0.75rem;
   border-radius: 0.375rem;
   font-family: var(--font-mono);
@@ -6276,7 +6349,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .auth-airplane-logo.forgot {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%);
   box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
 }
 
@@ -6327,8 +6400,8 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .auth-styled-input:focus {
-  border-color: #38bdf8 !important;
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25) !important;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.25) !important;
   background: #192233 !important;
 }
 
@@ -6404,7 +6477,7 @@ body.map-fullscreen .tactical-panel-card {
 .auth-switch-link {
   background: none;
   border: none;
-  color: #38bdf8;
+  color: var(--accent-color);
   font-weight: 700;
   font-size: 0.82rem;
   cursor: pointer;
@@ -6433,8 +6506,8 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .auth-sync-benefit-card {
-  background: rgba(56, 189, 248, 0.08);
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.2);
   border-radius: 0.5rem;
   padding: 0.75rem 0.9rem;
   display: flex;
@@ -6488,8 +6561,8 @@ body.map-fullscreen .tactical-panel-card {
   gap: 0.75rem;
   padding: 0.75rem 0.875rem;
   margin: 0.5rem 0.75rem 0.75rem;
-  background: #151c24;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -6498,8 +6571,27 @@ body.map-fullscreen .tactical-panel-card {
 
 .gemini-pilot-card:hover,
 .gemini-pilot-card.active {
-  background: #1b2430;
-  border-color: rgba(45, 212, 191, 0.35);
+  background: var(--panel-bg-hover);
+  border-color: var(--accent-color);
+}
+
+.pilot-verified-badge {
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: #4ade80;
+  background-color: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  margin-left: 0.35rem;
+}
+
+.gemini-pilot-member-since {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 0.15rem;
 }
 
 .gemini-pilot-avatar {
@@ -6564,9 +6656,9 @@ body.map-fullscreen .tactical-panel-card {
 
 .wind-scheduled-tag {
   font-size: 0.72rem;
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: rgba(45, 212, 191, 0.15);
+  color: var(--accent-color);
+  border: 1px solid rgba(45, 212, 191, 0.35);
   padding: 0.15rem 0.45rem;
   border-radius: 4px;
   font-weight: 600;
@@ -7051,7 +7143,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .flight-meta-pill .pill-val.highlight {
-  color: #38bdf8;
+  color: var(--accent-color);
 }
 
 .saved-flight-actions {
@@ -7107,12 +7199,12 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .saved-flight-delete-btn {
-  color: #ef4444;
+  color: var(--danger-color);
 }
 
 .saved-flight-delete-btn:hover {
   background: rgba(239, 68, 68, 0.15);
-  border-color: #ef4444;
+  border-color: var(--danger-color);
 }
 
 .saved-flights-empty-card {
@@ -7244,11 +7336,11 @@ body.map-fullscreen .tactical-panel-card {
 
 .ad-interstitial-card {
   background: radial-gradient(circle at 50% 0%, #151928 0%, #0d101d 100%);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: 1px solid rgba(45, 212, 191, 0.25);
   border-radius: 1rem;
   width: 100%;
   max-width: 520px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 35px rgba(56, 189, 248, 0.12);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 35px rgba(45, 212, 191, 0.12);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -7273,16 +7365,16 @@ body.map-fullscreen .tactical-panel-card {
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-  color: #38bdf8;
+  color: var(--accent-color);
   text-transform: uppercase;
 }
 
 .ad-pulse-dot {
   width: 8px;
   height: 8px;
-  background-color: #38bdf8;
+  background-color: var(--accent-color);
   border-radius: 50%;
-  box-shadow: 0 0 8px #38bdf8;
+  box-shadow: 0 0 8px var(--accent-color);
   animation: adDotBlink 1.5s infinite;
 }
 
@@ -7359,9 +7451,9 @@ body.map-fullscreen .tactical-panel-card {
 
 .ad-timer-progress-circle {
   fill: none;
-  stroke: #38bdf8;
+  stroke: var(--accent-color);
   transition: stroke-dashoffset 0.85s linear;
-  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+  filter: drop-shadow(0 0 6px rgba(45, 212, 191, 0.6));
 }
 
 .ad-timer-number-box {
@@ -7380,7 +7472,7 @@ body.map-fullscreen .tactical-panel-card {
   font-weight: 800;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   color: #f8fafc;
-  text-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+  text-shadow: 0 0 12px rgba(45, 212, 191, 0.6);
 }
 
 .ad-timer-check {
@@ -7523,18 +7615,18 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .ad-sponsor-cta-btn.partner {
-  background: rgba(56, 189, 248, 0.12);
-  color: #38bdf8;
-  border-color: rgba(56, 189, 248, 0.3);
+  background: rgba(45, 212, 191, 0.12);
+  color: var(--accent-color);
+  border-color: rgba(45, 212, 191, 0.3);
 }
 
 .ad-sponsor-cta-btn.partner:hover {
-  background: rgba(56, 189, 248, 0.22);
+  background: rgba(45, 212, 191, 0.22);
   color: #ffffff;
 }
 
 .ad-sponsor-cta-btn.pro {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%);
   color: #0f172a;
   border: none;
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
@@ -7622,7 +7714,7 @@ body.map-fullscreen .tactical-panel-card {
 .ad-pro-link-btn {
   background: none;
   border: none;
-  color: #f59e0b;
+  color: var(--warning-color);
   font-weight: 700;
   text-decoration: underline;
   cursor: pointer;
@@ -7662,7 +7754,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .pro-pill-badge {
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--warning-color);
   border: 1px solid rgba(245, 158, 11, 0.4);
   padding: 0.25rem 0.65rem;
   border-radius: 9999px;
@@ -7735,9 +7827,9 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .pro-status-banner.inactive {
-  background: rgba(56, 189, 248, 0.1);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  background: rgba(45, 212, 191, 0.1);
+  color: var(--accent-color);
+  border: 1px solid rgba(45, 212, 191, 0.25);
 }
 
 .pro-status-dot {
@@ -7805,7 +7897,7 @@ body.map-fullscreen .tactical-panel-card {
   cursor: pointer;
   transition: all 0.25s ease;
   border: none;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%);
   color: #0f172a;
   box-shadow: 0 4px 16px rgba(245, 158, 11, 0.45);
 }
@@ -7817,7 +7909,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .pro-primary-cta-btn.pro-active {
   background: #1e293b;
-  color: #f59e0b;
+  color: var(--warning-color);
   border: 1px solid rgba(245, 158, 11, 0.4);
   box-shadow: none;
 }
@@ -7833,7 +7925,7 @@ body.map-fullscreen .tactical-panel-card {
 .hangar-pro-badge-btn {
   background: rgba(245, 158, 11, 0.12);
   border: 1px solid rgba(245, 158, 11, 0.35);
-  color: #f59e0b;
+  color: var(--warning-color);
   font-size: 0.78rem;
   font-weight: 700;
   padding: 0.45rem 0.85rem;
@@ -7847,7 +7939,7 @@ body.map-fullscreen .tactical-panel-card {
 
 .hangar-pro-badge-btn:hover {
   background: rgba(245, 158, 11, 0.22);
-  border-color: #f59e0b;
+  border-color: var(--warning-color);
   color: #ffffff;
 }
 
@@ -8080,7 +8172,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .qm-val.val-mh {
-  color: #f59e0b;
+  color: var(--warning-color);
 }
 
 .qm-val.val-fuel {
@@ -8144,15 +8236,15 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .route-chip.airport {
-  background: #18262f;
-  border: 1px solid #2a4f54;
-  color: #99f6e4;
+  background: #3e565a;
+  border: 1px solid #4e6f74;
+  color: #ccfbf1;
 }
 
 .route-chip.waypoint {
-  background: #18262f;
-  border: 1px solid #2a4f54;
-  color: #99f6e4;
+  background: #3e565a;
+  border: 1px solid #4e6f74;
+  color: #ccfbf1;
 }
 
 .route-chip-remove-btn {
@@ -8191,9 +8283,9 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .route-btn-save {
-  background: #2dd4bf;
-  border: 1px solid #5eead4;
-  color: #042f2e;
+  background: #56978f;
+  border: 1px solid #66ada5;
+  color: #ffffff;
   font-size: 0.82rem;
   font-weight: 800;
   padding: 0.45rem 0.95rem;
@@ -8206,8 +8298,8 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .route-btn-save:hover:not(:disabled) {
-  background: #5eead4;
-  box-shadow: 0 2px 10px rgba(45, 212, 191, 0.4);
+  background: #48827b;
+  box-shadow: 0 2px 10px rgba(86, 151, 143, 0.4);
 }
 
 .route-btn-save.saved {
@@ -8217,8 +8309,8 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .route-btn-share {
-  background: #182029;
-  border: 1px solid #283544;
+  background: #33363b;
+  border: 1px solid #454b52;
   color: #e2e8f0;
   font-size: 0.82rem;
   font-weight: 700;
@@ -8229,14 +8321,14 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .route-btn-share:hover:not(:disabled) {
-  background: #222d3a;
-  border-color: #3b4d63;
+  background: #3d4249;
+  border-color: #555c65;
   color: #ffffff;
 }
 
 .route-btn-kneeboard {
-  background: #eab308;
-  border: 1px solid #facc15;
+  background: #c2a667;
+  border: 1px solid #d4b879;
   color: #1c1917;
   font-size: 0.82rem;
   font-weight: 800;
@@ -8247,18 +8339,18 @@ body.map-fullscreen .tactical-panel-card {
   align-items: center;
   gap: 0.35rem;
   transition: all 0.15s ease;
-  box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);
+  box-shadow: 0 2px 8px rgba(194, 166, 103, 0.3);
 }
 
 .route-btn-kneeboard:hover {
-  background: #facc15;
-  box-shadow: 0 4px 14px rgba(234, 179, 8, 0.45);
+  background: #b59a5d;
+  box-shadow: 0 4px 14px rgba(194, 166, 103, 0.45);
 }
 
 .route-btn-secondary {
-  background: #182029;
-  border: 1px solid #283544;
-  color: #94a3b8;
+  background: #33363b;
+  border: 1px solid #454b52;
+  color: #cbd5e1;
   font-size: 0.82rem;
   font-weight: 600;
   padding: 0.45rem 0.85rem;
@@ -8268,8 +8360,8 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .route-btn-secondary:hover:not(:disabled) {
-  background: #222d3a;
-  border-color: #3b4d63;
+  background: #3d4249;
+  border-color: #555c65;
   color: #ffffff;
 }
 
@@ -8318,8 +8410,8 @@ body.map-fullscreen .tactical-panel-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #121620;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
   border-radius: 0.75rem;
   padding: 1.25rem 1.75rem;
   gap: 1.5rem;
@@ -8341,21 +8433,22 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .command-save-btn {
-  background: #14b8a6;
-  border: 1px solid #2dd4bf;
+  background: #56978f;
+  border: 1px solid #66ada5;
   color: #ffffff;
   font-weight: 700;
   padding: 0.55rem 1.15rem;
   border-radius: 0.45rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   transition: all 0.15s ease;
 }
 
 .command-save-btn:hover {
-  background: #0d9488;
+  background: #48827b;
 }
-
-
 
 /* Two-Surface Command Grid */
 .cockpit-command-grid {
@@ -8372,13 +8465,49 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 .cockpit-surface {
-  background: #121620;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--panel-bg);
+  border: 1px solid var(--border-color);
   border-radius: 0.75rem;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+}
+
+.standalone-surface-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  margin: 0 0 0.5rem 0;
+  text-transform: uppercase;
+}
+
+.profile-section-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0.5rem 0 0.25rem 0;
+}
+
+.btn-change-pwd-link {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.35rem;
+  transition: all 0.15s ease;
+}
+
+.btn-change-pwd-link:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .surface-header {

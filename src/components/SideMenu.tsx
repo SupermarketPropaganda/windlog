@@ -148,7 +148,10 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           </div>
           <div className="gemini-pilot-meta">
             <div className="gemini-pilot-name">
-              {user?.displayName || user?.email || 'Guest Pilot'}
+              <span>{user?.displayName || user?.email || 'Guest Pilot'}</span>
+              {user && !user.id.startsWith('guest_') && (
+                <span className="pilot-verified-badge">✓ Verified</span>
+              )}
               {isPro && (
                 <span
                   style={{
@@ -156,8 +159,8 @@ export const SideMenu: React.FC<SideMenuProps> = ({
                     fontSize: '0.62rem',
                     padding: '0.1rem 0.35rem',
                     borderRadius: '4px',
-                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                    color: '#f59e0b',
+                    backgroundColor: 'rgba(194, 166, 103, 0.2)',
+                    color: '#c2a667',
                     fontWeight: 800,
                   }}
                 >
@@ -168,6 +171,11 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             <div className="gemini-pilot-sub">
               {user?.pilotLicense ? user.pilotLicense : 'Click to Sign In / Settings'}
             </div>
+            {user && !user.id.startsWith('guest_') && (
+              <div className="gemini-pilot-member-since">
+                MEMBER SINCE {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase() : 'SEP 20, 2026'}
+              </div>
+            )}
           </div>
           {user && !user.id.startsWith('guest_') ? (
             <button
@@ -215,7 +223,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
               </div>
             </div>
             {navLogSummary && navLogSummary.legs.length > 0 && (
-              <span className="gemini-nav-badge badge-blue">
+              <span className="gemini-nav-badge badge-teal">
                 {navLogSummary.legs.length}
               </span>
             )}
@@ -237,7 +245,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
               </div>
             </div>
             {savedFlightsCount !== undefined && savedFlightsCount > 0 && (
-              <span className="gemini-nav-badge badge-blue">
+              <span className="gemini-nav-badge badge-teal">
                 {savedFlightsCount}
               </span>
             )}

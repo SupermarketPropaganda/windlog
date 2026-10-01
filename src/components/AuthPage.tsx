@@ -928,12 +928,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   </span>
                 </div>
                 <div className="profile-meta-subline">
-                  <span>🪪 {editLicense.trim() || 'EASA PPL(A)'}</span>
+                  <span>🇪🇺 {editLicense.trim() || 'EASA PPL(A)'}</span>
                   <span className="meta-sep">|</span>
-                  <span>📍 Base: {editHomeBase.trim() || 'LPCS'}</span>
+                  <span>Base: {editHomeBase.trim() || 'LPCS'}</span>
                   <span className="meta-sep">|</span>
                   <span>
-                    📅 Member Since: {user ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sep 20, 2026'}
+                    Member Since: {user ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sep 20, 2026'}
                   </span>
                 </div>
               </div>
@@ -957,20 +957,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <div className="cockpit-command-grid">
             {/* ── Surface 1 (Left): PROFILE & IDENTITY ── */}
             <div className="cockpit-surface profile-identity-surface">
-              <div className="surface-header">
-                <span className="surface-icon">👤</span>
-                <div>
-                  <h2 className="surface-title">PROFILE &amp; IDENTITY</h2>
-                  <p className="surface-subtitle">Personal pilot credentials, licenses, and default home aerodrome</p>
-                </div>
-              </div>
+              <h2 className="surface-title standalone-surface-title">PROFILE &amp; IDENTITY</h2>
 
               <div className="surface-body">
-                {/* Dynamic Pilot ID Card Field */}
+                {/* Calls sign & Display Name Section */}
+                <h3 className="profile-section-heading">Calls sign &amp; Display Name</h3>
                 <div className="profile-field dynamic-id-field">
-                  <label className="profile-label">CALLSIGN / DISPLAY NAME</label>
+                  <label className="profile-label">CALLSIGN &amp; DISPLAY NAME</label>
                   <div className="pilot-id-input-card">
-                    <span className="id-card-icon">🪪</span>
                     <input
                       type="text"
                       className="profile-input id-card-input"
@@ -978,52 +972,56 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                       value={editDisplayName}
                       onChange={(e) => setEditDisplayName(e.target.value)}
                     />
-                    <span className="id-card-badge">PILOT ID</span>
                   </div>
+                  <span className="profile-field-hint">Dynamic ID Card feel</span>
                 </div>
 
-                <div className="profile-field">
-                  <label className="profile-label">PILOT LICENSE / RATING</label>
-                  <input
-                    type="text"
-                    className="profile-input"
-                    placeholder="e.g. EASA PPL(A) - SEP (Land)"
-                    value={editLicense}
-                    onChange={(e) => setEditLicense(e.target.value)}
-                  />
-                </div>
-
-                <div className="profile-field">
-                  <label className="profile-label">HOME BASE AIRPORT (ICAO)</label>
-                  <div className="profile-input-with-badge">
+                {/* Aviation Credentials Section */}
+                <h3 className="profile-section-heading">Aviation Credentials</h3>
+                <div className="profile-input-row">
+                  <div className="profile-field">
+                    <label className="profile-label">LICENSE / RATING</label>
                     <input
                       type="text"
                       className="profile-input"
-                      placeholder="e.g. LPCS"
-                      value={editHomeBase}
-                      onChange={(e) => setEditHomeBase(e.target.value.toUpperCase())}
-                      maxLength={4}
+                      placeholder="e.g. EASA PPL(A)"
+                      value={editLicense}
+                      onChange={(e) => setEditLicense(e.target.value)}
                     />
-                    <span className="profile-input-badge">ICAO</span>
                   </div>
-                  {editHomeBase.trim() && (
-                    <div className="home-base-resolved-pill">
-                      <span className="pill-check">✓</span>
-                      <span>
-                        {editHomeBase.toUpperCase() === 'LPCS'
-                          ? 'Cascais Aerodrome (LPCS)'
-                          : `${editHomeBase.toUpperCase()} Aerodrome`}
-                      </span>
+
+                  <div className="profile-field">
+                    <label className="profile-label">HOME BASE AIRPORT (ICAO)</label>
+                    <div className="profile-input-with-badge">
+                      <input
+                        type="text"
+                        className="profile-input"
+                        placeholder="e.g. LPCS"
+                        value={editHomeBase}
+                        onChange={(e) => setEditHomeBase(e.target.value.toUpperCase())}
+                        maxLength={4}
+                      />
+                      <span className="profile-input-badge">ICAO</span>
                     </div>
-                  )}
+                    {editHomeBase.trim() && (
+                      <div className="home-base-resolved-pill">
+                        <span className="pill-check">✓</span>
+                        <span>
+                          {editHomeBase.toUpperCase() === 'LPCS'
+                            ? 'Cascais Aerodrome (LPCS)'
+                            : `${editHomeBase.toUpperCase()} Aerodrome`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Modern Switch Toggle: Auto-fill Home Base */}
                 <div className="cockpit-toggle-row">
                   <div className="toggle-info">
-                    <span className="toggle-title">Auto-fill home base as departure on new flights</span>
+                    <span className="toggle-title">Auto-fill Home Base as departure in Flight Planner</span>
                     <span className="toggle-desc">
-                      Automatically populates {editHomeBase ? `"${editHomeBase.toUpperCase()}"` : 'home base'} when opening a clean flight route.
+                      When opening a blank flight plan or cloning the route, automatically populates {editHomeBase ? `"${editHomeBase.toUpperCase()}"` : '"LPCS"'} as departure.
                     </span>
                   </div>
                   <label className="switch-control">
@@ -1036,33 +1034,26 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   </label>
                 </div>
 
-                {/* Section Divider: Account & Security */}
-                <div className="surface-section-divider">
-                  <span className="section-divider-label">ACCOUNT &amp; SECURITY</span>
-                </div>
+                {/* Cloud & Account Sync Section */}
+                <h3 className="profile-section-heading">Cloud &amp; Account Sync</h3>
 
                 <div className="profile-field">
-                  <label className="profile-label">REGISTERED PILOT EMAIL</label>
                   <div className="email-display-card">
                     <span className="email-text">
-                      {user?.email || (editDisplayName ? `${editDisplayName.toLowerCase().replace(/\s+/g, '')}@cockpit.aero` : 'pilot@cockpit.aero')}
+                      Email: {user?.email || (editDisplayName ? `${editDisplayName.toLowerCase().replace(/\s+/g, '')}@cockpit.aero` : 'pilot@cockpit.aero')}
                     </span>
                     <span className="verified-tag">✓ Verified</span>
                   </div>
                 </div>
 
                 <div className="profile-field">
-                  <label className="profile-label">SECURITY CREDENTIALS</label>
-                  <div className="password-display-card">
-                    <span className="masked-pwd">••••••••••••</span>
-                    <button
-                      type="button"
-                      className="btn-change-pwd"
-                      onClick={() => setIsChangingPassword(!isChangingPassword)}
-                    >
-                      {isChangingPassword ? 'Cancel' : '🔑 Change Password'}
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="btn-change-pwd-link"
+                    onClick={() => setIsChangingPassword(!isChangingPassword)}
+                  >
+                    🔑 {isChangingPassword ? 'Cancel' : 'Change Password'}
+                  </button>
                 </div>
 
                 {/* Inline Change Password Form */}
