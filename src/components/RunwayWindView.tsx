@@ -347,20 +347,28 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
         </div>
       )}
 
-      {weatherError && !weatherReport && (
-        <div className="rw-weather-warn">
-          ⚠️ {weatherError} You can enter wind values manually below.
+      {(!weatherReport || weatherError) && (
+        <div className="rw-weather-amber-banner">
+          <span className="amber-warn-icon">⚠️</span>
+          <span>
+            Live surface wind currently unavailable for this station ({activeAirport.identifier}). Enter manual METAR/ATIS observations.
+          </span>
         </div>
       )}
 
       {/* Main Grid */}
       <div className="rw-grid-layout">
-        {/* Left Column: Inputs & Runways */}
+        {/* Left Column: Calculation Hub */}
         <div className="rw-inputs-col">
+          <div className="rw-col-header">
+            <span className="rw-col-icon">⚙️</span>
+            <h2 className="rw-col-title">CALCULATION HUB</h2>
+          </div>
+
           {/* Runway Selection Card */}
           <div className="mb-card">
             <div className="mb-card-header">
-              <span className="mb-card-title">1. Runway Selection ({activeAirport.identifier})</span>
+              <span className="mb-card-title">Step 1: Select Aerodrome Runway ({activeAirport.identifier})</span>
               <span className="mb-badge">
                 {airportRunwayInfo ? 'Official AIP Runways' : 'Generic Runways'}
               </span>
@@ -383,7 +391,9 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                       <span className="rwy-choice-num">RWY {item.runway.designator}</span>
                       <span className="rwy-choice-heading">{item.runway.heading}°M</span>
                       {item.isBest && (
-                        <span className="rwy-best-badge">🟢 Recommended</span>
+                        <span className="rwy-best-badge">
+                          Recommended ✓ {item.headwind >= 0 ? `+${item.headwind} kt Headwind` : `${item.headwind} kt`}
+                        </span>
                       )}
                     </div>
 
@@ -428,7 +438,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
           {/* Wind & Gust Card */}
           <div className="mb-card">
             <div className="mb-card-header">
-              <span className="mb-card-title">2. Surface Wind &amp; Gusts</span>
+              <span className="mb-card-title">Step 2: Surface Wind &amp; Gusts</span>
               <span className={`mb-badge ${isAutoWind ? 'badge-live' : 'badge-manual'}`}>
                 {isAutoWind ? '⚡ Live Weather Synced' : '⚙️ Manual Override'}
               </span>
@@ -436,7 +446,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
 
             <div className="rw-field-grid">
               <div className="rw-input-wrap">
-                <label>Wind Direction (°M)</label>
+                <label>WIND DIRECTION (°M)</label>
                 <div className="rw-input-unit-box">
                   <input
                     type="number"
@@ -451,7 +461,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
               </div>
 
               <div className="rw-input-wrap">
-                <label>Wind Speed (KT)</label>
+                <label>WIND SPEED (KT)</label>
                 <div className="rw-input-unit-box">
                   <input
                     type="number"
@@ -466,7 +476,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
               </div>
 
               <div className="rw-input-wrap">
-                <label>Gust Speed (KT, Optional)</label>
+                <label>GUST SPEED (KT, OPTIONAL)</label>
                 <div className="rw-input-unit-box">
                   <input
                     type="number"
@@ -482,7 +492,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
               </div>
 
               <div className="rw-input-wrap">
-                <label>Max Demo Crosswind (KT)</label>
+                <label>MAX DEMO CROSSWIND (KT)</label>
                 <div className="rw-input-unit-box">
                   <input
                     type="number"
@@ -501,7 +511,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
           {/* Reciprocal Runway Card */}
           <div className="mb-card rw-reciprocal-card">
             <div className="mb-card-header">
-              <span className="mb-card-title">3. Reciprocal Runway ({recipNum})</span>
+              <span className="mb-card-title">Step 3: Reciprocal Runway Analysis ({recipNum})</span>
               <span className="mb-badge">Opposite Direction</span>
             </div>
             <div className="rw-reciprocal-body">
@@ -543,6 +553,10 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
 
         {/* Right Column: Visual Compass Rose & Component Cards */}
         <div className="rw-visual-col">
+          <div className="rw-col-header">
+            <span className="rw-col-icon">🧭</span>
+            <h2 className="rw-col-title">PERFORMANCE ANALYSIS &amp; COMPASS ROSE</h2>
+          </div>
           {/* Component Metric Cards */}
           <div className="rw-metrics-row">
             {/* Headwind / Tailwind Card */}

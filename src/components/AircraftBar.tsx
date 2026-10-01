@@ -152,54 +152,62 @@ export const AircraftBar: React.FC<AircraftBarProps> = ({ profile, onChange }) =
   };
 
   return (
-    <div className="aircraft-bar">
-      <div className="input-group preset-group">
-        <label>Aircraft Model</label>
-        <select
-          className="aircraft-select"
-          value={selectedModel}
-          onChange={handlePresetSelect}
-        >
-          {AIRCRAFT_PRESETS.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+    <div className="aircraft-bar aircraft-performance-grid">
+      {/* Card 1: Aircraft Model */}
+      <div className="aircraft-perf-card input-group preset-group">
+        <label className="perf-card-label">AIRCRAFT MODEL</label>
+        <div className="perf-select-wrapper">
+          <select
+            className="aircraft-select perf-select"
+            value={selectedModel}
+            onChange={handlePresetSelect}
+          >
+            {AIRCRAFT_PRESETS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <div className="input-group">
-        <label>Cruise Altitude</label>
-        <div className="input-with-suffix">
+      {/* Card 2: Cruise Altitude */}
+      <div className="aircraft-perf-card input-group">
+        <label className="perf-card-label">CRUISE ALTITUDE</label>
+        <div className="input-with-suffix perf-input-wrapper">
           <input
             type="number"
             step="500"
-            placeholder="4500"
+            className="perf-input"
+            placeholder="3500"
             value={alt}
             onChange={handleAltChange}
           />
-          <span className="suffix">ft</span>
+          <span className="suffix perf-suffix">FT MSL</span>
         </div>
       </div>
 
-      <div className="input-group">
-        <label>True Airspeed (TAS)</label>
-        <div className="input-with-suffix">
+      {/* Card 3: True Airspeed */}
+      <div className="aircraft-perf-card input-group">
+        <label className="perf-card-label">TRUE AIRSPEED</label>
+        <div className="input-with-suffix perf-input-wrapper">
           <input
             type="number"
             step="5"
-            placeholder="105"
+            className="perf-input"
+            placeholder="90"
             value={tas}
             onChange={handleTasChange}
           />
-          <span className="suffix">kt</span>
+          <span className="suffix perf-suffix">KT TAS</span>
         </div>
       </div>
 
-      <div className="input-group">
-        <div className="label-with-unit-switch">
-          <label>Fuel Burn</label>
-          <div className="unit-switch">
+      {/* Card 4: Fuel Burn */}
+      <div className="aircraft-perf-card input-group">
+        <div className="label-with-unit-switch perf-label-row">
+          <label className="perf-card-label">FUEL BURN</label>
+          <div className="unit-switch perf-unit-switch">
             <button
               type="button"
               className={`unit-btn ${profile.fuelUnit === 'gph' ? 'active' : ''}`}
@@ -214,19 +222,20 @@ export const AircraftBar: React.FC<AircraftBarProps> = ({ profile, onChange }) =
               onClick={() => handleUnitToggle('lph')}
               title="Liters per Hour"
             >
-              L/h
+              L/H
             </button>
           </div>
         </div>
-        <div className="input-with-suffix">
+        <div className="input-with-suffix perf-input-wrapper">
           <input
             type="number"
             step="0.5"
-            placeholder={profile.fuelUnit === 'gph' ? '8.5' : '32'}
+            className="perf-input"
+            placeholder={profile.fuelUnit === 'gph' ? '8.5' : '16'}
             value={fuel}
             onChange={handleFuelChange}
           />
-          <span className="suffix">{profile.fuelUnit === 'gph' ? 'gph' : 'L/h'}</span>
+          <span className="suffix perf-suffix">{profile.fuelUnit === 'gph' ? 'GPH' : 'L/H'}</span>
         </div>
       </div>
     </div>

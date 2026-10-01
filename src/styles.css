@@ -7835,6 +7835,1166 @@ body, html {
   color: #34d399;
 }
 
+/* ═════════════════════════════════════════════════════════════════════════
+   CONSULTANT UI REDESIGN SYSTEM (Images 1 - 4 & consultant-redo-website-ui)
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. TOP AIRCRAFT PERFORMANCE 4-CARD GRID (_image1_.jpg) ─── */
+.aircraft-performance-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .aircraft-performance-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 550px) {
+  .aircraft-performance-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.aircraft-perf-card {
+  background: #121620;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.65rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.4rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.aircraft-perf-card:hover {
+  border-color: rgba(45, 212, 191, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.perf-card-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.perf-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.perf-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.perf-select {
+  width: 100%;
+  background: #0e1118;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.4rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.perf-select:focus {
+  border-color: #2dd4bf;
+}
+
+.perf-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: #0e1118;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  gap: 0.5rem;
+}
+
+.perf-input-wrapper:focus-within {
+  border-color: #2dd4bf;
+}
+
+.perf-input {
+  background: transparent;
+  border: none;
+  color: #f8fafc;
+  font-family: var(--font-mono, monospace);
+  font-size: 1.05rem;
+  font-weight: 700;
+  width: 100%;
+  outline: none;
+}
+
+.perf-suffix {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.perf-unit-switch {
+  display: flex;
+  background: #0e1118;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.35rem;
+  padding: 2px;
+  gap: 2px;
+}
+
+.perf-unit-switch .unit-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.perf-unit-switch .unit-btn.active {
+  background: #14b8a6;
+  color: #ffffff;
+}
+
+/* ─── 2. WEATHER & FLIGHT SNAPSHOT BAR (_image1_.jpg) ─── */
+.weather-snapshot-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #121620;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.65rem;
+  padding: 0.6rem 1.25rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.weather-snapshot-bar .wind-display {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.wind-readout-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wind-icon {
+  font-size: 1.1rem;
+}
+
+.wind-readout-text {
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #f8fafc;
+}
+
+.wind-scheduled-tag {
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  color: #2dd4bf;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.15s ease;
+}
+
+.wind-scheduled-tag:hover {
+  background: rgba(45, 212, 191, 0.22);
+}
+
+.weather-quick-metrics {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  font-family: var(--font-mono, monospace);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.35rem 0.85rem;
+  border-radius: 0.45rem;
+}
+
+.qm-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.qm-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.qm-val {
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.qm-val.val-mh {
+  color: #f59e0b;
+}
+
+.qm-val.val-fuel {
+  color: #2dd4bf;
+}
+
+.qm-sep {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── 3. INTELLIGENT ROUTE CHIPS BUILDER (_image1_.jpg & _image2_.jpg) ─── */
+.route-builder-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.route-chips-container {
+  display: flex;
+  align-items: center;
+  background: #0e1118;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.55rem;
+  padding: 0.45rem 0.75rem;
+  min-height: 48px;
+  cursor: text;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.route-chips-container.focused,
+.route-chips-container:focus-within {
+  border-color: #2dd4bf;
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.15);
+}
+
+.route-chips-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.route-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  user-select: none;
+}
+
+.route-chip:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.route-chip.airport {
+  background: rgba(20, 184, 166, 0.15);
+  border: 1px solid rgba(20, 184, 166, 0.4);
+  color: #2dd4bf;
+}
+
+.route-chip.waypoint {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: #38bdf8;
+}
+
+.route-chip-remove-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 0.75rem;
+  padding: 0 2px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.route-chip-remove-btn:hover {
+  opacity: 1;
+}
+
+.route-chip-input {
+  background: transparent;
+  border: none;
+  color: #f8fafc;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  flex: 1;
+  min-width: 140px;
+  text-transform: uppercase;
+}
+
+.route-action-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.route-btn-save {
+  background: #14b8a6;
+  border: 1px solid #2dd4bf;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.45rem 0.95rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s ease;
+}
+
+.route-btn-save:hover:not(:disabled) {
+  background: #0d9488;
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.35);
+}
+
+.route-btn-save.saved {
+  background: #059669;
+  border-color: #10b981;
+}
+
+.route-btn-share {
+  background: #121620;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  color: #2dd4bf;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.route-btn-share:hover:not(:disabled) {
+  background: rgba(45, 212, 191, 0.15);
+  color: #ffffff;
+}
+
+.route-btn-kneeboard {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.45rem 0.95rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+}
+
+.route-btn-kneeboard:hover {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.route-btn-secondary {
+  background: #121620;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.route-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.route-btn-save:disabled,
+.route-btn-share:disabled,
+.route-btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.route-status-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.route-status-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.35rem;
+  font-family: var(--font-mono, monospace);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.route-status-pill.resolved {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+}
+
+.route-status-pill.not-found {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  cursor: pointer;
+}
+
+/* ─── 4. FLIGHT LEGS & TOTALS TABLE (_image2_.jpg) ─── */
+.navlog-totals-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.totals-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.totals-section-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.add-phases-btn {
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  color: #2dd4bf;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.add-phases-btn:hover {
+  background: rgba(45, 212, 191, 0.2);
+  color: #ffffff;
+}
+
+.totals-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.55rem;
+  background: #121620;
+}
+
+.totals-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  font-family: var(--font-mono, monospace);
+  text-align: left;
+}
+
+.totals-table th {
+  background: rgba(0, 0, 0, 0.35);
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.totals-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+.totals-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.totals-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.totals-row.active-row {
+  background: rgba(45, 212, 191, 0.08);
+  border-left: 3px solid #2dd4bf;
+}
+
+.totals-summary-row {
+  background: rgba(0, 0, 0, 0.4);
+  font-weight: 800;
+}
+
+.totals-summary-row td {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: none;
+}
+
+.cell-bold {
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.cell-ident {
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.cell-mh {
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.cell-fuel {
+  color: #2dd4bf;
+}
+
+.cell-total-label {
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+/* ─── 5. PILOT PROFILE & COCKPIT CENTER (_image3_.jpg) ─── */
+.pilot-command-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #121620;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.75rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.profile-meta-subline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.meta-sep {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.command-save-btn {
+  background: #14b8a6;
+  border: 1px solid #2dd4bf;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 0.55rem 1.15rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.command-save-btn:hover {
+  background: #0d9488;
+}
+
+.pilot-menu-wrapper {
+  position: relative;
+}
+
+.pilot-menu-btn {
+  background: #0e1118;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0.55rem 1rem;
+  border-radius: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pilot-menu-btn:hover {
+  border-color: #2dd4bf;
+}
+
+.pilot-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #121620;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  min-width: 200px;
+  z-index: 1000;
+  padding: 0.35rem 0;
+}
+
+.dropdown-item {
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.dropdown-item.item-danger {
+  color: #f87171;
+}
+
+.dropdown-item.item-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0.35rem 0;
+}
+
+/* Two-Surface Command Grid */
+.cockpit-command-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 950px) {
+  .cockpit-command-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cockpit-surface {
+  background: #121620;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.surface-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.surface-header-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.surface-icon {
+  font-size: 1.5rem;
+}
+
+.surface-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.surface-subtitle {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0.2rem 0 0 0;
+}
+
+.surface-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.surface-section-divider {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.section-divider-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+/* Dynamic Pilot ID Card */
+.pilot-id-input-card {
+  display: flex;
+  align-items: center;
+  background: #0e1118;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  gap: 0.6rem;
+}
+
+.id-card-icon {
+  font-size: 1.2rem;
+}
+
+.id-card-input {
+  background: transparent;
+  border: none;
+  color: #f8fafc;
+  font-size: 0.95rem;
+  font-weight: 700;
+  width: 100%;
+  outline: none;
+}
+
+.id-card-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  background: rgba(45, 212, 191, 0.15);
+  color: #2dd4bf;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.25rem;
+  white-space: nowrap;
+}
+
+.home-base-resolved-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  padding: 0.25rem 0.55rem;
+  border-radius: 0.35rem;
+  margin-top: 0.35rem;
+  width: fit-content;
+}
+
+.cockpit-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  gap: 1rem;
+}
+
+.toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.toggle-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.toggle-desc {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Switch control */
+.switch-control {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch-control input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #334155;
+  transition: 0.25s;
+  border-radius: 24px;
+}
+
+.switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.25s;
+  border-radius: 50%;
+}
+
+.switch-control input:checked + .switch-slider {
+  background-color: #14b8a6;
+}
+
+.switch-control input:checked + .switch-slider:before {
+  transform: translateX(20px);
+}
+
+.email-display-card,
+.password-display-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0e1118;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.85rem;
+}
+
+.email-text,
+.masked-pwd {
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.verified-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+}
+
+.btn-change-pwd {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-change-pwd:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* Featured Aircraft Card */
+.featured-aircraft-card {
+  background: #0e1118;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  border-radius: 0.65rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.aircraft-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.aircraft-info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.aircraft-silhouette {
+  font-size: 1.75rem;
+}
+
+.featured-aircraft-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.active-default-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4ade80;
+  margin-top: 0.15rem;
+  display: inline-block;
+}
+
+.aircraft-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.spec-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.spec-val-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.spec-input {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.3rem;
+  color: #f8fafc;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.95rem;
+  font-weight: 700;
+  width: 65px;
+  padding: 0.2rem 0.4rem;
+  outline: none;
+}
+
+.spec-input:focus {
+  border-color: #2dd4bf;
+}
+
+.spec-unit {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.preset-switch-select {
+  background: #0e1118;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  color: #2dd4bf;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.reserve-pills-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.reserve-pill {
+  flex: 1;
+  background: #0e1118;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.5rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.reserve-pill.active {
+  background: rgba(45, 212, 191, 0.15);
+  border-color: #2dd4bf;
+  color: #ffffff;
+}
+
+/* Measurement Preference Matrix */
+.matrix-2x2-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .matrix-2x2-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.matrix-cell {
+  background: #0e1118;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.matrix-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.matrix-toggle {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.matrix-toggle-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.4rem 0.3rem;
+  border-radius: 0.35rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.matrix-toggle-btn.active {
+  background: rgba(45, 212, 191, 0.15);
+  border-color: #2dd4bf;
+  color: #2dd4bf;
+}
+
+/* ─── 6. RUNWAY WIND & CROSSWIND CALCULATOR (_image4_.jpg) ─── */
+.rw-col-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.25rem;
+}
+
+.rw-col-icon {
+  font-size: 1.25rem;
+}
+
+.rw-col-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  margin: 0;
+}
+
+.rw-weather-amber-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 0.55rem;
+  padding: 0.75rem 1.25rem;
+  color: #fbbf24;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.amber-warn-icon {
+  font-size: 1.25rem;
+}
+
+.rwy-best-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+}
+
+
 
 
 

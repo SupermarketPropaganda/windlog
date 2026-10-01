@@ -33,3 +33,8 @@ dist-ssr
 # Vitest / Testing
 coverage
 .cache
+
+# Reference Assets & Local Prototypes
+prototypes/
+_image*.jpg
+consultant-redo-website-ui.txt

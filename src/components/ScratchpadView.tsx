@@ -11,6 +11,7 @@ import {
 import { AircraftBar } from './AircraftBar';
 import { WindPanel } from './WindPanel';
 import { NavLogRow } from './NavLogRow';
+import { RouteChipsBuilder } from './RouteChipsBuilder';
 import { CoordPrompt } from './CoordPrompt';
 import { RouteMap, AirspaceFilterType } from './RouteMap';
 import { AltitudeProfile } from './AltitudeProfile';
@@ -113,111 +114,26 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
           isLoading={props.isWindLoading}
           departureTime={props.departureTime}
           onDepartureTimeChange={props.onDepartureTimeChange}
+          navLog={props.navLog}
+          profile={props.profile}
         />
       </div>
 
-      {/* Flight Route Scratchpad Input */}
+      {/* Flight Route Scratchpad Input via RouteChipsBuilder */}
       <div className="route-section">
-        <div className="route-input-wrapper">
-          <input
-            type="text"
-            className="route-input"
-            placeholder="TYPE ROUTE: LPCS/4500 COIMB/3500 LPCS"
-            value={props.routeInput}
-            onChange={(e) => props.onRouteInputChange(e.target.value)}
-            autoCapitalize="characters"
-            autoCorrect="off"
-            spellCheck={false}
-            autoComplete="off"
-          />
-
-          <div className="route-actions">
-            {props.onSaveFlight && (
-              <button
-                type="button"
-                className={`route-action-btn ${props.isFlightSaved ? 'saved' : ''}`}
-                title={props.routeInput.trim().length > 0 ? "Save flight to your library" : "Enter a route to save"}
-                onClick={props.routeInput.trim().length > 0 ? props.onSaveFlight : undefined}
-                disabled={props.routeInput.trim().length === 0}
-                style={{
-                  borderColor: props.routeInput.trim().length > 0 ? '#10b981' : '#334155',
-                  color: props.routeInput.trim().length > 0 ? '#34d399' : '#64748b',
-                  cursor: props.routeInput.trim().length > 0 ? 'pointer' : 'not-allowed',
-                  opacity: props.routeInput.trim().length > 0 ? 1 : 0.6,
-                }}
-              >
-                💾 {props.isFlightSaved ? 'Saved ✓' : 'Save Flight'}
-              </button>
-            )}
-            {props.routeInput.trim().length > 0 && (
-              <>
-                <button
-                  type="button"
-                  className="route-action-btn"
-                  title="Share flight route as URL"
-                  onClick={props.onShareRoute}
-                >
-                  🔗 Share
-                </button>
-                {props.navLog && props.navLog.legs.length > 0 && (
-                  <button
-                    type="button"
-                    className="route-action-btn"
-                    title="Open Printable SOP Form 002 Kneeboard / PDF"
-                    onClick={props.onOpenKneeboard}
-                    style={{ borderColor: '#3b82f6', color: '#60a5fa' }}
-                  >
-                    📄 PDF Kneeboard
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="route-action-btn"
-                  title="Reverse Route (Return Flight)"
-                  onClick={props.onReverseRoute}
-                >
-                  ⇄ Reverse
-                </button>
-                <button
-                  type="button"
-                  className="route-action-btn"
-                  title="Clear Route"
-                  onClick={props.onClearRoute}
-                >
-                  ✕ Clear
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {props.tokens.length > 0 && (
-          <div className="route-tokens">
-            {props.tokens.map((token, idx) => (
-              <span
-                key={idx}
-                className={`token ${token.status} ${token.status === 'not-found' ? 'clickable' : ''}`}
-                onClick={() => props.onTokenClick(token)}
-                title={
-                  token.status === 'not-found'
-                    ? 'Click to set coordinates manually'
-                    : `${token.waypoint?.name || token.identifier}${
-                        token.altitudeOverride
-                          ? ` @ ${token.altitudeOverride.toLocaleString()} ft`
-                          : ''
-                      }`
-                }
-              >
-                {token.identifier}
-                {token.altitudeOverride && (
-                  <span className="token-alt"> {token.altitudeOverride / 1000}k</span>
-                )}
-                {token.status === 'not-found' && ' ⚠️'}
-                {token.status === 'resolved' && ' ✓'}
-              </span>
-            ))}
-          </div>
-        )}
+        <RouteChipsBuilder
+          routeInput={props.routeInput}
+          tokens={props.tokens}
+          resolvedWaypoints={props.resolvedWaypoints}
+          onRouteInputChange={props.onRouteInputChange}
+          onSaveFlight={props.onSaveFlight}
+          isFlightSaved={props.isFlightSaved}
+          onShareRoute={props.onShareRoute}
+          onOpenKneeboard={props.onOpenKneeboard}
+          onReverseRoute={props.onReverseRoute}
+          onClearRoute={props.onClearRoute}
+          onTokenClick={props.onTokenClick}
+        />
       </div>
 
       {/* Responsive Main Layout:
@@ -231,6 +147,8 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
               <NavLogRow
                 key={leg.id}
                 leg={leg}
+                legIndex={idx}
+                fuelUnit={props.profile.fuelUnit}
                 isActive={props.activeLegIndex === idx}
                 onSelect={() => props.onSelectLeg(idx)}
                 onAltitudeChange={(newAlt) => props.onLegAltitudeChange(idx, newAlt)}
@@ -272,6 +190,86 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
               </div>
             </div>
           )}
+
+          {/* Detailed Flight Legs & Totals Table (matching _image2_.jpg) */}
+          {props.navLog && props.navLog.legs.length > 0 && (
+            <div className="navlog-totals-section">
+              <div className="totals-header-row">
+                <h3 className="totals-section-title">FLIGHT LEGS &amp; TOTALS</h3>
+                <button
+                  type="button"
+                  className="add-phases-btn"
+                  title="Include or toggle climb/descent flight phase totals"
+                >
+                  📈 Add Phases Total
+                </button>
+              </div>
+
+              <div className="totals-table-wrap">
+                <table className="totals-table">
+                  <thead>
+                    <tr>
+                      <th>LEG</th>
+                      <th>FROM/TO</th>
+                      <th>ALT</th>
+                      <th>TC</th>
+                      <th>WIND</th>
+                      <th>TH</th>
+                      <th>VAR</th>
+                      <th>MH</th>
+                      <th>DIST</th>
+                      <th>GS</th>
+                      <th>ETE</th>
+                      <th>FUEL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {props.navLog.legs.map((leg, idx) => (
+                      <tr
+                        key={`table_leg_${leg.id}`}
+                        className={`totals-row ${props.activeLegIndex === idx ? 'active-row' : ''}`}
+                        onClick={() => props.onSelectLeg(idx)}
+                      >
+                        <td className="cell-bold">{idx + 1}</td>
+                        <td className="cell-ident">{leg.from.identifier} - {leg.to.identifier}</td>
+                        <td>{leg.altitude}</td>
+                        <td>{Math.round(leg.trueTrack).toString().padStart(3, '0')}°</td>
+                        <td>
+                          {leg.wind
+                            ? `${leg.wind.direction.toString().padStart(3, '0')}°/${leg.wind.speed}kt`
+                            : '--'}
+                        </td>
+                        <td>{Math.round(leg.trueHeading).toString().padStart(3, '0')}°</td>
+                        <td>
+                          {leg.magneticVariation >= 0
+                            ? `+${leg.magneticVariation.toFixed(1)}°`
+                            : `${leg.magneticVariation.toFixed(1)}°`}
+                        </td>
+                        <td className="cell-mh">
+                          {Math.round(leg.magneticHeading).toString().padStart(3, '0')}°
+                        </td>
+                        <td>{leg.distance.toFixed(1)} nm</td>
+                        <td>{Math.round(leg.groundSpeed)} kt</td>
+                        <td>{formatTime(leg.ete)}</td>
+                        <td className="cell-fuel">
+                          {leg.fuelBurn.toFixed(1)} {fuelUnitLabel}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="totals-summary-row">
+                      <td colSpan={8} className="cell-total-label">TOTAL</td>
+                      <td className="cell-bold">{props.navLog.totalDistance.toFixed(1)} nm</td>
+                      <td></td>
+                      <td className="cell-bold">{formatTime(props.navLog.totalEte)}</td>
+                      <td className="cell-bold cell-fuel">
+                        {props.navLog.totalFuel.toFixed(1)} {fuelUnitLabel}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Tactical Flight Panel with Tabbed Map / Profile View */}
@@ -301,7 +299,7 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                   >
                     <span className="tactical-tab-icon">📈</span>
                     <span>Vertical Profile</span>
-                    <span className="tactical-tab-badge">{props.navLog.totalDistance.toFixed(0)} NM</span>
+                    <span className="tactical-tab-badge">({props.navLog.totalDistance.toFixed(0)} NM)</span>
                   </button>
                 )}
               </div>

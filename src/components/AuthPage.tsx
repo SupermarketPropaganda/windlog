@@ -160,6 +160,16 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [editAltimeterUnit, setEditAltimeterUnit] = useState<'hPa' | 'inHg'>(() => {
     return getStorageItemSync<'hPa' | 'inHg'>('windlog_altimeter_unit', 'hPa');
   });
+  const [editDistanceUnit, setEditDistanceUnit] = useState<'NM' | 'KM'>(() => {
+    return getStorageItemSync<'NM' | 'KM'>('windlog_distance_unit', 'NM');
+  });
+  const [editSpeedUnit, setEditSpeedUnit] = useState<'KT' | 'MPH'>(() => {
+    return getStorageItemSync<'KT' | 'MPH'>('windlog_speed_unit', 'KT');
+  });
+  const [editWeightUnit, setEditWeightUnit] = useState<'kg' | 'lbs'>(() => {
+    return getStorageItemSync<'kg' | 'lbs'>('windlog_weight_unit', 'kg');
+  });
+  const [isPilotMenuOpen, setIsPilotMenuOpen] = useState(false);
 
   // Update local states when user changes (e.g. on sign in)
   useEffect(() => {
@@ -213,6 +223,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       setStorageItem('windlog_home_base', sanitizedHomeBase);
       setStorageItem('windlog_auto_home_base', editAutoFillHomeBase);
       setStorageItem('windlog_altimeter_unit', editAltimeterUnit);
+      setStorageItem('windlog_distance_unit', editDistanceUnit);
+      setStorageItem('windlog_speed_unit', editSpeedUnit);
+      setStorageItem('windlog_weight_unit', editWeightUnit);
       setStorageItem('windlog_reserve_fuel_mins', editReserveFuelMinutes);
 
       const updatedProfile: AircraftProfile = {
@@ -898,12 +911,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          4. COCKPIT PREFERENCES & FLIGHT DEFAULTS VIEW
+          4. COCKPIT COMMAND CENTER & PROFILE VIEW (matching _image3_.jpg)
           ───────────────────────────────────────────────────────────── */}
       {activeTab === 'profile' && (
         <>
-          {/* Top Pilot Profile Header Card */}
-          <div className="profile-header-card">
+          {/* Top Pilot Profile Command Banner */}
+          <div className="profile-header-card pilot-command-banner">
             <div className="profile-header-left">
               <div className="profile-avatar-circle" title="Pilot Avatar">
                 {initials}
@@ -915,15 +928,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     {isRealPilotUser ? '☁ Cloud Synced' : '💾 Local Guest Pilot'}
                   </span>
                 </div>
-                <div className="profile-pills-row">
-                  <span className="profile-pill">
-                    🪪 {editLicense.trim() ? editLicense.trim().toUpperCase() : 'No License Set'}
-                  </span>
-                  <span className="profile-pill">
-                    📍 Base: {editHomeBase.trim() ? editHomeBase.trim().toUpperCase() : 'None'}
-                  </span>
-                  <span className="profile-pill">
-                    ✈ {AIRCRAFT_PRESETS.find((p) => p.id === editAircraftModel)?.name || 'Custom Aircraft'}
+                <div className="profile-meta-subline">
+                  <span>🪪 {editLicense.trim() || 'EASA PPL(A)'}</span>
+                  <span className="meta-sep">|</span>
+                  <span>📍 Base: {editHomeBase.trim() || 'LPCS'}</span>
+                  <span className="meta-sep">|</span>
+                  <span>
+                    📅 Member Since: {user ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Sep 20, 2026'}
                   </span>
                 </div>
               </div>
@@ -932,451 +943,456 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <div className="profile-header-actions">
               <button
                 type="button"
-                className="profile-save-btn"
+                className="profile-save-btn command-save-btn"
                 onClick={handleSaveAllPreferences}
                 disabled={isSaving}
               >
                 {isSaving ? 'Saving...' : '💾 Save Preferences'}
               </button>
 
-              {isRealPilotUser ? (
+              {/* Pilot Account Dropdown */}
+              <div className="pilot-menu-wrapper">
                 <button
                   type="button"
-                  className="profile-signout-btn"
-                  onClick={async () => {
-                    await signOut();
-                    setActiveTab('signin');
-                  }}
+                  className="pilot-menu-btn"
+                  onClick={() => setIsPilotMenuOpen(!isPilotMenuOpen)}
                 >
-                  Sign Out
+                  <span>👤 {displayName}</span>
+                  <span className="menu-caret">{isPilotMenuOpen ? '▲' : '▼'}</span>
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  className="profile-btn-secondary"
-                  onClick={() => setActiveTab('signin')}
-                >
-                  Sign In / Register
-                </button>
-              )}
+
+                {isPilotMenuOpen && (
+                  <div className="pilot-dropdown-menu">
+                    <div className="dropdown-item" onClick={() => setIsPilotMenuOpen(false)}>
+                      👤 Profile &amp; Identity
+                    </div>
+                    <div className="dropdown-item" onClick={() => setIsPilotMenuOpen(false)}>
+                      ✈️ Aircraft Presets
+                    </div>
+                    <div className="dropdown-item" onClick={() => setIsPilotMenuOpen(false)}>
+                      🧭 Units &amp; Measures
+                    </div>
+                    {isRealPilotUser ? (
+                      <>
+                        <div
+                          className="dropdown-item"
+                          onClick={() => {
+                            setIsPilotMenuOpen(false);
+                            setIsChangingPassword(true);
+                          }}
+                        >
+                          🔑 Change Password
+                        </div>
+                        <div className="dropdown-divider" />
+                        <div
+                          className="dropdown-item item-danger"
+                          onClick={async () => {
+                            setIsPilotMenuOpen(false);
+                            await signOut();
+                            setActiveTab('signin');
+                          }}
+                        >
+                          🚪 Sign Out
+                        </div>
+                      </>
+                    ) : (
+                      <div
+                        className="dropdown-item"
+                        onClick={() => {
+                          setIsPilotMenuOpen(false);
+                          setActiveTab('signin');
+                        }}
+                      >
+                        🔐 Sign In / Register
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Spacious 4-Card Dashboard Grid */}
-          <div className="profile-grid">
-            {/* Card 1: Pilot Identity & Station */}
-            <div className="profile-card">
-              <div className="profile-card-header">
-                <span className="profile-card-icon">👤</span>
+          {/* Two-Surface Command Center Grid */}
+          <div className="cockpit-command-grid">
+            {/* ── Surface 1 (Left): PROFILE & IDENTITY ── */}
+            <div className="cockpit-surface profile-identity-surface">
+              <div className="surface-header">
+                <span className="surface-icon">👤</span>
                 <div>
-                  <h2 className="profile-card-title">Pilot Identity &amp; Station</h2>
-                  <p className="profile-card-subtitle">
-                    Callsign, flight license, ratings, and home base airport
-                  </p>
+                  <h2 className="surface-title">PROFILE &amp; IDENTITY</h2>
+                  <p className="surface-subtitle">Personal pilot credentials, licenses, and default home aerodrome</p>
                 </div>
               </div>
 
-              <div className="profile-form-body">
+              <div className="surface-body">
+                {/* Dynamic Pilot ID Card Field */}
+                <div className="profile-field dynamic-id-field">
+                  <label className="profile-label">CALLSIGN / DISPLAY NAME</label>
+                  <div className="pilot-id-input-card">
+                    <span className="id-card-icon">🪪</span>
+                    <input
+                      type="text"
+                      className="profile-input id-card-input"
+                      placeholder="e.g. Captain Maverick or CS-TFC"
+                      value={editDisplayName}
+                      onChange={(e) => setEditDisplayName(e.target.value)}
+                    />
+                    <span className="id-card-badge">PILOT ID</span>
+                  </div>
+                </div>
+
                 <div className="profile-field">
-                  <label className="profile-label">Callsign / Display Name</label>
+                  <label className="profile-label">PILOT LICENSE / RATING</label>
                   <input
                     type="text"
                     className="profile-input"
-                    placeholder="e.g. Capt. Maverick or N172SP"
-                    value={editDisplayName}
-                    onChange={(e) => setEditDisplayName(e.target.value)}
+                    placeholder="e.g. EASA PPL(A) - SEP (Land)"
+                    value={editLicense}
+                    onChange={(e) => setEditLicense(e.target.value)}
                   />
                 </div>
 
-                <div className="profile-input-row">
-                  <div className="profile-field">
-                    <label className="profile-label">Pilot License / Rating</label>
+                <div className="profile-field">
+                  <label className="profile-label">HOME BASE AIRPORT (ICAO)</label>
+                  <div className="profile-input-with-badge">
                     <input
                       type="text"
                       className="profile-input"
-                      placeholder="e.g. PPL(A), CPL-IR, ATPL"
-                      value={editLicense}
-                      onChange={(e) => setEditLicense(e.target.value)}
+                      placeholder="e.g. LPCS"
+                      value={editHomeBase}
+                      onChange={(e) => setEditHomeBase(e.target.value.toUpperCase())}
+                      maxLength={4}
                     />
+                    <span className="profile-input-badge">ICAO</span>
                   </div>
-
-                  <div className="profile-field">
-                    <label className="profile-label">Home Base Airport (ICAO)</label>
-                    <div className="profile-input-with-badge">
-                      <input
-                        type="text"
-                        className="profile-input"
-                        placeholder="e.g. LPCS"
-                        value={editHomeBase}
-                        onChange={(e) => setEditHomeBase(e.target.value.toUpperCase())}
-                        maxLength={4}
-                      />
-                      <span className="profile-input-badge">ICAO</span>
+                  {editHomeBase.trim() && (
+                    <div className="home-base-resolved-pill">
+                      <span className="pill-check">✓</span>
+                      <span>
+                        {editHomeBase.toUpperCase() === 'LPCS'
+                          ? 'Cascais Aerodrome (LPCS)'
+                          : `${editHomeBase.toUpperCase()} Aerodrome`}
+                      </span>
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                <div className="profile-checkbox-card">
-                  <label className="profile-checkbox-label">
+                {/* Modern Switch Toggle: Auto-fill Home Base */}
+                <div className="cockpit-toggle-row">
+                  <div className="toggle-info">
+                    <span className="toggle-title">Auto-fill home base as departure on new flights</span>
+                    <span className="toggle-desc">
+                      Automatically populates {editHomeBase ? `"${editHomeBase.toUpperCase()}"` : 'home base'} when opening a clean flight route.
+                    </span>
+                  </div>
+                  <label className="switch-control">
                     <input
                       type="checkbox"
-                      className="profile-checkbox"
                       checked={editAutoFillHomeBase}
                       onChange={(e) => setEditAutoFillHomeBase(e.target.checked)}
                     />
-                    <div className="profile-checkbox-content">
-                      <span className="profile-checkbox-title">
-                        Auto-fill Home Base as departure in Flight Planner
-                      </span>
-                      <span className="profile-checkbox-desc">
-                        When opening a blank flight plan or clearing the route, automatically populates{' '}
-                        {editHomeBase ? `"${editHomeBase.toUpperCase()}"` : 'your home base'} as departure.
-                      </span>
-                    </div>
+                    <span className="switch-slider" />
                   </label>
                 </div>
+
+                {/* Section Divider: Account & Security */}
+                <div className="surface-section-divider">
+                  <span className="section-divider-label">ACCOUNT &amp; SECURITY</span>
+                </div>
+
+                <div className="profile-field">
+                  <label className="profile-label">REGISTERED PILOT EMAIL</label>
+                  <div className="email-display-card">
+                    <span className="email-text">
+                      {user?.email || (editDisplayName ? `${editDisplayName.toLowerCase().replace(/\s+/g, '')}@cockpit.aero` : 'pilot@cockpit.aero')}
+                    </span>
+                    <span className="verified-tag">✓ Verified</span>
+                  </div>
+                </div>
+
+                <div className="profile-field">
+                  <label className="profile-label">SECURITY CREDENTIALS</label>
+                  <div className="password-display-card">
+                    <span className="masked-pwd">••••••••••••</span>
+                    <button
+                      type="button"
+                      className="btn-change-pwd"
+                      onClick={() => setIsChangingPassword(!isChangingPassword)}
+                    >
+                      {isChangingPassword ? 'Cancel' : '🔑 Change Password'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Inline Change Password Form */}
+                {isChangingPassword && (
+                  <form onSubmit={handleChangePasswordSubmit} className="inline-pwd-form">
+                    {passwordChangeError && (
+                      <div className="auth-feedback-banner error">{passwordChangeError}</div>
+                    )}
+                    {passwordChangeSuccess && (
+                      <div className="auth-feedback-banner success">{passwordChangeSuccess}</div>
+                    )}
+                    <div className="profile-field">
+                      <label className="profile-label">Current Password</label>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        className="profile-input"
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        required
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div className="profile-field">
+                      <label className="profile-label">New Password (min 6 chars)</label>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        className="profile-input"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <div className="profile-field">
+                      <label className="profile-label">Confirm New Password</label>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        className="profile-input"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <button type="submit" className="profile-save-btn full">
+                      Update Password
+                    </button>
+                  </form>
+                )}
               </div>
             </div>
 
-            {/* Card 2: Flight Planning Defaults */}
-            <div className="profile-card">
-              <div className="profile-card-header">
-                <span className="profile-card-icon">✈️</span>
-                <div>
-                  <h2 className="profile-card-title">Flight Planning Defaults</h2>
-                  <p className="profile-card-subtitle">
-                    Default aircraft performance, cruise altitude, TAS, and fuel burn
-                  </p>
+            {/* ── Surface 2 (Right): AIRCRAFT & COCKPIT CONFIGURATION ── */}
+            <div className="cockpit-surface aircraft-cockpit-surface">
+              <div className="surface-header-with-action">
+                <div className="surface-header">
+                  <span className="surface-icon">✈️</span>
+                  <div>
+                    <h2 className="surface-title">AIRCRAFT &amp; COCKPIT CONFIGURATION</h2>
+                    <p className="surface-subtitle">Fleet profiles, cruise performance defaults, and unit systems</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="profile-form-body">
-                <div className="profile-field">
-                  <label className="profile-label">Default Aircraft Preset</label>
+                <div className="preset-switch-dropdown">
                   <select
-                    className="profile-select"
+                    className="preset-switch-select"
                     value={editAircraftModel}
                     onChange={(e) => handleSelectAircraftPreset(e.target.value)}
                   >
-                    <optgroup label="Standard Aircraft Presets">
-                      {AIRCRAFT_PRESETS.map((preset) => (
-                        <option key={preset.id} value={preset.id}>
-                          {preset.name} ({preset.tas} KT • {preset.fuelFlow} {preset.fuelUnit.toUpperCase()})
-                        </option>
-                      ))}
-                    </optgroup>
+                    {AIRCRAFT_PRESETS.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        + Switch: {p.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
+              </div>
 
-                <div className="profile-input-row">
-                  <div className="profile-field">
-                    <label className="profile-label">Default Cruise Altitude</label>
-                    <div className="profile-input-with-badge">
-                      <input
-                        type="number"
-                        step="500"
-                        min="500"
-                        max="45000"
-                        className="profile-input"
-                        value={editCruiseAltitude}
-                        onChange={(e) => setEditCruiseAltitude(e.target.value)}
-                      />
-                      <span className="profile-input-badge">FT MSL</span>
+              <div className="surface-body">
+                {/* Featured Aircraft Preset Card (matching _image3_.jpg) */}
+                <div className="featured-aircraft-card">
+                  <div className="aircraft-card-top">
+                    <div className="aircraft-info-row">
+                      <span className="aircraft-silhouette">🛩️</span>
+                      <div>
+                        <h3 className="featured-aircraft-name">
+                          {AIRCRAFT_PRESETS.find((p) => p.id === editAircraftModel)?.name || 'Tecnam P2002-JF Sierra'}
+                        </h3>
+                        <span className="active-default-badge">● Active Default</span>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="profile-field">
-                    <label className="profile-label">Default True Airspeed (TAS)</label>
-                    <div className="profile-input-with-badge">
-                      <input
-                        type="number"
-                        step="1"
-                        min="30"
-                        max="500"
-                        className="profile-input"
-                        value={editTas}
-                        onChange={(e) => setEditTas(e.target.value)}
-                      />
-                      <span className="profile-input-badge">KT</span>
+                  <div className="aircraft-specs-grid">
+                    <div className="spec-item">
+                      <span className="spec-label">CRUISE ALTITUDE</span>
+                      <div className="spec-val-row">
+                        <input
+                          type="number"
+                          step="500"
+                          className="spec-input"
+                          value={editCruiseAltitude}
+                          onChange={(e) => setEditCruiseAltitude(e.target.value)}
+                        />
+                        <span className="spec-unit">FT MSL</span>
+                      </div>
+                    </div>
+
+                    <div className="spec-item">
+                      <span className="spec-label">TRUE AIRSPEED</span>
+                      <div className="spec-val-row">
+                        <input
+                          type="number"
+                          step="1"
+                          className="spec-input"
+                          value={editTas}
+                          onChange={(e) => setEditTas(e.target.value)}
+                        />
+                        <span className="spec-unit">KT TAS</span>
+                      </div>
+                    </div>
+
+                    <div className="spec-item">
+                      <span className="spec-label">FUEL BURN</span>
+                      <div className="spec-val-row">
+                        <input
+                          type="number"
+                          step="0.5"
+                          className="spec-input"
+                          value={editFuelFlow}
+                          onChange={(e) => setEditFuelFlow(e.target.value)}
+                        />
+                        <span className="spec-unit">{editFuelUnit === 'gph' ? 'GPH' : 'L/H'}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="profile-input-row">
-                  <div className="profile-field">
-                    <label className="profile-label">Default Fuel Burn Rate</label>
-                    <div className="profile-input-with-badge">
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0.5"
-                        max="300"
-                        className="profile-input"
-                        value={editFuelFlow}
-                        onChange={(e) => setEditFuelFlow(e.target.value)}
-                      />
-                      <span className="profile-input-badge">
-                        {editFuelUnit === 'gph' ? 'GPH' : 'L/h'}
-                      </span>
-                    </div>
-                  </div>
+                {/* Section Divider: Operational Defaults */}
+                <div className="surface-section-divider">
+                  <span className="section-divider-label">OPERATIONAL DEFAULTS</span>
+                </div>
 
-                  <div className="profile-field">
-                    <label className="profile-label">Fuel Consumption Unit</label>
-                    <div className="profile-segmented-control">
+                <div className="profile-field">
+                  <label className="profile-label">RESERVE FUEL POLICY (VFR / IFR)</label>
+                  <div className="reserve-pills-row">
+                    {[30, 45, 60].map((mins) => (
                       <button
+                        key={mins}
                         type="button"
-                        className={`profile-segment-btn ${editFuelUnit === 'gph' ? 'active' : ''}`}
-                        onClick={() => setEditFuelUnit('gph')}
+                        className={`reserve-pill ${editReserveFuelMinutes === mins ? 'active' : ''}`}
+                        onClick={() => setEditReserveFuelMinutes(mins)}
                       >
-                        US Gallons (GPH)
+                        {mins} min
                       </button>
-                      <button
-                        type="button"
-                        className={`profile-segment-btn ${editFuelUnit === 'lph' ? 'active' : ''}`}
-                        onClick={() => setEditFuelUnit('lph')}
-                      >
-                        Liters (L/h)
-                      </button>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
                 <div className="profile-field">
-                  <label className="profile-label">VFR Reserve Fuel Policy</label>
-                  <div className="profile-segmented-control triple">
-                    <button
-                      type="button"
-                      className={`profile-segment-btn ${editReserveFuelMinutes === 30 ? 'active' : ''}`}
-                      onClick={() => setEditReserveFuelMinutes(30)}
-                      title="FAA 14 CFR § 91.151 / EASA Part-NCO.OP.125 minimum"
-                    >
-                      30 min (Day VFR)
-                    </button>
-                    <button
-                      type="button"
-                      className={`profile-segment-btn ${editReserveFuelMinutes === 45 ? 'active' : ''}`}
-                      onClick={() => setEditReserveFuelMinutes(45)}
-                      title="Standard Night VFR / Cross-Country Reserve"
-                    >
-                      45 min (Night / Standard)
-                    </button>
-                    <button
-                      type="button"
-                      className={`profile-segment-btn ${editReserveFuelMinutes === 60 ? 'active' : ''}`}
-                      onClick={() => setEditReserveFuelMinutes(60)}
-                      title="Conservative Safety Margin / IFR Alternate"
-                    >
-                      60 min (Conservative)
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Units of Measurement & Cockpit Preferences */}
-            <div className="profile-card">
-              <div className="profile-card-header">
-                <span className="profile-card-icon">🧭</span>
-                <div>
-                  <h2 className="profile-card-title">Units &amp; Cockpit Preferences</h2>
-                  <p className="profile-card-subtitle">
-                    Aeronautical measurement standards across the Flight Planning Suite
-                  </p>
-                </div>
-              </div>
-
-              <div className="profile-form-body">
-                <div className="profile-field">
-                  <label className="profile-label">Altimeter Setting (QNH Pressure Unit)</label>
+                  <label className="profile-label">DEFAULT FUEL VOLUME UNIT</label>
                   <div className="profile-segmented-control">
                     <button
                       type="button"
-                      className={`profile-segment-btn ${editAltimeterUnit === 'hPa' ? 'active' : ''}`}
-                      onClick={() => setEditAltimeterUnit('hPa')}
+                      className={`profile-segment-btn ${editFuelUnit === 'gph' ? 'active' : ''}`}
+                      onClick={() => setEditFuelUnit('gph')}
                     >
-                      Hectopascals (hPa / mb)
+                      GPH (US Gallons)
                     </button>
                     <button
                       type="button"
-                      className={`profile-segment-btn ${editAltimeterUnit === 'inHg' ? 'active' : ''}`}
-                      onClick={() => setEditAltimeterUnit('inHg')}
+                      className={`profile-segment-btn ${editFuelUnit === 'lph' ? 'active' : ''}`}
+                      onClick={() => setEditFuelUnit('lph')}
                     >
-                      Inches of Mercury (inHg)
+                      L/h (Liters)
                     </button>
                   </div>
-                  <span className="profile-field-hint">
-                    Standard European / ICAO (1013 hPa) vs US Aviation (29.92 inHg).
-                  </span>
                 </div>
 
-                <div className="profile-field">
-                  <label className="profile-label">Distance &amp; Airspeed Standard</label>
-                  <div className="profile-fixed-badge-row">
-                    <span className="profile-fixed-badge">
-                      ⚓ Nautical Miles (NM) &amp; Knots (kt)
-                    </span>
-                    <span className="profile-field-hint">
-                      ICAO Annex 5 mandatory worldwide aeronautical standard.
-                    </span>
-                  </div>
+                {/* Section Divider: Measurement Preference Matrix */}
+                <div className="surface-section-divider">
+                  <span className="section-divider-label">MEASUREMENT PREFERENCE MATRIX</span>
                 </div>
 
-                <div className="profile-field">
-                  <label className="profile-label">Altitude Standard</label>
-                  <div className="profile-fixed-badge-row">
-                    <span className="profile-fixed-badge">
-                      ⛰️ Feet MSL (ft)
-                    </span>
-                    <span className="profile-field-hint">
-                      Barometric pressure altitude referenced to Mean Sea Level.
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4: Pilot Account & Cloud Sync */}
-            <div className="profile-card">
-              <div className="profile-card-header">
-                <span className="profile-card-icon">☁️</span>
-                <div>
-                  <h2 className="profile-card-title">Pilot Account &amp; Cloud Sync</h2>
-                  <p className="profile-card-subtitle">
-                    Cross-device route sync, cloud backups, and security credentials
-                  </p>
-                </div>
-              </div>
-
-              <div className="profile-form-body">
-                {isRealPilotUser && user ? (
-                  <div className="profile-authenticated-info">
-                    <div className="profile-info-row">
-                      <span className="profile-info-label">Account Email:</span>
-                      <span className="profile-info-value">
-                        {user.email} <span className="profile-verified-tag">✓ Verified</span>
-                      </span>
-                    </div>
-
-                    <div className="profile-info-row">
-                      <span className="profile-info-label">Member Since:</span>
-                      <span className="profile-info-value">
-                        {new Date(user.createdAt).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
-                    </div>
-
-                    {!isChangingPassword ? (
-                      <div className="profile-account-actions">
-                        <button
-                          type="button"
-                          className="profile-btn-secondary"
-                          onClick={() => setIsChangingPassword(true)}
-                        >
-                          🔑 Change Password
-                        </button>
-                      </div>
-                    ) : (
-                      <form onSubmit={handleChangePasswordSubmit} className="profile-password-form">
-                        <h4 className="profile-subheading">Update Account Password</h4>
-                        {passwordChangeError && (
-                          <div className="auth-feedback-banner error">{passwordChangeError}</div>
-                        )}
-                        {passwordChangeSuccess && (
-                          <div className="auth-feedback-banner success">{passwordChangeSuccess}</div>
-                        )}
-
-                        <div className="profile-field">
-                          <label className="profile-label">Current Password</label>
-                          <input
-                            type={showPassword ? 'text' : 'password'}
-                            className="profile-input"
-                            value={oldPassword}
-                            onChange={(e) => setOldPassword(e.target.value)}
-                            required
-                            placeholder="••••••••"
-                          />
-                        </div>
-
-                        <div className="profile-field">
-                          <label className="profile-label">New Password (min 6 chars)</label>
-                          <input
-                            type={showPassword ? 'text' : 'password'}
-                            className="profile-input"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            required
-                            minLength={6}
-                            placeholder="••••••••"
-                          />
-                        </div>
-
-                        <div className="profile-field">
-                          <label className="profile-label">Confirm New Password</label>
-                          <input
-                            type={showPassword ? 'text' : 'password'}
-                            className="profile-input"
-                            value={confirmNewPassword}
-                            onChange={(e) => setConfirmNewPassword(e.target.value)}
-                            required
-                            minLength={6}
-                            placeholder="••••••••"
-                          />
-                        </div>
-
-                        <div className="profile-btn-row">
-                          <button type="submit" className="profile-save-btn">
-                            Update Password
-                          </button>
-                          <button
-                            type="button"
-                            className="profile-btn-secondary"
-                            onClick={() => {
-                              setIsChangingPassword(false);
-                              setPasswordChangeError(null);
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
-                    )}
-                  </div>
-                ) : (
-                  <div className="profile-guest-card">
-                    <div className="profile-guest-notice">
-                      <div className="profile-guest-icon">🛡️</div>
-                      <div>
-                        <h4 className="profile-guest-title">Local Guest Pilot Mode</h4>
-                        <p className="profile-guest-desc">
-                          Your preferences and saved flights are securely stored directly in your browser.
-                          Sign in or register to sync your flights across multiple cockpits and devices.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="profile-btn-row">
+                <div className="matrix-2x2-grid">
+                  {/* Item 1: Altimeter */}
+                  <div className="matrix-cell">
+                    <label className="matrix-label">Altimeter / QNH</label>
+                    <div className="matrix-toggle">
                       <button
                         type="button"
-                        className="profile-save-btn full"
-                        onClick={() => setActiveTab('signin')}
+                        className={`matrix-toggle-btn ${editAltimeterUnit === 'hPa' ? 'active' : ''}`}
+                        onClick={() => setEditAltimeterUnit('hPa')}
                       >
-                        Sign In with Existing Account ➔
+                        hPa (Standard)
+                      </button>
+                      <button
+                        type="button"
+                        className={`matrix-toggle-btn ${editAltimeterUnit === 'inHg' ? 'active' : ''}`}
+                        onClick={() => setEditAltimeterUnit('inHg')}
+                      >
+                        inHg
                       </button>
                     </div>
-
-                    <button
-                      type="button"
-                      className="profile-btn-secondary full"
-                      onClick={() => setActiveTab('register')}
-                    >
-                      Create Free Cloud Pilot Account
-                    </button>
                   </div>
-                )}
+
+                  {/* Item 2: Distance & Runways */}
+                  <div className="matrix-cell">
+                    <label className="matrix-label">Distance &amp; Runways</label>
+                    <div className="matrix-toggle">
+                      <button
+                        type="button"
+                        className={`matrix-toggle-btn ${editDistanceUnit === 'NM' ? 'active' : ''}`}
+                        onClick={() => setEditDistanceUnit('NM')}
+                      >
+                        Nautical Miles (NM)
+                      </button>
+                      <button
+                        type="button"
+                        className={`matrix-toggle-btn ${editDistanceUnit === 'KM' ? 'active' : ''}`}
+                        onClick={() => setEditDistanceUnit('KM')}
+                      >
+                        Kilometers (KM)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Item 3: Airspeed */}
+                  <div className="matrix-cell">
+                    <label className="matrix-label">Airspeed Standard</label>
+                    <div className="matrix-toggle">
+                      <button
+                        type="button"
+                        className={`matrix-toggle-btn ${editSpeedUnit === 'KT' ? 'active' : ''}`}
+                        onClick={() => setEditSpeedUnit('KT')}
+                      >
+                        Knots (KT)
+                      </button>
+                      <button
+                        type="button"
+                        className={`matrix-toggle-btn ${editSpeedUnit === 'MPH' ? 'active' : ''}`}
+                        onClick={() => setEditSpeedUnit('MPH')}
+                      >
+                        Miles/hr (MPH)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Item 4: Weight & Balance */}
+                  <div className="matrix-cell">
+                    <label className="matrix-label">Weight &amp; Balance</label>
+                    <div className="matrix-toggle">
+                      <button
+                        type="button"
+                        className={`matrix-toggle-btn ${editWeightUnit === 'kg' ? 'active' : ''}`}
+                        onClick={() => setEditWeightUnit('kg')}
+                      >
+                        Kilograms (kg)
+                      </button>
+                      <button
+                        type="button"
+                        className={`matrix-toggle-btn ${editWeightUnit === 'lbs' ? 'active' : ''}`}
+                        onClick={() => setEditWeightUnit('lbs')}
+                      >
+                        Pounds (lbs)
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

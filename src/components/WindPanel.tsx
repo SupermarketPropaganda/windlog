@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { WindState, Wind, WindMode } from '../types';
+import { WindState, Wind, WindMode, NavLogSummary, AircraftProfile } from '../types';
 import { parseManualWind } from '../data/winds-aloft';
 
 export interface WindPanelProps {
@@ -15,6 +15,10 @@ export interface WindPanelProps {
   departureTime?: string | null;
   /** Callback fired when departure time changes */
   onDepartureTimeChange?: (time: string | null) => void;
+  /** Optional NavLog for summary strip */
+  navLog?: NavLogSummary | null;
+  /** Optional aircraft profile for fuel unit */
+  profile?: AircraftProfile;
 }
 
 /**
@@ -27,12 +31,27 @@ export const WindPanel: React.FC<WindPanelProps> = ({
   isLoading,
   departureTime = null,
   onDepartureTimeChange,
+  navLog,
+  profile,
 }) => {
   const [inputValue, setInputValue] = useState<string>(() =>
     windState.wind ? `${windState.wind.direction}/${windState.wind.speed}` : ''
   );
   const [isScheduleOpen, setIsScheduleOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const fuelUnitLabel = profile?.fuelUnit === 'gph' ? 'gal' : 'L';
+
+  const formatTimeShort = (seconds: number): string => {
+    const totalMins = Math.floor(seconds / 60);
+    const totalSecs = Math.round(seconds % 60);
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    if (h > 0) {
+      return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    }
+    return `${m.toString().padStart(2, '0')}:${totalSecs.toString().padStart(2, '0')}`;
+  };
 
   const handleOpenDatePicker = (e?: React.MouseEvent | React.KeyboardEvent) => {
     if (e) {
@@ -138,7 +157,7 @@ export const WindPanel: React.FC<WindPanelProps> = ({
   };
 
   return (
-    <div className="wind-panel">
+    <div className="wind-panel weather-snapshot-bar">
       <div className="wind-display">
         <div className="wind-value">
           {windState.mode === 'manual' ? (
@@ -154,9 +173,14 @@ export const WindPanel: React.FC<WindPanelProps> = ({
             </div>
           ) : (
             <div className="wind-readout-group">
+              <span className="wind-icon">💨</span>
               <span className="wind-readout-text">{formatWind(windState.wind)}</span>
               {departureTime && (
-                <span className="wind-scheduled-tag" title="Forecast for planned flight time">
+                <span
+                  className="wind-scheduled-tag clickable"
+                  title="Click to change flight departure schedule"
+                  onClick={() => setIsScheduleOpen(!isScheduleOpen)}
+                >
                   📅 {formatDepartureBadge(departureTime)}
                 </span>
               )}
@@ -179,6 +203,35 @@ export const WindPanel: React.FC<WindPanelProps> = ({
           </div>
         )}
       </div>
+
+      {/* Flight Route Quick Metrics Strip (matching _image1_.jpg) */}
+      {navLog && navLog.legs.length > 0 && (
+        <div className="weather-quick-metrics">
+          <span className="qm-item">
+            <span className="qm-label">MH</span>{' '}
+            <span className="qm-val val-mh">
+              {Math.round(navLog.legs[0].magneticHeading).toString().padStart(3, '0')}°
+            </span>
+          </span>
+          <span className="qm-sep">•</span>
+          <span className="qm-item">
+            <span className="qm-label">DIST</span>{' '}
+            <span className="qm-val">{navLog.totalDistance.toFixed(1)} nm</span>
+          </span>
+          <span className="qm-sep">•</span>
+          <span className="qm-item">
+            <span className="qm-label">ETE</span>{' '}
+            <span className="qm-val">{formatTimeShort(navLog.totalEte)}</span>
+          </span>
+          <span className="qm-sep">•</span>
+          <span className="qm-item">
+            <span className="qm-label">FUEL</span>{' '}
+            <span className="qm-val val-fuel">
+              {navLog.totalFuel.toFixed(1)} {fuelUnitLabel}
+            </span>
+          </span>
+        </div>
+      )}
 
       <div className="wind-panel-right">
         {/* Departure Time & Date Selector Button (Available in Auto Mode) */}

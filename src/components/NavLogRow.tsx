@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Leg } from '../types';
+import { Leg, FuelUnit } from '../types';
 import { getSemicircularOptions } from '../engine/navlog-engine';
 
 export interface NavLogRowProps {
   /** The leg data to display */
   leg: Leg;
+  /** Index of the leg (0-based) */
+  legIndex?: number;
+  /** Fuel unit ('gph' | 'lph') */
+  fuelUnit?: FuelUnit;
   /** Whether this leg is currently selected/active */
   isActive?: boolean;
   /** Callback fired when the leg is tapped */
@@ -31,6 +35,8 @@ const formatEte = (seconds: number) => {
  */
 export const NavLogRow: React.FC<NavLogRowProps> = ({
   leg,
+  legIndex = 0,
+  fuelUnit = 'lph',
   isActive = false,
   onSelect,
   onAltitudeChange,
@@ -47,6 +53,7 @@ export const NavLogRow: React.FC<NavLogRowProps> = ({
     leg.magneticVariation >= 0 ? 'E' : 'W'
   }`;
   const isZeroGs = leg.groundSpeed <= 0;
+  const fuelUnitLabel = fuelUnit === 'gph' ? 'gal' : 'L';
 
   // Calculate magnetic track for accurate semicircular rule
   let magTrack = (leg.trueTrack - leg.magneticVariation) % 360;
@@ -78,11 +85,12 @@ export const NavLogRow: React.FC<NavLogRowProps> = ({
     >
       <div className="navlog-header">
         <div className="navlog-waypoints">
+          <span className="leg-prefix">LEG {legIndex + 1}: </span>
           <span className="waypoint-id">{leg.from.identifier}</span>
-          {leg.from.name && <span className="waypoint-name"> {leg.from.name}</span>}
+          {leg.from.name && <span className="waypoint-name"> ({leg.from.name})</span>}
           <span className="waypoint-arrow"> ➔ </span>
           <span className="waypoint-id">{leg.to.identifier}</span>
-          {leg.to.name && <span className="waypoint-name"> {leg.to.name}</span>}
+          {leg.to.name && <span className="waypoint-name"> ({leg.to.name})</span>}
         </div>
 
         <div className="navlog-header-actions" onClick={(e) => e.stopPropagation()}>
@@ -95,7 +103,7 @@ export const NavLogRow: React.FC<NavLogRowProps> = ({
               setIsEditingAlt(!isEditingAlt);
             }}
           >
-            ✈ {leg.altitude.toLocaleString()} ft {isEditingAlt ? '▲' : '✎'}
+            + {leg.altitude.toLocaleString()} ft {isEditingAlt ? '▲' : '✎'}
           </button>
 
           <button
@@ -104,24 +112,24 @@ export const NavLogRow: React.FC<NavLogRowProps> = ({
             title="Toggle flight math breakdown"
             onClick={() => setShowMathDetails(!showMathDetails)}
           >
-            {showMathDetails ? '▲ Math' : '▼ Math'}
+            {showMathDetails ? '▲ Math' : '▾ Math'}
           </button>
         </div>
       </div>
 
       <div className="navlog-grid">
         <div className="grid-item">
-          <span className="grid-label">MH (Heading)</span>
+          <span className="grid-label">MH</span>
           <span className="grid-val val-mh">
             {Math.round(leg.magneticHeading).toString().padStart(3, '0')}°
           </span>
         </div>
         <div className="grid-item">
-          <span className="grid-label">Dist</span>
+          <span className="grid-label">DIST</span>
           <span className="grid-val">{leg.distance.toFixed(1)} nm</span>
         </div>
         <div className="grid-item">
-          <span className="grid-label">Ground Speed</span>
+          <span className="grid-label">GS</span>
           <span className={`grid-val ${isZeroGs ? 'val-warning' : ''}`}>
             {Math.round(leg.groundSpeed)} kt
           </span>
@@ -132,8 +140,10 @@ export const NavLogRow: React.FC<NavLogRowProps> = ({
         </div>
         {leg.fuelBurn > 0 && (
           <div className="grid-item">
-            <span className="grid-label">Fuel</span>
-            <span className="grid-val val-fuel">{leg.fuelBurn.toFixed(1)}</span>
+            <span className="grid-label">FUEL</span>
+            <span className="grid-val val-fuel">
+              {leg.fuelBurn.toFixed(1)} {fuelUnitLabel}
+            </span>
           </div>
         )}
       </div>
