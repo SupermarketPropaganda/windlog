@@ -173,6 +173,18 @@ export const RouteMap: React.FC<RouteMapProps> = ({
     }
   };
 
+  // Handle body class for fullscreen map to prevent side menu or headers overlapping
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.classList.add('map-fullscreen');
+    } else {
+      document.body.classList.remove('map-fullscreen');
+    }
+    return () => {
+      document.body.classList.remove('map-fullscreen');
+    };
+  }, [isFullscreen]);
+
   // Keyboard shortcut: Esc to exit fullscreen
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

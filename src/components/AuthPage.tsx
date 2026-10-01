@@ -169,7 +169,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [editWeightUnit, setEditWeightUnit] = useState<'kg' | 'lbs'>(() => {
     return getStorageItemSync<'kg' | 'lbs'>('windlog_weight_unit', 'kg');
   });
-  const [isPilotMenuOpen, setIsPilotMenuOpen] = useState(false);
 
   // Update local states when user changes (e.g. on sign in)
   useEffect(() => {
@@ -950,65 +949,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 {isSaving ? 'Saving...' : '💾 Save Preferences'}
               </button>
 
-              {/* Pilot Account Dropdown */}
-              <div className="pilot-menu-wrapper">
-                <button
-                  type="button"
-                  className="pilot-menu-btn"
-                  onClick={() => setIsPilotMenuOpen(!isPilotMenuOpen)}
-                >
-                  <span>👤 {displayName}</span>
-                  <span className="menu-caret">{isPilotMenuOpen ? '▲' : '▼'}</span>
-                </button>
 
-                {isPilotMenuOpen && (
-                  <div className="pilot-dropdown-menu">
-                    <div className="dropdown-item" onClick={() => setIsPilotMenuOpen(false)}>
-                      👤 Profile &amp; Identity
-                    </div>
-                    <div className="dropdown-item" onClick={() => setIsPilotMenuOpen(false)}>
-                      ✈️ Aircraft Presets
-                    </div>
-                    <div className="dropdown-item" onClick={() => setIsPilotMenuOpen(false)}>
-                      🧭 Units &amp; Measures
-                    </div>
-                    {isRealPilotUser ? (
-                      <>
-                        <div
-                          className="dropdown-item"
-                          onClick={() => {
-                            setIsPilotMenuOpen(false);
-                            setIsChangingPassword(true);
-                          }}
-                        >
-                          🔑 Change Password
-                        </div>
-                        <div className="dropdown-divider" />
-                        <div
-                          className="dropdown-item item-danger"
-                          onClick={async () => {
-                            setIsPilotMenuOpen(false);
-                            await signOut();
-                            setActiveTab('signin');
-                          }}
-                        >
-                          🚪 Sign Out
-                        </div>
-                      </>
-                    ) : (
-                      <div
-                        className="dropdown-item"
-                        onClick={() => {
-                          setIsPilotMenuOpen(false);
-                          setActiveTab('signin');
-                        }}
-                      >
-                        🔐 Sign In / Register
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 

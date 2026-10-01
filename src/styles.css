@@ -990,6 +990,25 @@ body, html {
 }
 
 /* Route Map Fullscreen Mode */
+body.map-fullscreen {
+  overflow: hidden !important;
+}
+
+body.map-fullscreen .gemini-sidebar,
+body.map-fullscreen .gemini-sidebar-toggle-btn,
+body.map-fullscreen .gemini-sidebar-backdrop {
+  display: none !important;
+}
+
+body.map-fullscreen .cockpit-main-content {
+  margin-left: 0 !important;
+}
+
+body.map-fullscreen .dashboard-right-col,
+body.map-fullscreen .tactical-panel-card {
+  position: static !important;
+}
+
 .route-map-container.is-fullscreen {
   position: fixed;
   top: 0;
@@ -998,7 +1017,7 @@ body, html {
   bottom: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 10000;
+  z-index: 99999 !important;
   border-radius: 0;
   margin: 0;
   border: none;
@@ -8292,127 +8311,7 @@ body, html {
   cursor: pointer;
 }
 
-/* ─── 4. FLIGHT LEGS & TOTALS TABLE (_image2_.jpg) ─── */
-.navlog-totals-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  margin-top: 1rem;
-}
 
-.totals-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.totals-section-title {
-  font-size: 0.85rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  color: #cbd5e1;
-  margin: 0;
-}
-
-.add-phases-btn {
-  background: rgba(45, 212, 191, 0.1);
-  border: 1px solid rgba(45, 212, 191, 0.35);
-  color: #2dd4bf;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.3rem 0.65rem;
-  border-radius: 0.35rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.add-phases-btn:hover {
-  background: rgba(45, 212, 191, 0.2);
-  color: #ffffff;
-}
-
-.totals-table-wrap {
-  width: 100%;
-  overflow-x: auto;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.55rem;
-  background: #121620;
-}
-
-.totals-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-  font-family: var(--font-mono, monospace);
-  text-align: left;
-}
-
-.totals-table th {
-  background: rgba(0, 0, 0, 0.35);
-  color: #64748b;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  padding: 0.55rem 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  white-space: nowrap;
-}
-
-.totals-table td {
-  padding: 0.55rem 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  color: #cbd5e1;
-  white-space: nowrap;
-}
-
-.totals-row {
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.totals-row:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.totals-row.active-row {
-  background: rgba(45, 212, 191, 0.08);
-  border-left: 3px solid #2dd4bf;
-}
-
-.totals-summary-row {
-  background: rgba(0, 0, 0, 0.4);
-  font-weight: 800;
-}
-
-.totals-summary-row td {
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: none;
-}
-
-.cell-bold {
-  font-weight: 800;
-  color: #f8fafc;
-}
-
-.cell-ident {
-  font-weight: 700;
-  color: #38bdf8;
-}
-
-.cell-mh {
-  font-weight: 700;
-  color: #f59e0b;
-}
-
-.cell-fuel {
-  color: #2dd4bf;
-}
-
-.cell-total-label {
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  color: #94a3b8;
-}
 
 /* ─── 5. PILOT PROFILE & COCKPIT CENTER (_image3_.jpg) ─── */
 .pilot-command-banner {
@@ -8456,68 +8355,7 @@ body, html {
   background: #0d9488;
 }
 
-.pilot-menu-wrapper {
-  position: relative;
-}
 
-.pilot-menu-btn {
-  background: #0e1118;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #f8fafc;
-  font-weight: 600;
-  font-size: 0.88rem;
-  padding: 0.55rem 1rem;
-  border-radius: 0.45rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.pilot-menu-btn:hover {
-  border-color: #2dd4bf;
-}
-
-.pilot-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  background: #121620;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 0.5rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-  min-width: 200px;
-  z-index: 1000;
-  padding: 0.35rem 0;
-}
-
-.dropdown-item {
-  padding: 0.6rem 1rem;
-  font-size: 0.85rem;
-  color: #cbd5e1;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #ffffff;
-}
-
-.dropdown-item.item-danger {
-  color: #f87171;
-}
-
-.dropdown-item.item-danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.dropdown-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.08);
-  margin: 0.35rem 0;
-}
 
 /* Two-Surface Command Grid */
 .cockpit-command-grid {
