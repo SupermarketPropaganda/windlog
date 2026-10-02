@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   AircraftProfile,
   WindState,
@@ -7,7 +7,11 @@ import {
   RouteToken,
   NavLogSummary,
   Waypoint,
+  AlternatePlan,
 } from '../types';
+import { getAllCandidateAlternates, getAirportWaypoint } from '../data/airport-runways';
+import { findNearestCandidateAlternates, getSemicircularOptions } from '../engine/navlog-engine';
+import { greatCircleDistance } from '../engine/coordinate-math';
 import { AircraftBar } from './AircraftBar';
 import { WindPanel } from './WindPanel';
 import { NavLogRow } from './NavLogRow';
@@ -64,6 +68,13 @@ export interface ScratchpadViewProps {
   onSaveFlight?: () => void;
   isFlightSaved?: boolean;
 
+  /** Alternate Aerodrome & Diversion Plan */
+  alternateAirport?: Waypoint | null;
+  onAlternateAirportChange?: (alt: Waypoint | null) => void;
+  alternateAltitude?: number;
+  onAlternateAltitudeChange?: (alt: number) => void;
+  alternatePlan?: AlternatePlan | null;
+
   /** Temporary toast message */
   toastMessage: string | null;
 }
@@ -92,8 +103,43 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
   const [showSectorLabels, setShowSectorLabels] = useState<boolean>(true);
   const [onlyRouteAirspaces, setOnlyRouteAirspaces] = useState<boolean>(false);
 
+  // Alternate ICAO input state
+  const [customAltIcao, setCustomAltIcao] = useState<string>('');
+
   const hasWaypoints = props.resolvedWaypoints.length > 0;
   const fuelUnitLabel = props.profile.fuelUnit === 'gph' ? 'gal' : 'L';
+
+  const destination = useMemo(() => {
+    if (props.resolvedWaypoints.length > 1) {
+      return props.resolvedWaypoints[props.resolvedWaypoints.length - 1];
+    }
+    return null;
+  }, [props.resolvedWaypoints]);
+
+  const candidateAirports = useMemo(() => getAllCandidateAlternates(), []);
+
+  const nearestAlternates = useMemo(() => {
+    if (!destination) return [];
+    return findNearestCandidateAlternates(destination, candidateAirports, 6);
+  }, [destination, candidateAirports]);
+
+  const semicircularHint = useMemo(() => {
+    if (!props.alternatePlan) return null;
+    return getSemicircularOptions(
+      props.alternatePlan.magneticTrack,
+      props.alternateAltitude ?? 3500
+    );
+  }, [props.alternatePlan, props.alternateAltitude]);
+
+  const handleApplyCustomAlt = () => {
+    const code = customAltIcao.trim().toUpperCase();
+    if (!code) return;
+    const wp = getAirportWaypoint(code);
+    if (wp && props.onAlternateAirportChange) {
+      props.onAlternateAirportChange(wp);
+      setCustomAltIcao('');
+    }
+  };
 
   return (
     <div className="app-container">
@@ -188,9 +234,244 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                   </div>
                 )}
               </div>
+
+              {/* TOC & TOD Flight Telemetry */}
+              {props.navLog.climbDescent && (
+                <div className="navlog-climb-summary">
+                  <div className="climb-summary-chip toc-chip" title="Top of Climb from Departure">
+                    <span className="chip-indicator">▲</span>
+                    <span className="chip-label">TOC:</span>
+                    <span className="chip-val">{props.navLog.climbDescent.climbDistanceNm.toFixed(1)} NM</span>
+                    <span className="chip-detail">
+                      ({formatTime(props.navLog.climbDescent.climbTimeSeconds)} • {props.navLog.climbDescent.climbFuelBurn.toFixed(1)} {fuelUnitLabel})
+                    </span>
+                  </div>
+                  <div className="climb-summary-chip tod-chip" title="Top of Descent into Destination">
+                    <span className="chip-indicator">▼</span>
+                    <span className="chip-label">TOD:</span>
+                    <span className="chip-val">
+                      {(props.navLog.totalDistance - props.navLog.climbDescent.todDistanceNm).toFixed(1)} NM out
+                    </span>
+                    <span className="chip-detail">
+                      ({formatTime(props.navLog.climbDescent.descentTimeSeconds)} • {props.navLog.climbDescent.descentFuelBurn.toFixed(1)} {fuelUnitLabel})
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
+          {/* Alternate Aerodrome & Diversion Planning Hub */}
+          {hasWaypoints && destination && (
+            <div className="alternate-planning-hub">
+              <div className="alt-hub-header">
+                <div className="alt-hub-title-group">
+                  <span className="alt-hub-icon">🛬</span>
+                  <div>
+                    <h3 className="alt-hub-title">ALTERNATE &amp; DIVERSION PLANNING</h3>
+                    <p className="alt-hub-subtitle">
+                      SOP Form 002 ICAO diversion calculations &amp; contingency fuel reserves
+                    </p>
+                  </div>
+                </div>
+                {props.alternateAirport && props.onAlternateAirportChange && (
+                  <button
+                    type="button"
+                    className="alt-clear-btn"
+                    onClick={() => {
+                      props.onAlternateAirportChange?.(null);
+                      setCustomAltIcao('');
+                    }}
+                    title="Remove selected alternate"
+                  >
+                    ✕ Clear Alternate
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Candidate Suggestion Pills */}
+              <div className="alt-candidates-bar">
+                <span className="alt-candidates-label">Nearby Aerodromes:</span>
+                <div className="alt-pills-list">
+                  {nearestAlternates.map((cand) => {
+                    const isSelected = props.alternateAirport?.identifier === cand.identifier;
+                    const distNm = destination
+                      ? Math.round(
+                          greatCircleDistance(
+                            destination.latitude,
+                            destination.longitude,
+                            cand.latitude,
+                            cand.longitude
+                          ) / 1852
+                        )
+                      : 0;
+                    return (
+                      <button
+                        key={cand.identifier}
+                        type="button"
+                        className={`alt-pill-btn ${isSelected ? 'active' : ''}`}
+                        onClick={() => props.onAlternateAirportChange?.(cand)}
+                        title={`${cand.name} (${cand.identifier})`}
+                      >
+                        <span className="alt-pill-icao">{cand.identifier}</span>
+                        <span className="alt-pill-dist">{distNm} NM</span>
+                        {isSelected && <span className="alt-pill-check">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Alternate Aerodrome Selector & Diversion Altitude */}
+              <div className="alt-controls-grid">
+                <div className="alt-input-col">
+                  <label className="alt-input-label" htmlFor="custom-alt-input">CUSTOM ALTERNATE (ICAO)</label>
+                  <div className="alt-input-group">
+                    <input
+                      id="custom-alt-input"
+                      type="text"
+                      className="alt-icao-input"
+                      placeholder="e.g. LPCS, LPBJ, LPFR..."
+                      maxLength={4}
+                      value={customAltIcao}
+                      onChange={(e) => setCustomAltIcao(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleApplyCustomAlt();
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="alt-apply-btn"
+                      onClick={handleApplyCustomAlt}
+                      disabled={!customAltIcao.trim()}
+                    >
+                      Set Alternate
+                    </button>
+                  </div>
+                </div>
+
+                <div className="alt-input-col">
+                  <label className="alt-input-label" htmlFor="alt-alt-input">
+                    DIVERT ALTITUDE (FT MSL)
+                    {semicircularHint && (
+                      <span className="alt-semicircular-tag" title={semicircularHint.ruleLabel}>
+                        {semicircularHint.isEastbound ? 'ODD+500' : 'EVEN+500'}
+                      </span>
+                    )}
+                  </label>
+                  <div className="alt-altitude-control">
+                    <input
+                      id="alt-alt-input"
+                      type="number"
+                      step={500}
+                      min={1000}
+                      max={19500}
+                      className="alt-altitude-input"
+                      value={props.alternateAltitude ?? 3500}
+                      onChange={(e) =>
+                        props.onAlternateAltitudeChange?.(Math.max(500, Number(e.target.value)))
+                      }
+                    />
+                    <span className="alt-altitude-unit">FT</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Telemetry Strip & Fuel Breakdown when an Alternate is Active */}
+              {props.alternatePlan && props.alternateAirport ? (
+                <div className="alt-active-details">
+                  <div className="alt-telemetry-strip">
+                    <div className="alt-telemetry-card">
+                      <span className="telemetry-label">DIVERT LEG</span>
+                      <span className="telemetry-val val-route">
+                        {destination?.identifier} ➔ {props.alternateAirport.identifier}
+                      </span>
+                    </div>
+                    <div className="alt-telemetry-card">
+                      <span className="telemetry-label">MAG HEADING</span>
+                      <span className="telemetry-val val-gold">
+                        {Math.round(props.alternatePlan.magneticHeading).toString().padStart(3, '0')}°
+                      </span>
+                    </div>
+                    <div className="alt-telemetry-card">
+                      <span className="telemetry-label">DISTANCE</span>
+                      <span className="telemetry-val">
+                        {props.alternatePlan.distance.toFixed(1)} NM
+                      </span>
+                    </div>
+                    <div className="alt-telemetry-card">
+                      <span className="telemetry-label">GROUND SPEED</span>
+                      <span className="telemetry-val">
+                        {Math.round(props.alternatePlan.groundSpeed)} KT
+                      </span>
+                    </div>
+                    <div className="alt-telemetry-card">
+                      <span className="telemetry-label">ETE</span>
+                      <span className="telemetry-val">
+                        {formatTime(props.alternatePlan.eetSeconds)}
+                      </span>
+                    </div>
+                    <div className="alt-telemetry-card">
+                      <span className="telemetry-label">DIVERT FUEL</span>
+                      <span className="telemetry-val val-fuel">
+                        {props.alternatePlan.fuelBurn.toFixed(1)} {fuelUnitLabel}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* SOP Fuel Policy Breakdown Card */}
+                  <div className="alt-fuel-policy-card">
+                    <div className="alt-fuel-policy-header">
+                      <span className="fuel-policy-badge">SOP Form 002 Policy</span>
+                      <span className="fuel-policy-title">Required Fuel Breakdown</span>
+                    </div>
+                    <div className="alt-fuel-policy-grid">
+                      <div className="policy-row">
+                        <span className="policy-label">Trip Fuel:</span>
+                        <span className="policy-val">{props.navLog?.totalFuel.toFixed(1) ?? '0.0'} {fuelUnitLabel}</span>
+                      </div>
+                      <div className="policy-row">
+                        <span className="policy-label">+ 5% Contingency:</span>
+                        <span className="policy-val">{props.alternatePlan.contingencyFuel.toFixed(1)} {fuelUnitLabel}</span>
+                      </div>
+                      <div className="policy-row">
+                        <span className="policy-label">+ Alternate Fuel:</span>
+                        <span className="policy-val">{props.alternatePlan.fuelBurn.toFixed(1)} {fuelUnitLabel}</span>
+                      </div>
+                      <div className="policy-row">
+                        <span className="policy-label">+ 45m Final Reserve:</span>
+                        <span className="policy-val">{props.alternatePlan.finalReserveFuel.toFixed(1)} {fuelUnitLabel}</span>
+                      </div>
+                      <div className="policy-row">
+                        <span className="policy-label">+ Taxi Allowance:</span>
+                        <span className="policy-val">{props.alternatePlan.taxiFuel.toFixed(1)} {fuelUnitLabel}</span>
+                      </div>
+                      <div className="policy-row total-required-row">
+                        <span className="policy-label font-bold">TOTAL REQUIRED:</span>
+                        <span className="policy-val font-bold val-total-fuel">
+                          {props.alternatePlan.totalFuelRequired.toFixed(1)} {fuelUnitLabel}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="alt-kneeboard-action">
+                      <button
+                        type="button"
+                        className="alt-kneeboard-btn"
+                        onClick={props.onOpenKneeboard}
+                      >
+                        📋 View SOP Form 002 Kneeboard Alternate Table
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="alt-empty-notice">
+                  <span>💡 Select a nearby aerodrome above or enter an ICAO to compute diversion headings, flight time, and legal contingency reserves.</span>
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
 
@@ -244,6 +525,7 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                     onToggleSectorLabels={setShowSectorLabels}
                     onlyRouteAirspaces={onlyRouteAirspaces}
                     onToggleOnlyRouteAirspaces={setOnlyRouteAirspaces}
+                    alternateAirport={props.alternateAirport}
                   />
                 </div>
 

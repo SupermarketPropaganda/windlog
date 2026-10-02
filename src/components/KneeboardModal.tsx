@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { NavLogSummary, AircraftProfile } from '../types';
+import React, { useState, useMemo } from 'react';
+import { NavLogSummary, AircraftProfile, AlternatePlan } from '../types';
 import { useAdBreak } from '../context/AdContext';
+import { computeAlternatePlan } from '../engine/navlog-engine';
+import { getAirportWaypoint } from '../data/airport-runways';
 
 export interface KneeboardModalProps {
   navLog: NavLogSummary | null;
   profile: AircraftProfile;
   onClose: () => void;
+  plannedAlternate?: AlternatePlan | null;
 }
 
 const formatMinutesSeconds = (seconds: number) => {
@@ -19,28 +22,52 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
   navLog,
   profile,
   onClose,
+  plannedAlternate,
 }) => {
   const [taxiFuelInput, setTaxiFuelInput] = useState(
     profile.fuelUnit === 'gph' ? '1.0' : '4.0'
   );
-  const [alternateAirport, setAlternateAirport] = useState('');
-  const [alternateDist, setAlternateDist] = useState('20');
+  const initialAltIcao =
+    plannedAlternate?.toAirport.identifier ||
+    navLog?.alternatePlan?.toAirport.identifier ||
+    '';
+  const [alternateAirport, setAlternateAirport] = useState(initialAltIcao);
   const [remarksText, setRemarksText] = useState('');
 
   const fuelUnitLabel = profile.fuelUnit === 'gph' ? 'gal' : 'l';
   const fuelRate = profile.fuelFlow > 0 ? profile.fuelFlow : 0;
+  const legs = navLog?.legs || [];
+
+  // ─── Dynamic Alternate Plan Navigation Computation ───
+  const activeAltPlan: AlternatePlan | null = useMemo(() => {
+    if (
+      plannedAlternate &&
+      plannedAlternate.toAirport.identifier.toUpperCase() === alternateAirport.toUpperCase().trim()
+    ) {
+      return plannedAlternate;
+    }
+    if (
+      navLog?.alternatePlan &&
+      navLog.alternatePlan.toAirport.identifier.toUpperCase() === alternateAirport.toUpperCase().trim()
+    ) {
+      return navLog.alternatePlan;
+    }
+    if (!alternateAirport.trim() || legs.length === 0) return null;
+
+    const destWp = legs[legs.length - 1].to;
+    const altWp = getAirportWaypoint(alternateAirport.trim());
+    if (!altWp) return null;
+
+    const lastWind = legs[legs.length - 1].wind || null;
+    return computeAlternatePlan(destWp, altWp, profile, lastWind, 2500, navLog?.totalFuel || 0);
+  }, [alternateAirport, plannedAlternate, navLog, legs, profile]);
 
   // ─── SOP Fuel Calculations ───
   const tripFuel = navLog ? navLog.totalFuel : 0;
   const taxiFuel = parseFloat(taxiFuelInput) || 0;
-  const contingencyFuel = tripFuel * 0.05; // 5% Contingency
-  const holdingFuel = 0.75 * fuelRate; // 45 min holding reserve
-
-  // Alternate Fuel calculation (based on alternate distance & TAS)
-  const altDistNum = parseFloat(alternateDist) || 0;
-  const altEteHours = profile.tas > 0 && altDistNum > 0 ? altDistNum / profile.tas : 0;
-  const alternateFuel = altEteHours * fuelRate;
-
+  const contingencyFuel = activeAltPlan ? activeAltPlan.contingencyFuel : tripFuel * 0.05;
+  const holdingFuel = activeAltPlan ? activeAltPlan.finalReserveFuel : 0.75 * fuelRate;
+  const alternateFuel = activeAltPlan ? activeAltPlan.fuelBurn : 0;
   const totalFuelRequired =
     tripFuel + alternateFuel + taxiFuel + contingencyFuel + holdingFuel;
 
@@ -57,7 +84,6 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
     });
   };
 
-  const legs = navLog?.legs || [];
   const minRows = 10;
   const totalRowsCount = Math.max(minRows, legs.length + 1);
 
@@ -98,15 +124,11 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
                 style={{ width: '70px', textTransform: 'uppercase' }}
               />
             </label>
-            <label>
-              Alt Dist (NM):
-              <input
-                type="number"
-                value={alternateDist}
-                onChange={(e) => setAlternateDist(e.target.value)}
-                style={{ width: '55px' }}
-              />
-            </label>
+            {activeAltPlan && (
+              <span style={{ fontSize: '11px', color: '#0f766e', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                Alt: {activeAltPlan.distance.toFixed(1)} NM • {activeAltPlan.fuelBurn.toFixed(1)} {fuelUnitLabel}
+              </span>
+            )}
           </div>
 
           <div className="toolbar-actions">
@@ -250,7 +272,30 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {alternateAirport ? (
+                  {activeAltPlan ? (
+                    <tr className="sop-row">
+                      <td className="cell-bold">{activeAltPlan.fromAirport.identifier}</td>
+                      <td className="cell-bold">{activeAltPlan.toAirport.identifier}</td>
+                      <td className="cell-mono">{activeAltPlan.altitude}</td>
+                      <td className="cell-mono">
+                        {activeAltPlan.wind && activeAltPlan.wind.speed > 0
+                          ? `${activeAltPlan.wind.direction.toString().padStart(3, '0')}/${activeAltPlan.wind.speed}`
+                          : 'CALM'}
+                      </td>
+                      <td className="cell-mono">{Math.round(activeAltPlan.trueTrack).toString().padStart(3, '0')}°</td>
+                      <td className="cell-mono">{Math.round(activeAltPlan.magneticTrack).toString().padStart(3, '0')}°</td>
+                      <td className="cell-mono">{Math.round(activeAltPlan.tas)}</td>
+                      <td className="cell-mono">{Math.round(activeAltPlan.trueHeading).toString().padStart(3, '0')}°</td>
+                      <td className="cell-mono cell-bold">{Math.round(activeAltPlan.magneticHeading).toString().padStart(3, '0')}°</td>
+                      <td className="cell-bold">{activeAltPlan.toAirport.identifier}</td>
+                      <td className="cell-mono">{activeAltPlan.altitude}</td>
+                      <td className="cell-mono cell-bold">{Math.round(activeAltPlan.magneticHeading).toString().padStart(3, '0')}°</td>
+                      <td className="cell-mono cell-bold">{Math.round(activeAltPlan.groundSpeed)}</td>
+                      <td className="cell-mono">{activeAltPlan.distance.toFixed(1)}</td>
+                      <td className="cell-mono">{formatMinutesSeconds(activeAltPlan.eetSeconds)}</td>
+                      <td className="cell-mono cell-bold">{activeAltPlan.fuelBurn.toFixed(1)}</td>
+                    </tr>
+                  ) : alternateAirport ? (
                     <tr className="sop-row">
                       <td className="cell-bold">{legs[legs.length - 1]?.to.identifier || 'DEST'}</td>
                       <td className="cell-bold">{alternateAirport}</td>
@@ -265,9 +310,9 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
                       <td className="cell-mono">2500</td>
                       <td className="cell-mono cell-bold">---</td>
                       <td className="cell-mono cell-bold">{profile.tas}</td>
-                      <td className="cell-mono">{altDistNum.toFixed(1)}</td>
-                      <td className="cell-mono">{formatMinutesSeconds(altEteHours * 3600)}</td>
-                      <td className="cell-mono cell-bold">{alternateFuel.toFixed(1)}</td>
+                      <td className="cell-mono">---</td>
+                      <td className="cell-mono">---</td>
+                      <td className="cell-mono cell-bold">---</td>
                     </tr>
                   ) : (
                     <tr className="sop-row blank-row">

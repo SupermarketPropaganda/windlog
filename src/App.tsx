@@ -10,6 +10,7 @@ import {
   ActiveView,
   RunwayWindResult,
   SavedFlight,
+  AlternatePlan,
 } from './types';
 import { ScratchpadView } from './components/ScratchpadView';
 import { DisclaimerModal } from './components/DisclaimerModal';
@@ -28,7 +29,8 @@ import { searchOsmReportingPoint } from './data/osm-vrp';
 import { fetchWindsAloft, parseManualWind } from './data/winds-aloft';
 import { getSavedFlightsSync, saveFlightRecord } from './data/saved-flights';
 import { CURRENT_LEGAL_VERSION } from './data/legal-terms';
-import { computeNavLog } from './engine/navlog-engine';
+import { computeNavLog, computeAlternatePlan } from './engine/navlog-engine';
+import { getAirportWaypoint } from './data/airport-runways';
 import { parseRouteString } from './utils/route-parser';
 import { decodeRouteFromUrl, copyShareableRouteLink } from './utils/url-route';
 import { initStorage, getStorageItemSync, setStorageItem } from './data/storage-manager';
@@ -387,6 +389,46 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
     );
   })();
 
+  // ─── Alternate Aerodrome & Diversion Plan ───
+  const [selectedAlternate, setSelectedAlternate] = useState<Waypoint | null>(() => {
+    const stored = getStorageItemSync<string>('windlog_alternate_icao', '');
+    return stored ? getAirportWaypoint(stored) : null;
+  });
+  const [alternateAltitude, setAlternateAltitude] = useState<number>(() => {
+    return getStorageItemSync<number>('windlog_alternate_alt', 2500);
+  });
+
+  const handleAlternateChange = useCallback((alt: Waypoint | null) => {
+    setSelectedAlternate(alt);
+    setStorageItem('windlog_alternate_icao', alt?.identifier || '');
+  }, []);
+
+  const handleAlternateAltitudeChange = useCallback((alt: number) => {
+    setAlternateAltitude(alt);
+    setStorageItem('windlog_alternate_alt', alt);
+  }, []);
+
+  const alternatePlan: AlternatePlan | null = useMemo(() => {
+    if (!selectedAlternate || resolvedWaypoints.length < 2) return null;
+    const dest = resolvedWaypoints[resolvedWaypoints.length - 1];
+    const lastWind =
+      navLog && navLog.legs.length > 0
+        ? navLog.legs[navLog.legs.length - 1].wind || null
+        : windState.wind;
+    return computeAlternatePlan(
+      dest,
+      selectedAlternate,
+      profile,
+      lastWind,
+      alternateAltitude,
+      navLog?.totalFuel || 0
+    );
+  }, [selectedAlternate, resolvedWaypoints, profile, windState.wind, alternateAltitude, navLog]);
+
+  if (navLog && alternatePlan) {
+    navLog.alternatePlan = alternatePlan;
+  }
+
   // ─── Save & Load Flight Actions ───
   const handleSaveFlight = useCallback(async () => {
     if (!routeInput.trim()) {
@@ -643,6 +685,11 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
             onDepartureTimeChange={handleDepartureTimeChange}
             onSaveFlight={handleSaveFlight}
             isFlightSaved={isFlightSaved}
+            alternateAirport={selectedAlternate}
+            onAlternateAirportChange={handleAlternateChange}
+            alternateAltitude={alternateAltitude}
+            onAlternateAltitudeChange={handleAlternateAltitudeChange}
+            alternatePlan={alternatePlan}
           />
         )}
 
@@ -666,6 +713,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
           navLog={navLog}
           profile={profile}
           onClose={() => setIsKneeboardOpen(false)}
+          plannedAlternate={alternatePlan}
         />
       )}
 

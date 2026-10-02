@@ -1,4 +1,4 @@
-import { AirportRunwayInfo, RunwayDefinition } from '../types';
+import { AirportRunwayInfo, RunwayDefinition, Waypoint } from '../types';
 
 /**
  * Official Airport Runway Database (AIP Portugal & International)
@@ -509,4 +509,111 @@ export function scoreRunwaysForWind(
     ...s,
     isBest: windSpeed > 0 ? s.headwind === maxHw : false,
   }));
+}
+
+/**
+ * Verified Geographic Coordinates & Elevations for European and Portuguese Aerodromes.
+ */
+export const AIRPORT_COORDINATES: Record<
+  string,
+  { lat: number; lon: number; elevation: number; country: string }
+> = {
+  // Portugal Continental
+  LPCS: { lat: 38.7256, lon: -9.3553, elevation: 325, country: 'PT' },
+  LPPT: { lat: 38.7813, lon: -9.1359, elevation: 374, country: 'PT' },
+  LPFR: { lat: 37.0144, lon: -7.9659, elevation: 24, country: 'PT' },
+  LPPR: { lat: 41.2481, lon: -8.6814, elevation: 228, country: 'PT' },
+  LPBJ: { lat: 38.0792, lon: -7.9322, elevation: 636, country: 'PT' },
+  LPEV: { lat: 38.5342, lon: -7.8894, elevation: 807, country: 'PT' },
+  LPCO: { lat: 40.1583, lon: -8.4700, elevation: 587, country: 'PT' },
+  LPVR: { lat: 41.2742, lon: -7.7206, elevation: 1805, country: 'PT' },
+  LPVZ: { lat: 40.7256, lon: -7.8892, elevation: 2060, country: 'PT' },
+  LPPM: { lat: 37.1494, lon: -8.5839, elevation: 5, country: 'PT' },
+  LPSC: { lat: 39.1350, lon: -9.3800, elevation: 157, country: 'PT' },
+  LPSO: { lat: 39.2122, lon: -8.0539, elevation: 390, country: 'PT' },
+  LPVL: { lat: 41.2800, lon: -8.5178, elevation: 762, country: 'PT' },
+  LPBR: { lat: 41.5878, lon: -8.4447, elevation: 247, country: 'PT' },
+  LPBG: { lat: 41.8578, lon: -6.7072, elevation: 2241, country: 'PT' },
+  LPCB: { lat: 39.8483, lon: -7.4403, elevation: 1300, country: 'PT' },
+  LPCH: { lat: 41.7222, lon: -7.4633, elevation: 1181, country: 'PT' },
+  LPJF: { lat: 39.7828, lon: -8.8242, elevation: 151, country: 'PT' },
+  LPLZ: { lat: 40.1258, lon: -8.2458, elevation: 654, country: 'PT' },
+  LPSR: { lat: 39.2611, lon: -8.6881, elevation: 30, country: 'PT' },
+  LPAR: { lat: 38.9000, lon: -9.0300, elevation: 11, country: 'PT' },
+  LPST: { lat: 38.8306, lon: -9.3392, elevation: 440, country: 'PT' },
+  LPOV: { lat: 40.9142, lon: -8.6472, elevation: 56, country: 'PT' },
+  LPMR: { lat: 39.8308, lon: -8.8878, elevation: 187, country: 'PT' },
+  LPMT: { lat: 38.7078, lon: -8.9950, elevation: 46, country: 'PT' },
+
+  // Atlantic (Azores & Madeira)
+  LPMA: { lat: 32.6978, lon: -16.7744, elevation: 192, country: 'PT' },
+  LPPS: { lat: 33.0786, lon: -16.3497, elevation: 341, country: 'PT' },
+  LPPD: { lat: 37.7411, lon: -25.6978, elevation: 259, country: 'PT' },
+  LPLA: { lat: 38.7619, lon: -27.0908, elevation: 177, country: 'PT' },
+  LPFL: { lat: 39.4553, lon: -31.1314, elevation: 112, country: 'PT' },
+  LPGR: { lat: 39.0850, lon: -28.0297, elevation: 85, country: 'PT' },
+  LPHR: { lat: 38.5197, lon: -28.7158, elevation: 118, country: 'PT' },
+  LPPI: { lat: 38.5544, lon: -28.4414, elevation: 108, country: 'PT' },
+  LPSJ: { lat: 38.6653, lon: -28.1758, elevation: 312, country: 'PT' },
+  LPAZ: { lat: 36.9714, lon: -25.1706, elevation: 305, country: 'PT' },
+  LPCV: { lat: 38.3097, lon: -28.0306, elevation: 66, country: 'PT' },
+
+  // Spain & Western Europe
+  LEMD: { lat: 40.4936, lon: -3.5668, elevation: 2001, country: 'ES' },
+  LEBL: { lat: 41.2971, lon: 2.0785, elevation: 14, country: 'ES' },
+  LEZL: { lat: 37.4180, lon: -5.8931, elevation: 112, country: 'ES' },
+  LEMG: { lat: 36.6749, lon: -4.4991, elevation: 52, country: 'ES' },
+  LEVC: { lat: 39.4893, lon: -0.4816, elevation: 240, country: 'ES' },
+  LEAL: { lat: 38.2822, lon: -0.5581, elevation: 141, country: 'ES' },
+  LECO: { lat: 43.3021, lon: -8.3773, elevation: 328, country: 'ES' },
+  LEVX: { lat: 42.2319, lon: -8.6268, elevation: 856, country: 'ES' },
+  LEST: { lat: 42.8964, lon: -8.4151, elevation: 1214, country: 'ES' },
+  LEAS: { lat: 43.5636, lon: -6.0346, elevation: 417, country: 'ES' },
+  LEBB: { lat: 43.3011, lon: -2.9106, elevation: 138, country: 'ES' },
+  LFPG: { lat: 49.0097, lon: 2.5478, elevation: 390, country: 'FR' },
+  EGLL: { lat: 51.4700, lon: -0.4543, elevation: 83, country: 'GB' },
+  EDDF: { lat: 50.0379, lon: 8.5622, elevation: 364, country: 'DE' },
+  EHAM: { lat: 52.3105, lon: 4.7683, elevation: -11, country: 'NL' },
+};
+
+/**
+ * Resolves a Waypoint structure for any aerodrome in the database.
+ */
+export function getAirportWaypoint(icao: string): Waypoint | null {
+  if (!icao) return null;
+  const upper = icao.toUpperCase().trim();
+  const info = AIRPORT_RUNWAYS[upper];
+  const coords = AIRPORT_COORDINATES[upper];
+  if (!info && !coords) return null;
+
+  return {
+    id: Math.abs(upper.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)),
+    identifier: upper,
+    name: info?.name || upper,
+    type: 'airport',
+    latitude: coords?.lat ?? (info?.latitude ?? 0),
+    longitude: coords?.lon ?? (info?.longitude ?? 0),
+    elevation: coords?.elevation ?? info?.elevation ?? 0,
+    country: coords?.country || 'PT',
+    isCustom: false,
+  };
+}
+
+/**
+ * Returns a complete array of known candidate alternate aerodromes.
+ */
+export function getAllCandidateAlternates(): Waypoint[] {
+  const result: Waypoint[] = [];
+  const processed = new Set<string>();
+
+  for (const icao of Object.keys(AIRPORT_COORDINATES)) {
+    if (processed.has(icao)) continue;
+    const wp = getAirportWaypoint(icao);
+    if (wp && wp.latitude !== 0 && wp.longitude !== 0) {
+      result.push(wp);
+      processed.add(icao);
+    }
+  }
+
+  return result;
 }

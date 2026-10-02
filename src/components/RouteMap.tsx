@@ -32,6 +32,9 @@ export interface RouteMapProps {
   onlyRouteAirspaces?: boolean;
   onToggleOnlyRouteAirspaces?: (onlyRoute: boolean) => void;
   isVisible?: boolean;
+  alternateAirport?: Waypoint | null;
+  showRangeRings?: boolean;
+  onToggleRangeRings?: (show: boolean) => void;
 }
 
 const TILE_LAYERS: Record<
@@ -138,6 +141,39 @@ function createWindIcon(windDir: number, windSpeed: number): L.DivIcon {
   });
 }
 
+/**
+ * Creates custom badge icon for Top of Climb (TOC) and Top of Descent (TOD).
+ */
+function createClimbMarkerIcon(type: 'TOC' | 'TOD', distNm: number, altFt: number): L.DivIcon {
+  const isToc = type === 'TOC';
+  const color = isToc ? '#38bdf8' : '#c2a667';
+  const arrow = isToc ? '▲' : '▼';
+  return L.divIcon({
+    className: 'custom-climb-marker',
+    html: `<div class="map-climb-badge ${isToc ? 'is-toc' : 'is-tod'}" title="${type} at ${distNm.toFixed(1)} NM (${altFt.toLocaleString()} ft MSL)" style="border: 1.5px solid ${color}; background: rgba(15, 23, 42, 0.92); color: ${color}; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; font-family: monospace; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.5); white-space: nowrap;">
+             <span>${arrow} ${type}</span>
+             <span style="opacity: 0.85;">${distNm.toFixed(1)}NM</span>
+           </div>`,
+    iconSize: undefined,
+    iconAnchor: [35, 12],
+  });
+}
+
+/**
+ * Creates custom pin icon for the designated Alternate Aerodrome.
+ */
+function createAlternateMarkerIcon(wp: Waypoint): L.DivIcon {
+  return L.divIcon({
+    className: 'custom-alternate-marker',
+    html: `<div class="wpt-pin wpt-marker-airport is-alt" style="border: 2px solid #f59e0b; background: rgba(39, 33, 21, 0.95); color: #fde047; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);">
+             <span style="color: #f59e0b;">✈</span>
+             <span>ALT: ${wp.identifier}</span>
+           </div>`,
+    iconSize: undefined,
+    iconAnchor: undefined,
+  });
+}
+
 export const RouteMap: React.FC<RouteMapProps> = ({
   navLog,
   waypoints,
@@ -154,12 +190,20 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   onlyRouteAirspaces: externalOnlyRouteAirspaces,
   onToggleOnlyRouteAirspaces,
   isVisible = true,
+  alternateAirport,
+  showRangeRings: externalShowRangeRings,
+  onToggleRangeRings,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const routeLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const airspaceLayerGroupRef = useRef<L.LayerGroup | null>(null);
+
+  const [internalShowRangeRings, setInternalShowRangeRings] = useState<boolean>(true);
+  const showRangeRings =
+    externalShowRangeRings !== undefined ? externalShowRangeRings : internalShowRangeRings;
+  const setShowRangeRings = onToggleRangeRings || setInternalShowRangeRings;
 
   const [internalFullscreen, setInternalFullscreen] = useState<boolean>(false);
   const isFullscreen = externalIsFullscreen !== undefined ? externalIsFullscreen : internalFullscreen;
@@ -615,14 +659,161 @@ export const RouteMap: React.FC<RouteMapProps> = ({
       }).addTo(routeGroup);
     }
 
+    // 3. Plot Top of Climb (TOC) Marker
+    if (navLog?.climbDescent?.tocCoordinate) {
+      const tocCoord = navLog.climbDescent.tocCoordinate;
+      const tocIcon = createClimbMarkerIcon(
+        'TOC',
+        navLog.climbDescent.tocDistanceNm,
+        navLog.climbDescent.tocAltitudeFt
+      );
+      L.marker([tocCoord.latitude, tocCoord.longitude], { icon: tocIcon })
+        .bindPopup(
+          `<div class="map-popup">
+             <strong style="color: #38bdf8;">▲ Top of Climb (TOC)</strong><br/>
+             <span>Altitude: <strong>${navLog.climbDescent.tocAltitudeFt.toLocaleString()} ft MSL</strong></span><br/>
+             <span>Distance: ${navLog.climbDescent.tocDistanceNm.toFixed(1)} NM from DEP</span><br/>
+             <span>Climb Time: ${Math.round(navLog.climbDescent.climbTimeSeconds / 60)} min</span><br/>
+             <span>Climb Fuel: ${navLog.climbDescent.climbFuelBurn.toFixed(1)}</span>
+           </div>`
+        )
+        .addTo(routeGroup);
+    }
+
+    // 4. Plot Top of Descent (TOD) Marker
+    if (navLog?.climbDescent?.todCoordinate) {
+      const todCoord = navLog.climbDescent.todCoordinate;
+      const distFromDest = navLog.totalDistance - navLog.climbDescent.todDistanceNm;
+      const todIcon = createClimbMarkerIcon(
+        'TOD',
+        distFromDest,
+        navLog.climbDescent.todAltitudeFt
+      );
+      L.marker([todCoord.latitude, todCoord.longitude], { icon: todIcon })
+        .bindPopup(
+          `<div class="map-popup">
+             <strong style="color: #c2a667;">▼ Top of Descent (TOD)</strong><br/>
+             <span>Descent Inception: <strong>${navLog.climbDescent.todAltitudeFt.toLocaleString()} ft MSL</strong></span><br/>
+             <span>Distance: ${distFromDest.toFixed(1)} NM to DEST</span><br/>
+             <span>Descent Time: ${Math.round(navLog.climbDescent.descentTimeSeconds / 60)} min</span><br/>
+             <span>Descent Fuel: ${navLog.climbDescent.descentFuelBurn.toFixed(1)}</span>
+           </div>`
+        )
+        .addTo(routeGroup);
+    }
+
+    // 5. Automated Divert / Alternate Range Rings (Fuel & Best Glide)
+    if (showRangeRings && waypoints.length > 0) {
+      const centerWp =
+        activeLegIndex !== null && navLog?.legs[activeLegIndex]
+          ? navLog.legs[activeLegIndex].to
+          : waypoints[waypoints.length - 1];
+      const centerLat = centerWp.latitude;
+      const centerLon = centerWp.longitude;
+
+      const cruiseAlt =
+        activeLegIndex !== null && navLog?.legs[activeLegIndex]
+          ? navLog.legs[activeLegIndex].altitude
+          : navLog?.legs[0]?.altitude ?? 4500;
+      const groundElev = centerWp.elevation ?? 500;
+      const aglFt = Math.max(1000, cruiseAlt - groundElev);
+
+      // 1:10 Best Glide Cone (~1.64 NM per 1,000 ft AGL)
+      const glideRadiusNm = (aglFt / 6076.12) * 10;
+      const glideRadiusMeters = glideRadiusNm * 1852;
+
+      const glideCircle = L.circle([centerLat, centerLon], {
+        radius: glideRadiusMeters,
+        color: '#06b6d4',
+        weight: 2,
+        dashArray: '5, 5',
+        fillColor: '#06b6d4',
+        fillOpacity: 0.12,
+      }).addTo(routeGroup);
+
+      glideCircle.bindPopup(
+        `<div class="map-popup">
+           <strong style="color: #06b6d4;">🔵 Emergency Best Glide Cone (1:10)</strong><br/>
+           <span>Max Powerless Glide Radius: <strong>${glideRadiusNm.toFixed(1)} NM</strong> (~${(glideRadiusNm * 1.852).toFixed(1)} km)</span><br/>
+           <span>Reference Altitude: ${aglFt.toLocaleString()} ft AGL (${cruiseAlt.toLocaleString()} ft MSL)</span>
+         </div>`
+      );
+
+      // 45-min Reserve Divert Range Ring (0.75h * TAS)
+      const tas = navLog?.legs[0]?.groundSpeed ?? 105;
+      const divertRadiusNm = 0.75 * tas;
+      const divertRadiusMeters = divertRadiusNm * 1852;
+
+      const divertCircle = L.circle([centerLat, centerLon], {
+        radius: divertRadiusMeters,
+        color: '#f59e0b',
+        weight: 1.8,
+        dashArray: '8, 6',
+        fillColor: '#f59e0b',
+        fillOpacity: 0.05,
+      }).addTo(routeGroup);
+
+      divertCircle.bindPopup(
+        `<div class="map-popup">
+           <strong style="color: #f59e0b;">🟠 45-Min Reserve Diversion Radius</strong><br/>
+           <span>Safe Range on Final Reserve: <strong>${divertRadiusNm.toFixed(1)} NM</strong></span><br/>
+           <span>Speed Base: ${tas} KT TAS</span>
+         </div>`
+      );
+    }
+
+    // 6. Plot Alternate Aerodrome and Diversion Leg
+    if (alternateAirport) {
+      const altIcon = createAlternateMarkerIcon(alternateAirport);
+      L.marker([alternateAirport.latitude, alternateAirport.longitude], { icon: altIcon })
+        .bindPopup(
+          `<div class="map-popup">
+             <strong style="color: #f59e0b;">✈ ALTERNATE AERODROME</strong><br/>
+             <strong>${alternateAirport.identifier}</strong> — ${alternateAirport.name}<br/>
+             <span>${alternateAirport.latitude.toFixed(4)}°, ${alternateAirport.longitude.toFixed(4)}°</span>
+             ${alternateAirport.elevation !== undefined ? `<br/><span>Elev: ${alternateAirport.elevation} ft</span>` : ''}
+           </div>`
+        )
+        .addTo(routeGroup);
+
+      if (waypoints.length > 0) {
+        const dest = waypoints[waypoints.length - 1];
+        const altLine = L.polyline(
+          [
+            [dest.latitude, dest.longitude],
+            [alternateAirport.latitude, alternateAirport.longitude],
+          ],
+          {
+            color: '#f59e0b',
+            weight: 3.5,
+            opacity: 0.9,
+            dashArray: '6, 6',
+          }
+        ).addTo(routeGroup);
+
+        altLine.bindPopup(
+          `<div class="map-popup">
+             <strong style="color: #f59e0b;">DIVERSION LEG</strong><br/>
+             <span>${dest.identifier} ➔ ${alternateAirport.identifier}</span>
+             ${navLog?.alternatePlan ? `<br/><span>Dist: ${navLog.alternatePlan.distance.toFixed(1)} NM</span><br/><span>MH: ${Math.round(navLog.alternatePlan.magneticHeading)}°</span><br/><span>EET: ${Math.round(navLog.alternatePlan.eetSeconds / 60)} min</span>` : ''}
+           </div>`
+        );
+      }
+    }
+
     // Auto-fit map bounds
-    if (latLngs.length === 1) {
-      map.setView(latLngs[0], 10);
-    } else if (latLngs.length > 1) {
-      const bounds = L.latLngBounds(latLngs);
+    const allPlotPoints = [...latLngs];
+    if (alternateAirport) {
+      allPlotPoints.push(L.latLng(alternateAirport.latitude, alternateAirport.longitude));
+    }
+
+    if (allPlotPoints.length === 1) {
+      map.setView(allPlotPoints[0], 10);
+    } else if (allPlotPoints.length > 1) {
+      const bounds = L.latLngBounds(allPlotPoints);
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
     }
-  }, [waypoints, navLog, activeLegIndex, onSelectLeg]);
+  }, [waypoints, navLog, activeLegIndex, onSelectLeg, alternateAirport, showRangeRings]);
 
   return (
     <div className={`route-map-container ${isFullscreen ? 'is-fullscreen' : ''}`}>
@@ -796,6 +987,15 @@ export const RouteMap: React.FC<RouteMapProps> = ({
 
         <div className="map-layer-section">
           <div className="map-layer-buttons">
+            <button
+              type="button"
+              className={`layer-btn range-rings-btn ${showRangeRings ? 'active' : ''}`}
+              onClick={() => setShowRangeRings(!showRangeRings)}
+              title="Toggle Glide & Fuel Endurance Range Rings"
+            >
+              <span className="layer-btn-icon">⭕</span>
+              <span>{showRangeRings ? 'Rings: ON' : 'Rings: OFF'}</span>
+            </button>
             <button
               type="button"
               className="layer-btn offline-cache-trigger-btn"

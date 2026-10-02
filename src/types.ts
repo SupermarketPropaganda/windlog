@@ -78,6 +78,14 @@ export interface AircraftProfile {
   tas: number;            // knots true airspeed
   fuelFlow: number;       // fuel burn rate in fuelUnit (e.g. 8.5 GPH or 32 L/h)
   fuelUnit: FuelUnit;     // 'gph' (Gallons per Hour) or 'lph' (Liters per Hour)
+  climbRateFpm?: number;  // feet per minute (default 700)
+  climbSpeedKt?: number;  // knots indicated/true for climb (default 75)
+  climbFuelFlowMultiplier?: number; // climb fuel burn multiplier (default 1.35)
+  descentRateFpm?: number;// feet per minute (default 500)
+  descentSpeedKt?: number;// knots for descent (default 100)
+  descentFuelFlowMultiplier?: number; // descent fuel burn multiplier (default 0.65)
+  bestGlideRatio?: number;// glide ratio without engine power (default 10 = 1:10)
+  usableFuel?: number;    // total usable fuel capacity in profile.fuelUnit
 }
 
 // ─── Wind ───
@@ -109,6 +117,70 @@ export interface RouteToken {
   status: WaypointStatus;
 }
 
+// ─── Climb & Descent Vertical Profile ───
+
+export interface StepTransition {
+  fromLegIndex: number;
+  toLegIndex: number;
+  type: 'step-climb' | 'step-down';
+  fromAltitudeFt: number;
+  toAltitudeFt: number;
+  altitudeDeltaFt: number;
+  timeSeconds: number;
+  distanceNm: number;
+  fuelBurn: number;
+}
+
+export interface ClimbDescentProfile {
+  // Departure Climb phase up to Top of Climb (TOC)
+  climbTimeSeconds: number;
+  climbDistanceNm: number;
+  climbFuelBurn: number;
+  tocAltitudeFt: number;
+  tocDistanceNm: number;
+  tocCoordinate?: { latitude: number; longitude: number };
+
+  // Destination Descent phase initiating from Top of Descent (TOD)
+  descentTimeSeconds: number;
+  descentDistanceNm: number;
+  descentFuelBurn: number;
+  todAltitudeFt: number;
+  todDistanceNm: number; // distance from departure where descent begins
+  todCoordinate?: { latitude: number; longitude: number };
+
+  // Level Cruise segment between TOC and TOD
+  cruiseTimeSeconds: number;
+  cruiseDistanceNm: number;
+  cruiseFuelBurn: number;
+
+  // Step-climb / step-down transitions when legs have different altitudes
+  stepTransitions: StepTransition[];
+}
+
+// ─── Alternate & Diversion Planning ───
+
+export interface AlternatePlan {
+  fromAirport: Waypoint;
+  toAirport: Waypoint;
+  altitude: number; // feet MSL
+  wind: Wind | null;
+  trueTrack: number; // degrees true
+  magneticVariation: number; // degrees
+  magneticTrack: number; // degrees magnetic
+  tas: number; // knots
+  windCorrectionAngle: number; // degrees
+  trueHeading: number; // degrees true
+  magneticHeading: number; // degrees magnetic
+  groundSpeed: number; // knots
+  distance: number; // nautical miles
+  eetSeconds: number; // estimated enroute time in seconds
+  fuelBurn: number; // fuel burn in profile.fuelUnit
+  contingencyFuel: number; // 5% contingency
+  finalReserveFuel: number; // 45m reserve
+  taxiFuel: number; // taxi fuel allowance
+  totalFuelRequired: number; // trip + contingency + alternate + reserve + taxi
+}
+
 // ─── Nav Log Summary ───
 
 export interface NavLogSummary {
@@ -120,6 +192,8 @@ export interface NavLogSummary {
   minFuelRequiredDay: number;    // Trip Fuel + 30m reserve
   minFuelRequiredNight: number;  // Trip Fuel + 45m reserve
   legs: Leg[];
+  climbDescent?: ClimbDescentProfile;
+  alternatePlan?: AlternatePlan | null;
 }
 
 // ─── Mass & Balance (Weight & Balance) Types ───
@@ -232,6 +306,8 @@ export interface AirportRunwayInfo {
   icao: string;                  // e.g. "LPCS"
   name: string;                  // e.g. "Cascais Airport"
   elevation?: number;            // feet MSL
+  latitude?: number;             // decimal degrees
+  longitude?: number;            // decimal degrees
   runways: RunwayDefinition[];
 }
 

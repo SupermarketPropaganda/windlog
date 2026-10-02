@@ -179,6 +179,16 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
             <span className="vsd-hud-chip" title="Max Planned Cruise Altitude">
               <span className="chip-dim">CRZ</span> {maxAltInRoute.toLocaleString()} FT
             </span>
+            {navLog.climbDescent && (
+              <>
+                <span className="vsd-hud-chip vsd-hud-toc" title={`Top of Climb at ${navLog.climbDescent.tocDistanceNm.toFixed(1)} NM (Time: ${Math.round(navLog.climbDescent.climbTimeSeconds / 60)} min)`}>
+                  <span className="chip-dim" style={{ color: '#38bdf8' }}>▲ TOC</span> {navLog.climbDescent.tocDistanceNm.toFixed(1)} NM · {Math.round(navLog.climbDescent.climbTimeSeconds / 60)}m
+                </span>
+                <span className="vsd-hud-chip vsd-hud-tod" title={`Top of Descent at ${navLog.climbDescent.todDistanceNm.toFixed(1)} NM (${(navLog.totalDistance - navLog.climbDescent.todDistanceNm).toFixed(1)} NM from DEST)`}>
+                  <span className="chip-dim" style={{ color: '#c2a667' }}>▼ TOD</span> {navLog.climbDescent.todDistanceNm.toFixed(1)} NM · {Math.round(navLog.climbDescent.descentTimeSeconds / 60)}m
+                </span>
+              </>
+            )}
             {terrainResult && (
               <>
                 <span className="vsd-hud-chip" title="Peak Terrain Elevation along Route">
@@ -590,14 +600,135 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                 />
               ))}
 
+              {/* Climb Slope Line up to TOC */}
+              {navLog.climbDescent && navLog.climbDescent.climbDistanceNm > 0 && (
+                <g className="profile-climb-phase">
+                  <line
+                    x1={scaleX(0)}
+                    y1={scaleY(navLog.legs[0]?.from.elevation ?? 0)}
+                    x2={scaleX(navLog.climbDescent.tocDistanceNm)}
+                    y2={scaleY(navLog.climbDescent.tocAltitudeFt)}
+                    stroke="#38bdf8"
+                    strokeWidth="3.5"
+                    strokeDasharray="6, 3"
+                  />
+                  {/* TOC Drop line */}
+                  <line
+                    x1={scaleX(navLog.climbDescent.tocDistanceNm)}
+                    y1={scaleY(navLog.climbDescent.tocAltitudeFt)}
+                    x2={scaleX(navLog.climbDescent.tocDistanceNm)}
+                    y2={scaleY(0)}
+                    stroke="#38bdf8"
+                    strokeDasharray="2, 2"
+                    strokeWidth="1"
+                    opacity="0.6"
+                  />
+                  {/* TOC Badge Marker */}
+                  <polygon
+                    points={`${scaleX(navLog.climbDescent.tocDistanceNm)},${scaleY(navLog.climbDescent.tocAltitudeFt) - 6} ${scaleX(navLog.climbDescent.tocDistanceNm) + 6},${scaleY(navLog.climbDescent.tocAltitudeFt)} ${scaleX(navLog.climbDescent.tocDistanceNm)},${scaleY(navLog.climbDescent.tocAltitudeFt) + 6} ${scaleX(navLog.climbDescent.tocDistanceNm) - 6},${scaleY(navLog.climbDescent.tocAltitudeFt)}`}
+                    fill="#38bdf8"
+                    stroke="#0f172a"
+                    strokeWidth="2"
+                  />
+                  <rect
+                    x={scaleX(navLog.climbDescent.tocDistanceNm) - 44}
+                    y={scaleY(navLog.climbDescent.tocAltitudeFt) - 34}
+                    width={88}
+                    height={22}
+                    rx={4}
+                    fill="#0f172a"
+                    stroke="#38bdf8"
+                    strokeWidth="1.5"
+                  />
+                  <text
+                    x={scaleX(navLog.climbDescent.tocDistanceNm)}
+                    y={scaleY(navLog.climbDescent.tocAltitudeFt) - 19}
+                    textAnchor="middle"
+                    fill="#38bdf8"
+                    fontSize="11"
+                    fontWeight="bold"
+                    fontFamily="var(--font-mono, monospace)"
+                  >
+                    ▲ TOC {navLog.climbDescent.tocDistanceNm.toFixed(1)} NM
+                  </text>
+                </g>
+              )}
+
+              {/* Destination Descent Slope initiating from TOD */}
+              {navLog.climbDescent && navLog.climbDescent.descentDistanceNm > 0 && (
+                <g className="profile-descent-phase">
+                  <line
+                    x1={scaleX(navLog.climbDescent.todDistanceNm)}
+                    y1={scaleY(navLog.climbDescent.todAltitudeFt)}
+                    x2={scaleX(totalDist)}
+                    y2={scaleY((navLog.legs[navLog.legs.length - 1]?.to.elevation ?? 0) + 1000)}
+                    stroke="#c2a667"
+                    strokeWidth="3.5"
+                    strokeDasharray="6, 3"
+                  />
+                  {/* TOD Drop line */}
+                  <line
+                    x1={scaleX(navLog.climbDescent.todDistanceNm)}
+                    y1={scaleY(navLog.climbDescent.todAltitudeFt)}
+                    x2={scaleX(navLog.climbDescent.todDistanceNm)}
+                    y2={scaleY(0)}
+                    stroke="#c2a667"
+                    strokeDasharray="2, 2"
+                    strokeWidth="1"
+                    opacity="0.6"
+                  />
+                  {/* TOD Badge Marker */}
+                  <polygon
+                    points={`${scaleX(navLog.climbDescent.todDistanceNm)},${scaleY(navLog.climbDescent.todAltitudeFt) - 6} ${scaleX(navLog.climbDescent.todDistanceNm) + 6},${scaleY(navLog.climbDescent.todAltitudeFt)} ${scaleX(navLog.climbDescent.todDistanceNm)},${scaleY(navLog.climbDescent.todAltitudeFt) + 6} ${scaleX(navLog.climbDescent.todDistanceNm) - 6},${scaleY(navLog.climbDescent.todAltitudeFt)}`}
+                    fill="#c2a667"
+                    stroke="#0f172a"
+                    strokeWidth="2"
+                  />
+                  <rect
+                    x={scaleX(navLog.climbDescent.todDistanceNm) - 44}
+                    y={scaleY(navLog.climbDescent.todAltitudeFt) - 34}
+                    width={88}
+                    height={22}
+                    rx={4}
+                    fill="#0f172a"
+                    stroke="#c2a667"
+                    strokeWidth="1.5"
+                  />
+                  <text
+                    x={scaleX(navLog.climbDescent.todDistanceNm)}
+                    y={scaleY(navLog.climbDescent.todAltitudeFt) - 19}
+                    textAnchor="middle"
+                    fill="#c2a667"
+                    fontSize="11"
+                    fontWeight="bold"
+                    fontFamily="var(--font-mono, monospace)"
+                  >
+                    ▼ TOD {navLog.climbDescent.todDistanceNm.toFixed(1)} NM
+                  </text>
+                </g>
+              )}
+
               {/* Flight Trajectory Segments & Altitude Badges */}
               {navLog.legs.map((leg, idx) => {
                 const startDist =
                   idx === 0 ? 0 : navLog.legs.slice(0, idx).reduce((acc, l) => acc + l.distance, 0);
+                const endDist = startDist + leg.distance;
                 const startX = scaleX(startDist);
-                const endX = scaleX(startDist + leg.distance);
+                const endX = scaleX(endDist);
                 const legY = scaleY(leg.altitude);
                 const isActive = activeLegIndex === idx;
+
+                // Adjust segment start and end if clipped by TOC or TOD
+                let lineStartX = startX;
+                let lineEndX = endX;
+                if (navLog.climbDescent) {
+                  if (idx === 0 && navLog.climbDescent.tocDistanceNm > startDist) {
+                    lineStartX = scaleX(Math.min(endDist, navLog.climbDescent.tocDistanceNm));
+                  }
+                  if (idx === navLog.legs.length - 1 && navLog.climbDescent.todDistanceNm < endDist) {
+                    lineEndX = scaleX(Math.max(startDist, navLog.climbDescent.todDistanceNm));
+                  }
+                }
 
                 // If previous leg had different altitude, draw step-climb/descent connector
                 let stepConnector = null;
@@ -627,14 +758,16 @@ export const AltitudeProfile: React.FC<AltitudeProfileProps> = ({
                     {stepConnector}
 
                     {/* Flight Path Instrument Line */}
-                    <line
-                      x1={startX}
-                      y1={legY}
-                      x2={endX}
-                      y2={legY}
-                      className={`profile-cruise-line ${isActive ? 'active' : ''}`}
-                      filter={isActive ? 'url(#cyanGlow)' : undefined}
-                    />
+                    {lineEndX >= lineStartX && (
+                      <line
+                        x1={lineStartX}
+                        y1={legY}
+                        x2={lineEndX}
+                        y2={legY}
+                        className={`profile-cruise-line ${isActive ? 'active' : ''}`}
+                        filter={isActive ? 'url(#cyanGlow)' : undefined}
+                      />
+                    )}
 
                     {/* Altitude Pill above line */}
                     <rect
