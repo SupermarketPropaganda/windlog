@@ -60,8 +60,8 @@ export const AIRPORT_RUNWAYS: Record<string, AirportRunwayInfo> = {
     name: 'Évora Municipal Aerodrome',
     elevation: 807,
     runways: [
-      { designator: '01', heading: 7, lengthMeters: 1300, surface: 'ASPHALT', reciprocalDesignator: '19' },
-      { designator: '19', heading: 187, lengthMeters: 1300, surface: 'ASPHALT', reciprocalDesignator: '01' },
+      { designator: '01', heading: 7, lengthMeters: 1579, surface: 'ASPHALT', reciprocalDesignator: '19' },
+      { designator: '19', heading: 187, lengthMeters: 1579, surface: 'ASPHALT', reciprocalDesignator: '01' },
     ],
   },
   LPCO: {

@@ -37,17 +37,29 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
     }
 
     if (list.length === 0) {
-      // Default to Cascais (LPCS) if route is empty
+      // Default to Évora (LPEV) & MAXED if route is empty
       list.push({
-        role: 'Default',
+        role: 'Departure',
         waypoint: {
-          id: 0,
-          identifier: 'LPCS',
-          name: 'Cascais Airport',
+          id: 1,
+          identifier: 'LPEV',
+          name: 'Évora Airfield',
           type: 'airport',
-          latitude: 38.725,
-          longitude: -9.355,
-          elevation: 325,
+          latitude: 38.532,
+          longitude: -7.889,
+          elevation: 807,
+          country: 'PT',
+        },
+      });
+      list.push({
+        role: 'Destination',
+        waypoint: {
+          id: 2,
+          identifier: 'MAXED',
+          name: 'N. SRA. DE MACHEDE...',
+          type: 'custom',
+          latitude: 38.65,
+          longitude: -7.7,
           country: 'PT',
         },
       });
@@ -232,8 +244,9 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
       {/* Top Header Card */}
       <div className="rw-header-card">
         <div className="rw-header-left">
+          <span className="rw-header-icon">✈</span>
           <div>
-            <h1 className="rw-title">🛫 Runway Wind &amp; Crosswind Calculator</h1>
+            <h1 className="rw-title">Runway Wind &amp; Crosswind Calculator</h1>
             <div className="rw-subtitle">
               Auto Route Runway Extraction, Live METAR &amp; Surface Wind Analysis
             </div>
@@ -243,7 +256,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
         <div className="rw-header-actions">
           <button
             type="button"
-            className={`btn ${isAutoWind ? 'btn-primary' : 'btn-cancel'} rw-auto-toggle-btn`}
+            className={`btn rw-auto-toggle-btn ${isAutoWind ? 'rw-auto-on' : 'btn-cancel'}`}
             onClick={() => {
               const next = !isAutoWind;
               setIsAutoWind(next);
@@ -255,7 +268,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
           </button>
           <button
             type="button"
-            className="btn btn-cancel rw-refresh-btn"
+            className="btn rw-refresh-btn"
             onClick={handleRefreshWeather}
             disabled={isLoadingWeather}
             title="Refresh latest METAR and surface observations"
@@ -269,46 +282,46 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
       <div className="mb-card rw-airport-bar-card">
         <div className="rw-airport-bar-header">
           <div className="rw-airport-bar-title">
-            <span className="rw-route-icon">🗺️</span>
+            <span className="rw-route-icon">📁</span>
             <strong>Flight Plan Airports &amp; Aerodromes:</strong>
           </div>
           <div className="rw-airport-bar-meta">
             {activeAirport.elevation != null && (
-              <span className="rw-elev-badge">Elev: {activeAirport.elevation} ft MSL</span>
+              <span className="rw-elev-badge">Elev: {activeAirport.elevation} FT MSL</span>
             )}
             <span className="rw-active-badge">Active: {activeAirport.identifier} ({activeAirportRole})</span>
           </div>
         </div>
 
-        <div className="rw-airport-pills-wrap">
+        <div className="rw-airport-cards-row">
           {routeAirports.map((item, idx) => {
             const isSelected = idx === selectedAirportIndex;
             return (
               <button
                 key={`${item.role}_${item.waypoint.identifier}_${idx}`}
                 type="button"
-                className={`rw-airport-pill ${isSelected ? 'active' : ''}`}
+                className={`rw-airport-card-btn ${isSelected ? 'active' : ''}`}
                 onClick={() => setSelectedAirportIndex(idx)}
               >
-                <span className="pill-role">
+                <div className="rw-airport-card-role">
                   {item.role === 'Departure'
-                    ? '🛫 Departure'
+                    ? '🛫 DEPARTURE'
                     : item.role === 'Destination'
-                    ? '🛬 Destination'
+                    ? '🛬 DESTINATION'
                     : item.role === 'En-route'
-                    ? '📍 En-route'
-                    : '🏢 Aerodrome'}
-                </span>
-                <span className="pill-ident">{item.waypoint.identifier}</span>
-                <span className="pill-name">{item.waypoint.name}</span>
+                    ? '📍 EN-ROUTE'
+                    : '🏢 AERODROME'}
+                </div>
+                <div className="rw-airport-card-ident">{item.waypoint.identifier}</div>
+                <div className="rw-airport-card-name">{item.waypoint.name}</div>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* ─── Live METAR / Surface Weather Banner ─── */}
-      {weatherReport && (
+      {/* ─── Live METAR / Surface Weather Banner or Amber Notice ─── */}
+      {weatherReport && !weatherError && isAutoWind && weatherReport.windSpeed > 0 ? (
         <div className="rw-metar-banner">
           <div className="metar-banner-top">
             <div className="metar-source-tag">
@@ -343,9 +356,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
             </div>
           )}
         </div>
-      )}
-
-      {(!weatherReport || weatherError || !isAutoWind) && (
+      ) : (
         <div className="rw-weather-amber-banner">
           <span className="amber-warn-icon">⚠️</span>
           <span>Live surface wind unavailable. Enter manual values.</span>
@@ -357,15 +368,14 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
         {/* Left Column: Calculation Hub */}
         <div className="rw-inputs-col">
           <div className="rw-col-header">
-            <span className="rw-col-icon">⚙️</span>
             <h2 className="rw-col-title">CALCULATION HUB</h2>
           </div>
 
           {/* Runway Selection Card */}
-          <div className="mb-card">
+          <div className="mb-card rw-step-card">
             <div className="mb-card-header">
               <span className="mb-card-title">STEP 1: Runway Selection &amp; Environment</span>
-              <span className="mb-badge">
+              <span className="rw-official-badge">
                 {airportRunwayInfo ? 'Official. AIP Runways' : 'Generic Runways'}
               </span>
             </div>
@@ -384,13 +394,22 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                     onClick={() => handleManualRwyChange(item.runway.heading)}
                   >
                     <div className="rwy-choice-top">
-                      <span className="rwy-choice-num">RWY {item.runway.designator}</span>
-                      <span className="rwy-choice-heading">{item.runway.heading.toString().padStart(3, '0')}°M</span>
-                      {item.isBest && (
+                      <div className="rwy-choice-left">
+                        <span className="rwy-choice-prefix">RWY</span>
+                        <span className="rwy-choice-num">{item.runway.designator}</span>
+                        <span className="rwy-choice-heading-pill">
+                          {item.runway.heading.toString().padStart(item.runway.heading < 100 ? 1 : 3, '0')}°M
+                        </span>
+                      </div>
+                      {item.isBest ? (
                         <span className="rwy-best-badge">
                           Recommended ✓
                         </span>
-                      )}
+                      ) : item.runway.lengthMeters ? (
+                        <span className="rwy-length-pill">
+                          {item.runway.lengthMeters}M
+                        </span>
+                      ) : null}
                     </div>
 
                     <div className="rwy-choice-stats">
@@ -401,12 +420,6 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                         {item.crosswind} kt X-Wind
                       </span>
                     </div>
-
-                    {item.runway.lengthMeters && (
-                      <div className="rwy-choice-dim">
-                        {item.runway.lengthMeters}m ({Math.round(item.runway.lengthMeters * 3.28084)} ft) • {item.runway.surface || 'Asphalt'}
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -433,19 +446,16 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                     onChange={(e) => setRunwayInput(e.target.value)}
                     className="rw-main-input"
                   />
-                  <span className="rw-unit-text">°</span>
+                  <span className="rw-unit-text">-</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Wind & Gust Card */}
-          <div className="mb-card">
+          {/* Step 2: Wind Inputs Card */}
+          <div className="mb-card rw-step-card">
             <div className="mb-card-header">
               <span className="mb-card-title">STEP 2: Wind Inputs</span>
-              <span className={`mb-badge ${isAutoWind ? 'badge-live' : 'badge-manual'}`}>
-                {isAutoWind ? '⚡ Live Weather Synced' : '⚙️ Manual Override'}
-              </span>
             </div>
 
             <div className="rw-field-grid">
@@ -460,7 +470,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                     onChange={(e) => handleManualWindDirChange(e.target.value)}
                     className="rw-main-input"
                   />
-                  <span className="rw-unit-text">°</span>
+                  <span className="rw-unit-text">▾</span>
                 </div>
               </div>
 
@@ -483,9 +493,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                 <label>GUST SPEED (KT, OPTIONAL)</label>
                 <div className="rw-input-unit-box">
                   <input
-                    type="number"
-                    min="0"
-                    max="100"
+                    type="text"
                     placeholder="None"
                     value={gustSpeedInput}
                     onChange={(e) => handleManualGustChange(e.target.value)}
@@ -512,8 +520,8 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
             </div>
           </div>
 
-          {/* 3. Reciprocal Runway Card (matching bottom left of _image4_.jpg) */}
-          <div className="mb-card rw-recip-summary-card">
+          {/* 3. Reciprocal Runway Card */}
+          <div className="mb-card rw-step-card rw-recip-summary-card">
             <div className="mb-card-header">
               <span className="mb-card-title">3. Reciprocal Runway ({recipNum})</span>
             </div>
@@ -537,105 +545,89 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
               </div>
             </div>
           </div>
-
         </div>
 
-        {/* Right Column: Visual Compass Rose & Component Cards */}
+        {/* Right Column: Performance Analysis & Compass Rose */}
         <div className="rw-visual-col">
-          <div className="rw-col-header">
-            <span className="rw-col-icon">🧭</span>
-            <h2 className="rw-col-title">STEP 3: Performance Analysis &amp; Reciprocal</h2>
-          </div>
-          {/* Component Metric Cards */}
-          <div className="rw-metrics-row">
-            {/* Headwind / Tailwind Card */}
-            <div
-              className={`rw-metric-card ${
-                isHeadwind ? 'card-headwind' : 'card-tailwind'
-              }`}
-            >
-              <div className="metric-header">
-                <span className="metric-icon">{isHeadwind ? '⬇️' : '⬆️'}</span>
-                <span className="metric-label">
-                  {isHeadwind ? 'HEADWIND' : 'TAILWIND'}
-                </span>
-              </div>
-              <div className="metric-value">
-                {Math.abs(result.headwind)}{' '}
-                <span className="metric-unit">kt</span>
-              </div>
-              {result.gustHeadwind !== undefined && (
-                <div className="metric-gust">
-                  Gusts to {Math.abs(result.gustHeadwind)} kt
+          {/* Card 1: STEP 3: Performance Analysis & Reciprocal */}
+          <div className="mb-card rw-step-card">
+            <div className="mb-card-header">
+              <span className="mb-card-title">STEP 3: Performance Analysis &amp; Reciprocal</span>
+            </div>
+
+            {/* Top row: 2 Component Metric Cards */}
+            <div className="rw-perf-cards-row">
+              {/* Headwind Card */}
+              <div className="rw-perf-metric-card">
+                <div className="rw-perf-card-header">
+                  <div className="rw-perf-header-left">
+                    <span className="perf-icon-square">⬇</span>
+                    <span className="rw-perf-title">{isHeadwind ? 'Headwind' : 'Tailwind'}</span>
+                  </div>
+                  <div className="rw-perf-val">
+                    {Math.abs(result.headwind)} <span className="rw-perf-unit">kt</span>
+                  </div>
                 </div>
-              )}
-            </div>
-
-            {/* Crosswind Card */}
-            <div
-              className={`rw-metric-card ${
-                result.crosswindStatus === 'safe'
-                  ? 'card-xwind-safe'
-                  : result.crosswindStatus === 'caution'
-                  ? 'card-xwind-caution'
-                  : 'card-xwind-alert'
-              }`}
-            >
-              <div className="metric-header">
-                <span className="metric-icon">
-                  {result.crosswindSide === 'left'
-                    ? '⬅️'
-                    : result.crosswindSide === 'right'
-                    ? '➡️'
-                    : '🎯'}
-                </span>
-                <span className="metric-label">
-                  CROSSWIND ({result.crosswindSide.toUpperCase()})
-                </span>
-              </div>
-              <div className="metric-value">
-                {result.crosswind} <span className="metric-unit">kt</span>
-              </div>
-              {result.gustCrosswind !== undefined && (
-                <div className="metric-gust">
-                  Gusts to {result.gustCrosswind} kt
+                <div className="rw-perf-bar-track">
+                  <div
+                    className="rw-perf-bar-fill rw-bar-headwind"
+                    style={{
+                      width: `${Math.min(100, Math.max(15, (Math.abs(result.headwind) / (windSpeed || 15)) * 100))}%`,
+                    }}
+                  />
                 </div>
-              )}
+              </div>
+
+              {/* Crosswind Card */}
+              <div className="rw-perf-metric-card">
+                <div className="rw-perf-card-header">
+                  <div className="rw-perf-header-left">
+                    <span className="perf-icon-square">➖</span>
+                    <span className="rw-perf-title">Crosswind ({result.crosswindSide.toUpperCase()})</span>
+                  </div>
+                  <div className="rw-perf-val">
+                    {result.crosswind} <span className="rw-perf-unit">kt</span>
+                  </div>
+                </div>
+                <div className="rw-perf-bar-track">
+                  <div
+                    className="rw-perf-bar-fill rw-bar-crosswind"
+                    style={{
+                      width: `${Math.min(100, Math.max(15, (result.crosswind / (windSpeed || 15)) * 100))}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom section: Max Demo Crosswind */}
+            <div className="rw-max-demo-section">
+              <div className="rw-max-demo-header">
+                <span className="rw-sublabel">Max Demo Crosswind (KT)</span>
+                <span className="rw-max-demo-val">{maxXwind} kt</span>
+              </div>
+              <div className="xwind-limit-bar-wrap">
+                <div
+                  className="xwind-limit-bar-fill"
+                  style={{
+                    width: `${Math.min(100, xwindPercentage)}%`,
+                    backgroundColor: '#f59e0b',
+                  }}
+                />
+              </div>
+              <div className="xwind-limit-text">
+                {xwindPercentage.toFixed(0)}% of Max Demo ({maxXwind} KT)
+              </div>
             </div>
           </div>
 
-          {/* Max Demo Crosswind Card */}
-          <div className="mb-card rw-max-demo-card">
-            <div className="rw-max-demo-header">
-              <span className="rw-sublabel">Max Demo Crosswind (KT)</span>
-              <span className="rw-max-demo-val">{maxXwind} kt</span>
-            </div>
-            <div className="xwind-limit-bar-wrap">
-              <div
-                className="xwind-limit-bar-fill"
-                style={{
-                  width: `${Math.min(100, xwindPercentage)}%`,
-                  backgroundColor:
-                    result.crosswindStatus === 'safe'
-                      ? '#22c55e'
-                      : result.crosswindStatus === 'caution'
-                      ? '#eab308'
-                      : '#ef4444',
-                }}
-              />
-            </div>
-            <div className="xwind-limit-text">
-              {xwindPercentage.toFixed(0)}% of Max Demo ({result.crosswind} kt)
-            </div>
-          </div>
-
-          {/* Visual Interactive Compass Rose SVG */}
-          <div className="mb-card rw-compass-card">
+          {/* Card 2: Visual Compass Rose with Nested Reciprocal Box */}
+          <div className="mb-card rw-step-card rw-compass-card">
             <div className="mb-card-header">
               <span className="mb-card-title">
                 {activeAirport.identifier} RWY {rwyNum} Compass Rose
               </span>
-              <span className="mb-badge">
+              <span className="rw-angle-diff-badge">
                 Angle Diff: {Math.abs(result.angleDifference)}°
               </span>
             </div>
@@ -653,7 +645,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                     markerHeight="6"
                     orient="auto-start-reverse"
                   >
-                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#14b8a6" />
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
                   </marker>
                 </defs>
 
@@ -664,7 +656,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                   r={radius}
                   fill="#0e131f"
                   stroke="#334155"
-                  strokeWidth="2"
+                  strokeWidth="1.5"
                 />
                 <circle
                   cx={cx}
@@ -738,7 +730,7 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                   <rect x={cx - 83} y={cy - 10} width="6" height="20" fill="#ffffff" opacity="0.8" />
                   <rect x={cx + 77} y={cy - 10} width="6" height="20" fill="#ffffff" opacity="0.8" />
                   
-                  {/* Detailed Realistic Top-Down White Aircraft Silhouette matching _image4_.jpg */}
+                  {/* Detailed Realistic Top-Down White Aircraft Silhouette */}
                   {/* Wings */}
                   <path
                     d={`M ${cx - 4} ${cy - 40} L ${cx + 6} ${cy - 40} L ${cx + 10} ${cy - 3} L ${cx + 10} ${cy + 3} L ${cx + 6} ${cy + 40} L ${cx - 4} ${cy + 40} L ${cx - 2} ${cy + 4} L ${cx - 2} ${cy - 4} Z`}
@@ -767,6 +759,47 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                   />
                   {/* Vertical Fin Dorsal Spine */}
                   <line x1={cx - 24} y1={cy} x2={cx - 14} y2={cy} stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" />
+
+                  {/* Crosswind Deflection / Drift Vector Arrow near the nose */}
+                  {result.crosswind > 0 && (
+                    <g className="rw-crosswind-drift-arrow">
+                      {result.crosswindSide === 'left' ? (
+                        /* Pushed rightwards (+Y) */
+                        <g>
+                          <line
+                            x1={cx + 14}
+                            y1={cy + 8}
+                            x2={cx + 14}
+                            y2={cy + 20}
+                            stroke="#38bdf8"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                          />
+                          <polygon
+                            points={`${cx + 14},${cy + 25} ${cx + 9},${cy + 17} ${cx + 19},${cy + 17}`}
+                            fill="#38bdf8"
+                          />
+                        </g>
+                      ) : (
+                        /* Pushed leftwards (-Y) */
+                        <g>
+                          <line
+                            x1={cx + 14}
+                            y1={cy - 8}
+                            x2={cx + 14}
+                            y2={cy - 20}
+                            stroke="#38bdf8"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                          />
+                          <polygon
+                            points={`${cx + 14},${cy - 25} ${cx + 9},${cy - 17} ${cx + 19},${cy - 17}`}
+                            fill="#38bdf8"
+                          />
+                        </g>
+                      )}
+                    </g>
+                  )}
                 </g>
 
                 {/* Runway Designator Numbers (Fixed Orientation) */}
@@ -822,22 +855,22 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                       y1={windStartY}
                       x2={windEndX}
                       y2={windEndY}
-                      stroke="#14b8a6"
-                      strokeWidth="3"
+                      stroke="#38bdf8"
+                      strokeWidth="2.5"
                       markerEnd="url(#windArrow)"
                     />
                     <circle
                       cx={windStartX}
                       cy={windStartY}
                       r="4"
-                      fill="#14b8a6"
+                      fill="#38bdf8"
                       stroke="#ffffff"
                       strokeWidth="1"
                     />
                     <text
                       x={windStartX}
                       y={windStartY - 8}
-                      fill="#14b8a6"
+                      fill="#38bdf8"
                       fontSize="10"
                       fontWeight="bold"
                       textAnchor="middle"
@@ -851,38 +884,24 @@ export const RunwayWindView: React.FC<RunwayWindViewProps> = ({
                 <circle cx={cx} cy={cy} r="3" fill="#ffffff" />
               </svg>
             </div>
-          </div>
 
-          {/* Reciprocal Runway Report matching bottom of _image4_.jpg */}
-          <div className="mb-card rw-reciprocal-report">
-            <div className="mb-card-header">
-              <span className="mb-card-title">Reciprocal Runway ({recipNum})</span>
-            </div>
-            <div className="rw-reciprocal-body">
-              <div className="rw-recip-info">
-                <div>
-                  <strong>RWY {recipNum} ({result.reciprocalHeading}°M)</strong>:
-                </div>
-                <div className="rw-recip-values">
-                  Headwind:{' '}
-                  <span
-                    style={{
-                      color: result.reciprocalHeadwind >= 0 ? '#4ade80' : '#f87171',
-                    }}
-                  >
-                    {result.reciprocalHeadwind >= 0 ? '+' : ''}
-                    {result.reciprocalHeadwind} kt
-                  </span>{' '}
-                  • Crosswind: <strong>{result.reciprocalCrosswind} kt</strong>
-                </div>
+            {/* Nested Reciprocal Runway Box at bottom of Compass Rose Card */}
+            <div className="rw-compass-recip-box">
+              <div className="rw-compass-recip-title">
+                Reciprocal Runway ({recipNum})
               </div>
-
-              {result.reciprocalHeadwind > result.headwind && (
-                <div className="rw-recip-benefit">
-                  💡 <strong>RWY {recipNum}</strong> provides a{' '}
-                  {result.reciprocalHeadwind.toFixed(1)} kt headwind advantage.
-                </div>
-              )}
+              <div className="rw-compass-recip-metrics">
+                Headwind:{' '}
+                <span
+                  style={{
+                    color: result.reciprocalHeadwind >= 0 ? '#4ade80' : '#f87171',
+                  }}
+                >
+                  {result.reciprocalHeadwind >= 0 ? '+' : ''}
+                  {result.reciprocalHeadwind} kt
+                </span>{' '}
+                • Crosswind: <strong>{result.reciprocalCrosswind} kt</strong>
+              </div>
             </div>
           </div>
         </div>
