@@ -2,6 +2,10 @@ import React, { useState, useMemo } from 'react';
 import {
   MassBalanceProfile,
   NavLogSummary,
+  WeightUnit,
+  ArmUnit,
+  FuelType,
+  StationConfig,
 } from '../types';
 import {
   MASS_BALANCE_PRESETS,
@@ -14,6 +18,22 @@ import { computeWeightAndBalance } from '../engine/mass-balance';
 export interface MassBalanceViewProps {
   navLogSummary: NavLogSummary | null;
   onBackToNavLog?: () => void;
+}
+
+interface CustomProfileFormState {
+  name: string;
+  tailNumber: string;
+  weightUnit: WeightUnit;
+  armUnit: ArmUnit;
+  emptyWeight: number;
+  emptyArm: number;
+  maxTakeoffWeight: number;
+  maxLandingWeight: number;
+  fuelType: FuelType;
+  fuelCapacity: number;
+  fuelArm: number;
+  fuelUnit: 'gal' | 'l';
+  stations: StationConfig[];
 }
 
 export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
@@ -35,9 +55,27 @@ export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
     return JSON.parse(JSON.stringify(activePreset));
   });
 
-  // Custom profile creator modal
+  // Custom Aircraft Weight & Balance Sheet modal state
   const [isEditingCustom, setIsEditingCustom] = useState(false);
-  const [customNameInput, setCustomNameInput] = useState('');
+  const [customForm, setCustomForm] = useState<CustomProfileFormState>(() => ({
+    name: 'Custom Aircraft',
+    tailNumber: '',
+    weightUnit: 'lbs',
+    armUnit: 'in',
+    emptyWeight: 1650,
+    emptyArm: 40.0,
+    maxTakeoffWeight: 2550,
+    maxLandingWeight: 2550,
+    fuelType: 'avgas',
+    fuelCapacity: 50,
+    fuelArm: 48.0,
+    fuelUnit: 'gal',
+    stations: [
+      { id: 'st_pilot', name: 'Pilot & Front Pax', arm: 37.0, weight: 340, maxWeight: 400 },
+      { id: 'st_rear', name: 'Rear Passengers', arm: 73.0, weight: 0, maxWeight: 400 },
+      { id: 'st_bag', name: 'Baggage Area', arm: 95.0, weight: 20, maxWeight: 120 },
+    ],
+  }));
 
   // Trip fuel from NavLog if available
   const [tripFuelInput, setTripFuelInput] = useState<string>(() => {
@@ -91,22 +129,105 @@ export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
     }
   };
 
-  // Save as custom profile
-  const handleSaveAsCustom = () => {
-    const name = customNameInput.trim() || `${profile.name} (Custom)`;
+  // Open the custom aircraft sheet modal initialized from current profile
+  const handleOpenCustomModal = () => {
+    setCustomForm({
+      name: profile.name.includes('(Custom)') ? profile.name : `${profile.name} (Custom)`,
+      tailNumber: '',
+      weightUnit: profile.weightUnit,
+      armUnit: profile.armUnit,
+      emptyWeight: profile.emptyWeight,
+      emptyArm: profile.emptyArm,
+      maxTakeoffWeight: profile.maxTakeoffWeight,
+      maxLandingWeight: profile.maxLandingWeight ?? profile.maxTakeoffWeight,
+      fuelType: profile.fuelStation.fuelType,
+      fuelCapacity:
+        profile.fuelStation.fuelUnit === 'gal'
+          ? profile.fuelStation.capacityGallons ?? 50
+          : profile.fuelStation.capacityLiters ?? 100,
+      fuelArm: profile.fuelStation.arm,
+      fuelUnit: profile.fuelStation.fuelUnit,
+      stations: JSON.parse(JSON.stringify(profile.stations)),
+    });
+    setIsEditingCustom(true);
+  };
+
+  const handleAddStation = () => {
+    const newStation: StationConfig = {
+      id: `st_${Date.now()}`,
+      name: `Station ${customForm.stations.length + 1}`,
+      arm: customForm.emptyArm,
+      weight: 0,
+      maxWeight: customForm.weightUnit === 'lbs' ? 200 : 100,
+    };
+    setCustomForm((prev) => ({
+      ...prev,
+      stations: [...prev.stations, newStation],
+    }));
+  };
+
+  const handleRemoveStation = (stationId: string) => {
+    setCustomForm((prev) => ({
+      ...prev,
+      stations: prev.stations.filter((s) => s.id !== stationId),
+    }));
+  };
+
+  const handleUpdateStationField = (
+    stationId: string,
+    field: keyof StationConfig,
+    value: string | number
+  ) => {
+    setCustomForm((prev) => ({
+      ...prev,
+      stations: prev.stations.map((s) =>
+        s.id === stationId ? { ...s, [field]: value } : s
+      ),
+    }));
+  };
+
+  // Save the custom profile from form
+  const handleSaveCustomSheet = () => {
+    const displayName = customForm.tailNumber
+      ? `${customForm.name} (${customForm.tailNumber.toUpperCase()})`
+      : customForm.name.trim() || 'Custom Aircraft';
+
     const newId = `custom_${Date.now()}`;
     const newCustomProfile: MassBalanceProfile = {
-      ...profile,
       id: newId,
-      name,
+      name: displayName,
       isCustom: true,
+      weightUnit: customForm.weightUnit,
+      armUnit: customForm.armUnit,
+      emptyWeight: Math.max(1, customForm.emptyWeight),
+      emptyArm: customForm.emptyArm,
+      maxTakeoffWeight: Math.max(1, customForm.maxTakeoffWeight),
+      maxLandingWeight: Math.max(1, customForm.maxLandingWeight),
+      stations: customForm.stations.map((st) => ({
+        ...st,
+        name: st.name.trim() || 'Station',
+        arm: Number(st.arm) || 0,
+        weight: Number(st.weight) || 0,
+        maxWeight: Number(st.maxWeight) || undefined,
+      })),
+      fuelStation: {
+        name: `Fuel Tanks (${customForm.fuelCapacity} ${customForm.fuelUnit} usable)`,
+        arm: Number(customForm.fuelArm) || 0,
+        fuelType: customForm.fuelType,
+        fuelUnit: customForm.fuelUnit,
+        capacityGallons: customForm.fuelUnit === 'gal' ? customForm.fuelCapacity : undefined,
+        capacityLiters: customForm.fuelUnit === 'l' ? customForm.fuelCapacity : undefined,
+        takeoffFuelVolume: Math.round(customForm.fuelCapacity * 0.75),
+      },
+      // Preserve envelope geometry
+      envelope: profile.envelope,
     };
+
     saveCustomProfile(newCustomProfile);
     setCustomProfiles(loadSavedCustomProfiles());
     setSelectedProfileId(newId);
     setProfile(newCustomProfile);
     setIsEditingCustom(false);
-    setCustomNameInput('');
   };
 
   // Delete custom profile
@@ -241,9 +362,10 @@ export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
           <button
             type="button"
             className="btn btn-cancel"
-            onClick={() => setIsEditingCustom(true)}
+            onClick={handleOpenCustomModal}
+            title="Configure and save custom aircraft weight & balance sheet"
           >
-            💾 Save As Custom
+            📝 Custom Aircraft W&B Sheet
           </button>
 
           {profile.isCustom && (
@@ -569,6 +691,20 @@ export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
                 viewBox={`0 0 ${svgWidth} ${svgHeight}`}
                 className="envelope-svg"
               >
+                <defs>
+                  <marker
+                    id="fuel-burn-arrow"
+                    viewBox="0 0 10 10"
+                    refX="6"
+                    refY="5"
+                    markerWidth="6"
+                    markerHeight="6"
+                    orient="auto-start-reverse"
+                  >
+                    <path d="M 0 1.5 L 10 5 L 0 8.5 z" fill="#38bdf8" />
+                  </marker>
+                </defs>
+
                 {/* Background Grid */}
                 {[0.25, 0.5, 0.75, 1.0].map((frac, idx) => {
                   const yVal = minWeight + frac * (maxWeight - minWeight);
@@ -645,15 +781,16 @@ export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
                   />
                 )}
 
-                {/* Vector line from TOW to LW to ZFW */}
+                {/* Directional Vector line from TOW to LW (Fuel Burn Direction) */}
                 <line
                   x1={mapX(result.takeoffCG)}
                   y1={mapY(result.takeoffWeight)}
                   x2={mapX(result.landingCG)}
                   y2={mapY(result.landingWeight)}
                   stroke="#38bdf8"
-                  strokeWidth="2"
-                  strokeDasharray="3 2"
+                  strokeWidth="2.5"
+                  markerEnd="url(#fuel-burn-arrow)"
+                  strokeDasharray="4 2"
                 />
                 <line
                   x1={mapX(result.landingCG)}
@@ -747,31 +884,246 @@ export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
                 </text>
               </svg>
             </div>
+
+            {/* Takeoff vs. Landing CG Shift Vector Callout */}
+            <div className="cg-shift-badge-box">
+              <span className="cg-shift-tag">FUEL BURN CG SHIFT VECTOR:</span>
+              <span>
+                Fuel Burned: -{result.tripFuelWeight.toFixed(1)} {profile.weightUnit} ({tripFuelVal} {profile.fuelStation.fuelUnit})
+              </span>
+              <span>•</span>
+              <span>
+                ΔCG: {(result.landingCG - result.takeoffCG >= 0 ? '+' : '')}
+                {(result.landingCG - result.takeoffCG).toFixed(2)} {profile.armUnit} (
+                {result.landingCG > result.takeoffCG
+                  ? 'Aft Shift ➔'
+                  : result.landingCG < result.takeoffCG
+                  ? 'Fwd Shift ⬅'
+                  : 'Zero Shift'}
+                )
+              </span>
+              <span>•</span>
+              <span>
+                TOW: {result.takeoffCG} {profile.armUnit} ➔ LW: {result.landingCG} {profile.armUnit}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Save Custom Profile Modal */}
+      {/* Custom Aircraft Weight & Balance Sheet Modal */}
       {isEditingCustom && (
-        <div className="modal-overlay">
-          <div className="custom-mb-modal">
-            <h2 className="modal-title">Save Custom Aircraft Profile</h2>
-            <p className="modal-subtitle">
-              Save your current weights, arms, and stations for future flight planning.
-            </p>
-
-            <div className="mb-input-group" style={{ margin: '1rem 0' }}>
-              <label>Profile Name:</label>
-              <input
-                type="text"
-                placeholder="e.g. My Cessna 172 (CS-AXA)"
-                value={customNameInput}
-                onChange={(e) => setCustomNameInput(e.target.value)}
-                autoFocus
-              />
+        <div className="custom-wb-overlay" onClick={() => setIsEditingCustom(false)}>
+          <div className="custom-aircraft-wb-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="custom-wb-modal-header">
+              <h3 className="custom-wb-modal-title">
+                <span>✈️</span>
+                <span>Custom Aircraft Weight &amp; Balance Sheet</span>
+              </h3>
+              <button
+                type="button"
+                className="custom-wb-modal-close"
+                onClick={() => setIsEditingCustom(false)}
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="modal-actions">
+            <div className="custom-wb-modal-body">
+              {/* 1. Aircraft Identification */}
+              <div className="custom-wb-section">
+                <span className="custom-wb-section-title">1. Aircraft Identification &amp; Units</span>
+                <div className="custom-wb-grid-2">
+                  <div className="custom-wb-field">
+                    <label>Aircraft Model / Name</label>
+                    <input
+                      type="text"
+                      value={customForm.name}
+                      placeholder="e.g. Cessna 172N Skyhawk"
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="custom-wb-field">
+                    <label>Tail Number / Registration</label>
+                    <input
+                      type="text"
+                      value={customForm.tailNumber}
+                      placeholder="e.g. CS-AXA"
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, tailNumber: e.target.value.toUpperCase() }))}
+                    />
+                  </div>
+                </div>
+                <div className="custom-wb-grid-2">
+                  <div className="custom-wb-field">
+                    <label>Weight Unit</label>
+                    <select
+                      value={customForm.weightUnit}
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, weightUnit: e.target.value as WeightUnit }))}
+                    >
+                      <option value="lbs">Pounds (lbs)</option>
+                      <option value="kg">Kilograms (kg)</option>
+                    </select>
+                  </div>
+                  <div className="custom-wb-field">
+                    <label>Arm Measurement Unit</label>
+                    <select
+                      value={customForm.armUnit}
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, armUnit: e.target.value as ArmUnit }))}
+                    >
+                      <option value="in">Inches (in)</option>
+                      <option value="cm">Centimeters (cm)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Weight Limits & Empty Specs */}
+              <div className="custom-wb-section">
+                <span className="custom-wb-section-title">2. Weight Limits &amp; Basic Empty Weight (BEW)</span>
+                <div className="custom-wb-grid-2">
+                  <div className="custom-wb-field">
+                    <label>Basic Empty Weight ({customForm.weightUnit})</label>
+                    <input
+                      type="number"
+                      value={customForm.emptyWeight}
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, emptyWeight: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div className="custom-wb-field">
+                    <label>Empty Weight Arm ({customForm.armUnit})</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={customForm.emptyArm}
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, emptyArm: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                </div>
+                <div className="custom-wb-grid-2">
+                  <div className="custom-wb-field">
+                    <label>Max Takeoff Weight - MTOW ({customForm.weightUnit})</label>
+                    <input
+                      type="number"
+                      value={customForm.maxTakeoffWeight}
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, maxTakeoffWeight: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div className="custom-wb-field">
+                    <label>Max Landing Weight - MLW ({customForm.weightUnit})</label>
+                    <input
+                      type="number"
+                      value={customForm.maxLandingWeight}
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, maxLandingWeight: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Fuel Tank Specs */}
+              <div className="custom-wb-section">
+                <span className="custom-wb-section-title">3. Fuel Tank Specifications</span>
+                <div className="custom-wb-grid-3">
+                  <div className="custom-wb-field">
+                    <label>Fuel Type</label>
+                    <select
+                      value={customForm.fuelType}
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, fuelType: e.target.value as FuelType }))}
+                    >
+                      <option value="avgas">100LL Avgas</option>
+                      <option value="mogas">Mogas / Unleaded</option>
+                      <option value="jetA">Jet-A1</option>
+                    </select>
+                  </div>
+                  <div className="custom-wb-field">
+                    <label>Capacity ({customForm.fuelUnit})</label>
+                    <input
+                      type="number"
+                      value={customForm.fuelCapacity}
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, fuelCapacity: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div className="custom-wb-field">
+                    <label>Fuel Arm ({customForm.armUnit})</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={customForm.fuelArm}
+                      onChange={(e) => setCustomForm((prev) => ({ ...prev, fuelArm: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 4. Customizable Loading Stations */}
+              <div className="custom-wb-section">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span className="custom-wb-section-title">4. Customizable Loading Stations</span>
+                  <button
+                    type="button"
+                    className="wb-add-station-btn"
+                    style={{ width: 'auto', padding: '0.25rem 0.65rem' }}
+                    onClick={handleAddStation}
+                  >
+                    + Add Station
+                  </button>
+                </div>
+
+                <table className="custom-wb-stations-table">
+                  <thead>
+                    <tr>
+                      <th>Station Name</th>
+                      <th style={{ width: '90px' }}>Arm ({customForm.armUnit})</th>
+                      <th style={{ width: '100px' }}>Max ({customForm.weightUnit})</th>
+                      <th style={{ width: '40px' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customForm.stations.map((st) => (
+                      <tr key={st.id}>
+                        <td>
+                          <input
+                            type="text"
+                            className="wb-station-input"
+                            value={st.name}
+                            onChange={(e) => handleUpdateStationField(st.id, 'name', e.target.value)}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="wb-station-input"
+                            value={st.arm}
+                            onChange={(e) => handleUpdateStationField(st.id, 'arm', parseFloat(e.target.value) || 0)}
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            className="wb-station-input"
+                            value={st.maxWeight ?? ''}
+                            placeholder="Optional"
+                            onChange={(e) => handleUpdateStationField(st.id, 'maxWeight', parseFloat(e.target.value) || 0)}
+                          />
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            className="wb-del-station-btn"
+                            title="Remove station"
+                            onClick={() => handleRemoveStation(st.id)}
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="custom-wb-modal-footer">
               <button
                 type="button"
                 className="btn btn-cancel"
@@ -782,9 +1134,9 @@ export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
               <button
                 type="button"
                 className="btn btn-confirm"
-                onClick={handleSaveAsCustom}
+                onClick={handleSaveCustomSheet}
               >
-                Save Profile
+                💾 Save Aircraft Profile
               </button>
             </div>
           </div>
@@ -793,3 +1145,4 @@ export const MassBalanceView: React.FC<MassBalanceViewProps> = ({
     </div>
   );
 };
+

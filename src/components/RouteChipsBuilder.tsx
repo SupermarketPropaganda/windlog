@@ -29,7 +29,10 @@ export const RouteChipsBuilder: React.FC<RouteChipsBuilderProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [insertIndex, setInsertIndex] = useState<number | null>(null);
+  const [insertValue, setInsertValue] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const insertInputRef = useRef<HTMLInputElement>(null);
 
   // Sync route input tokens into readable chip labels
   const getChipLabel = (token: RouteToken): string => {
@@ -51,10 +54,35 @@ export const RouteChipsBuilder: React.FC<RouteChipsBuilderProps> = ({
       parts.splice(indexToRemove, 1);
       const newRoute = parts.join(' ');
       onRouteInputChange(newRoute);
+      if (insertIndex !== null) setInsertIndex(null);
     }
   };
 
-  // Handle adding a token from input
+  // Reorder chips left/right
+  const handleMoveChip = (fromIdx: number, direction: 'left' | 'right') => {
+    const toIdx = direction === 'left' ? fromIdx - 1 : fromIdx + 1;
+    const parts = routeInput.trim().split(/\s+/).filter(Boolean);
+    if (fromIdx < 0 || fromIdx >= parts.length || toIdx < 0 || toIdx >= parts.length) return;
+    const temp = parts[fromIdx];
+    parts[fromIdx] = parts[toIdx];
+    parts[toIdx] = temp;
+    onRouteInputChange(parts.join(' '));
+  };
+
+  // Commit inserting a waypoint at a specific position
+  const handleCommitInsert = () => {
+    if (insertIndex === null) return;
+    const trimmed = insertValue.trim().toUpperCase();
+    if (trimmed) {
+      const parts = routeInput.trim().split(/\s+/).filter(Boolean);
+      parts.splice(insertIndex, 0, trimmed);
+      onRouteInputChange(parts.join(' '));
+    }
+    setInsertIndex(null);
+    setInsertValue('');
+  };
+
+  // Handle adding a token from end input
   const handleCommitInput = () => {
     const trimmed = inputValue.trim().toUpperCase();
     if (!trimmed) return;
@@ -90,36 +118,107 @@ export const RouteChipsBuilder: React.FC<RouteChipsBuilderProps> = ({
         <div className="route-chips-list">
           {tokens.map((token, idx) => {
             const isAirport = token.waypoint?.type === 'airport';
+            const isInsertingHere = insertIndex === idx;
+
             return (
-              <div
-                key={`${token.identifier}_${idx}`}
-                className={`route-chip ${isAirport ? 'airport' : 'waypoint'} ${token.status}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTokenClick(token);
-                }}
-                title={
-                  token.waypoint
-                    ? `${token.waypoint.name} (${token.waypoint.type.toUpperCase()})`
-                    : 'Click to resolve coordinates'
-                }
-              >
-                <span className="route-chip-label">{getChipLabel(token)}</span>
-                {token.altitudeOverride && (
-                  <span className="route-chip-alt">/{token.altitudeOverride / 1000}k</span>
+              <React.Fragment key={`${token.identifier}_${idx}`}>
+                {/* Inline Insert Trigger or Box before this chip */}
+                {isInsertingHere ? (
+                  <div className="route-chip-insert-box" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      ref={insertInputRef}
+                      type="text"
+                      className="route-chip-insert-input"
+                      placeholder="INSERT WPT..."
+                      value={insertValue}
+                      onChange={(e) => setInsertValue(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleCommitInsert();
+                        } else if (e.key === 'Escape') {
+                          setInsertIndex(null);
+                        }
+                      }}
+                      autoFocus
+                    />
+                    <button type="button" className="insert-action-btn ok" onClick={handleCommitInsert}>
+                      ✓
+                    </button>
+                    <button type="button" className="insert-action-btn cancel" onClick={() => setInsertIndex(null)}>
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  idx > 0 && (
+                    <button
+                      type="button"
+                      className="route-chip-insert-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setInsertIndex(idx);
+                        setInsertValue('');
+                      }}
+                      title={`Insert waypoint between ${tokens[idx - 1].identifier} and ${token.identifier}`}
+                    >
+                      +
+                    </button>
+                  )
                 )}
-                <button
-                  type="button"
-                  className="route-chip-remove-btn"
+
+                <div
+                  className={`route-chip ${isAirport ? 'airport' : 'waypoint'} ${token.status}`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleRemoveChip(idx);
+                    onTokenClick(token);
                   }}
-                  title="Remove waypoint"
+                  title={
+                    token.waypoint
+                      ? `${token.waypoint.name} (${token.waypoint.type.toUpperCase()})`
+                      : 'Click to resolve coordinates'
+                  }
                 >
-                  ✕
-                </button>
-              </div>
+                  {/* Reorder Buttons (Move Earlier / Later) */}
+                  <div className="route-chip-reorder-group" onClick={(e) => e.stopPropagation()}>
+                    {idx > 0 && (
+                      <button
+                        type="button"
+                        className="route-chip-move-btn"
+                        onClick={() => handleMoveChip(idx, 'left')}
+                        title="Move waypoint earlier"
+                      >
+                        ◀
+                      </button>
+                    )}
+                    {idx < tokens.length - 1 && (
+                      <button
+                        type="button"
+                        className="route-chip-move-btn"
+                        onClick={() => handleMoveChip(idx, 'right')}
+                        title="Move waypoint later"
+                      >
+                        ▶
+                      </button>
+                    )}
+                  </div>
+
+                  <span className="route-chip-label">{getChipLabel(token)}</span>
+                  {token.altitudeOverride && (
+                    <span className="route-chip-alt">/{token.altitudeOverride / 1000}k</span>
+                  )}
+                  <button
+                    type="button"
+                    className="route-chip-remove-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveChip(idx);
+                    }}
+                    title="Remove waypoint"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </React.Fragment>
             );
           })}
 

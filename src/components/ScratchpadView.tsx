@@ -106,8 +106,42 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
   // Alternate ICAO input state
   const [customAltIcao, setCustomAltIcao] = useState<string>('');
 
+  // Standard ICAO / EASA Fuel Policy State
+  const [fuelReserveMode, setFuelReserveMode] = useState<'day' | 'night'>('day');
+  const [fobInput, setFobInput] = useState<string>('');
+
   const hasWaypoints = props.resolvedWaypoints.length > 0;
   const fuelUnitLabel = props.profile.fuelUnit === 'gph' ? 'gal' : 'L';
+
+  // Standard ICAO/EASA Fuel Policy Calculation
+  const fuelBreakdown = useMemo(() => {
+    const fuelFlow = props.profile.fuelFlow > 0 ? props.profile.fuelFlow : 0;
+    const taxi = props.alternatePlan?.taxiFuel ?? (fuelFlow > 0 ? Number(((fuelFlow * 0.4) * 0.25).toFixed(1)) : 0.8);
+    const trip = props.navLog ? props.navLog.totalFuel : 0;
+    // ICAO Annex 6 / EASA: Higher of 5% trip fuel or 5 min holding
+    const contingency = props.alternatePlan?.contingencyFuel ?? Math.max(trip * 0.05, (5 / 60) * fuelFlow);
+    const alternate = props.alternatePlan ? props.alternatePlan.fuelBurn : 0;
+    const finalReserveMinutes = fuelReserveMode === 'day' ? 30 : 45;
+    const finalReserve = (finalReserveMinutes / 60) * fuelFlow;
+    const minRequired = taxi + trip + contingency + alternate + finalReserve;
+    const parsedFob = parseFloat(fobInput);
+    const fob = !isNaN(parsedFob) ? parsedFob : (minRequired > 0 ? Number((minRequired * 1.2).toFixed(1)) : 0);
+    const margin = fob - minRequired;
+    const enduranceSec = fuelFlow > 0 && fob > 0 ? (fob / fuelFlow) * 3600 : 0;
+
+    return {
+      taxi,
+      trip,
+      contingency,
+      alternate,
+      finalReserveMinutes,
+      finalReserve,
+      minRequired,
+      fob,
+      margin,
+      enduranceSec,
+    };
+  }, [props.profile.fuelFlow, props.alternatePlan, props.navLog, fuelReserveMode, fobInput]);
 
   const destination = useMemo(() => {
     if (props.resolvedWaypoints.length > 1) {
@@ -189,17 +223,150 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
         {/* Left Column: NavLog Legs & Summary */}
         <div className="dashboard-left-col">
           <div className="navlog-list">
-            {props.navLog?.legs.map((leg, idx) => (
-              <NavLogRow
-                key={leg.id}
-                leg={leg}
-                legIndex={idx}
-                fuelUnit={props.profile.fuelUnit}
-                isActive={props.activeLegIndex === idx}
-                onSelect={() => props.onSelectLeg(idx)}
-                onAltitudeChange={(newAlt) => props.onLegAltitudeChange(idx, newAlt)}
-              />
-            ))}
+            {/* Integrated Climb Phase (DEP ➔ TOC) */}
+            {props.navLog?.climbDescent && props.navLog.legs.length > 0 && (
+              <div className="navlog-phase-card phase-climb">
+                <div className="phase-card-header">
+                  <div className="phase-card-title-group">
+                    <span className="phase-card-icon">▲</span>
+                    <span className="phase-card-title">CLIMB TO TOP OF CLIMB (TOC)</span>
+                  </div>
+                  <span className="phase-card-tag">DEP ➔ TOC</span>
+                </div>
+                <div className="phase-metrics-row">
+                  <div className="phase-metric-box">
+                    <span className="phase-metric-label">Profile</span>
+                    <span className="phase-metric-val val-cyan">
+                      {(props.resolvedWaypoints[0]?.elevation ?? 0).toLocaleString()} FT ➔ {props.navLog.climbDescent.tocAltitudeFt.toLocaleString()} FT
+                    </span>
+                  </div>
+                  <div className="phase-metric-box">
+                    <span className="phase-metric-label">Climb Dist</span>
+                    <span className="phase-metric-val">{props.navLog.climbDescent.climbDistanceNm.toFixed(1)} NM</span>
+                  </div>
+                  <div className="phase-metric-box">
+                    <span className="phase-metric-label">Climb ETE</span>
+                    <span className="phase-metric-val">{formatTime(props.navLog.climbDescent.climbTimeSeconds)}</span>
+                  </div>
+                  <div className="phase-metric-box">
+                    <span className="phase-metric-label">Climb Rate</span>
+                    <span className="phase-metric-val val-gold">+{props.profile.climbRateFpm || 700} FPM</span>
+                  </div>
+                  {props.profile.fuelFlow > 0 && (
+                    <div className="phase-metric-box">
+                      <span className="phase-metric-label">Fuel Burn</span>
+                      <span className="phase-metric-val val-fuel">
+                        {props.navLog.climbDescent.climbFuelBurn.toFixed(1)} {fuelUnitLabel}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {props.navLog?.legs.map((leg, idx) => {
+              const stepTransition = props.navLog?.climbDescent?.stepTransitions?.find(
+                (st) => st.fromLegIndex === idx
+              );
+
+              return (
+                <React.Fragment key={leg.id}>
+                  <NavLogRow
+                    leg={leg}
+                    legIndex={idx}
+                    fuelUnit={props.profile.fuelUnit}
+                    isActive={props.activeLegIndex === idx}
+                    onSelect={() => props.onSelectLeg(idx)}
+                    onAltitudeChange={(newAlt) => props.onLegAltitudeChange(idx, newAlt)}
+                  />
+
+                  {/* Step-Climb / Step-Down Transition Indicator */}
+                  {stepTransition && (
+                    <div
+                      className={`navlog-step-transition-banner ${
+                        stepTransition.type === 'step-climb' ? 'step-climb-banner' : 'step-down-banner'
+                      }`}
+                    >
+                      <div className="step-banner-left">
+                        <span className="step-banner-icon">
+                          {stepTransition.type === 'step-climb' ? '▲' : '▼'}
+                        </span>
+                        <span className="step-banner-title">
+                          {stepTransition.type === 'step-climb' ? 'STEP-CLIMB' : 'STEP-DOWN'} (
+                          {stepTransition.type === 'step-climb' ? '+' : '-'}
+                          {stepTransition.altitudeDeltaFt.toLocaleString()} FT)
+                        </span>
+                      </div>
+                      <div className="step-banner-details">
+                        <span className="step-banner-item">
+                          <span>Alt:</span>{' '}
+                          <strong>
+                            {stepTransition.fromAltitudeFt.toLocaleString()} FT ➔{' '}
+                            {stepTransition.toAltitudeFt.toLocaleString()} FT
+                          </strong>
+                        </span>
+                        <span className="step-banner-item">
+                          <span>ETE:</span> <strong>{formatTime(stepTransition.timeSeconds)}</strong>
+                        </span>
+                        <span className="step-banner-item">
+                          <span>Dist:</span> <strong>{stepTransition.distanceNm.toFixed(1)} NM</strong>
+                        </span>
+                        {props.profile.fuelFlow > 0 && (
+                          <span className="step-banner-item">
+                            <span>Fuel:</span>{' '}
+                            <strong style={{ color: '#4ade80' }}>
+                              {stepTransition.fuelBurn.toFixed(1)} {fuelUnitLabel}
+                            </strong>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </React.Fragment>
+              );
+            })}
+
+            {/* Integrated Descent Phase (TOD ➔ DEST) */}
+            {props.navLog?.climbDescent && props.navLog.legs.length > 0 && (
+              <div className="navlog-phase-card phase-descent">
+                <div className="phase-card-header">
+                  <div className="phase-card-title-group">
+                    <span className="phase-card-icon">▼</span>
+                    <span className="phase-card-title">DESCENT FROM TOP OF DESCENT (TOD)</span>
+                  </div>
+                  <span className="phase-card-tag">TOD ➔ DEST</span>
+                </div>
+                <div className="phase-metrics-row">
+                  <div className="phase-metric-box">
+                    <span className="phase-metric-label">Profile</span>
+                    <span className="phase-metric-val val-gold">
+                      {props.navLog.climbDescent.todAltitudeFt.toLocaleString()} FT ➔{' '}
+                      {((destination?.elevation ?? 0) + 1000).toLocaleString()} FT Pattern
+                    </span>
+                  </div>
+                  <div className="phase-metric-box">
+                    <span className="phase-metric-label">Descent Dist</span>
+                    <span className="phase-metric-val">{props.navLog.climbDescent.descentDistanceNm.toFixed(1)} NM</span>
+                  </div>
+                  <div className="phase-metric-box">
+                    <span className="phase-metric-label">Descent ETE</span>
+                    <span className="phase-metric-val">{formatTime(props.navLog.climbDescent.descentTimeSeconds)}</span>
+                  </div>
+                  <div className="phase-metric-box">
+                    <span className="phase-metric-label">Descent Rate</span>
+                    <span className="phase-metric-val val-cyan">-{props.profile.descentRateFpm || 500} FPM</span>
+                  </div>
+                  {props.profile.fuelFlow > 0 && (
+                    <div className="phase-metric-box">
+                      <span className="phase-metric-label">Fuel Burn</span>
+                      <span className="phase-metric-val val-fuel">
+                        {props.navLog.climbDescent.descentFuelBurn.toFixed(1)} {fuelUnitLabel}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {(!props.navLog || props.navLog.legs.length === 0) &&
               props.routeInput.trim().length > 0 && (
@@ -258,6 +425,132 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Standard ICAO / EASA Fuel Policy Breakdown Card */}
+          {props.navLog && props.navLog.legs.length > 0 && props.profile.fuelFlow > 0 && (
+            <div className="icao-easa-fuel-policy-card">
+              <div className="fuel-policy-top-bar">
+                <div className="fuel-policy-title-group">
+                  <span className="fuel-policy-icon">⛽</span>
+                  <div>
+                    <h4 className="fuel-policy-heading">ICAO / EASA STANDARD FUEL POLICY</h4>
+                    <p className="fuel-policy-subheading">
+                      Annex 6 / Part-NCO compliant dispatch calculations &amp; ramp reserves
+                    </p>
+                  </div>
+                </div>
+
+                <div className="fuel-reserve-switch-group">
+                  <button
+                    type="button"
+                    className={`fuel-reserve-btn ${fuelReserveMode === 'day' ? 'active' : ''}`}
+                    onClick={() => setFuelReserveMode('day')}
+                  >
+                    VFR Day (30m)
+                  </button>
+                  <button
+                    type="button"
+                    className={`fuel-reserve-btn ${fuelReserveMode === 'night' ? 'active' : ''}`}
+                    onClick={() => setFuelReserveMode('night')}
+                  >
+                    VFR Night (45m)
+                  </button>
+                </div>
+              </div>
+
+              <table className="fuel-policy-table">
+                <thead>
+                  <tr>
+                    <th>Fuel Component</th>
+                    <th>Regulation / Policy</th>
+                    <th style={{ textAlign: 'right' }}>Quantity ({fuelUnitLabel})</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Taxi Allowance</td>
+                    <td style={{ color: '#94a3b8' }}>10 min engine start, run-up &amp; taxi</td>
+                    <td className="val-policy-num">{fuelBreakdown.taxi.toFixed(1)}</td>
+                  </tr>
+                  <tr>
+                    <td>Trip Fuel</td>
+                    <td style={{ color: '#94a3b8' }}>Climb, cruise legs &amp; descent</td>
+                    <td className="val-policy-num">{fuelBreakdown.trip.toFixed(1)}</td>
+                  </tr>
+                  <tr>
+                    <td>Contingency Fuel</td>
+                    <td style={{ color: '#94a3b8' }}>Higher of 5% trip or 5m cruise</td>
+                    <td className="val-policy-num">{fuelBreakdown.contingency.toFixed(1)}</td>
+                  </tr>
+                  <tr>
+                    <td>Alternate Fuel</td>
+                    <td style={{ color: '#94a3b8' }}>
+                      {props.alternateAirport ? `Diversion to ${props.alternateAirport.identifier}` : 'No alternate selected (0.0)'}
+                    </td>
+                    <td className="val-policy-num">{fuelBreakdown.alternate.toFixed(1)}</td>
+                  </tr>
+                  <tr>
+                    <td>Final Reserve</td>
+                    <td style={{ color: '#94a3b8' }}>{fuelBreakdown.finalReserveMinutes} min holding reserve at cruise flow</td>
+                    <td className="val-policy-num">{fuelBreakdown.finalReserve.toFixed(1)}</td>
+                  </tr>
+                  <tr className="fuel-row-total">
+                    <td>MINIMUM REQUIRED RAMP FUEL</td>
+                    <td style={{ color: '#2dd4bf' }}>Legal Minimum Departure Fuel</td>
+                    <td className="val-policy-total">{fuelBreakdown.minRequired.toFixed(1)}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="fuel-policy-fob-section">
+                <div className="fuel-fob-input-box">
+                  <label htmlFor="fuel-fob-input" className="fuel-fob-label">Fuel on Board (FOB)</label>
+                  <div className="fuel-fob-field">
+                    <input
+                      id="fuel-fob-input"
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      className="fuel-fob-input"
+                      value={fobInput}
+                      placeholder={fuelBreakdown.fob.toFixed(1)}
+                      onChange={(e) => setFobInput(e.target.value)}
+                    />
+                    <span style={{ fontFamily: 'var(--font-mono, monospace)', fontWeight: 700, color: '#f8fafc' }}>
+                      {fuelUnitLabel}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="fuel-margin-box">
+                  <span className="fuel-fob-label">Fuel Margin / Extra</span>
+                  <div
+                    className={`fuel-margin-pill ${
+                      fuelBreakdown.margin >= 0 ? 'margin-positive' : 'margin-negative'
+                    }`}
+                  >
+                    <span>{fuelBreakdown.margin >= 0 ? '✓' : '⚠️'}</span>
+                    <span>
+                      {fuelBreakdown.margin >= 0 ? '+' : ''}
+                      {fuelBreakdown.margin.toFixed(1)} {fuelUnitLabel}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', opacity: 0.85 }}>
+                      ({fuelBreakdown.margin >= 0 ? 'Excess' : 'DEFICIT'})
+                    </span>
+                  </div>
+                </div>
+
+                <div className="fuel-endurance-badge">
+                  <span className="fuel-fob-label">Total Aircraft Endurance</span>
+                  <span className="fuel-endurance-val">{formatTime(fuelBreakdown.enduranceSec)}</span>
+                </div>
+              </div>
+
+              <div className="fuel-policy-disclaimer">
+                ⚠️ Pre-flight preparation only • Not for in-flight navigation • Pilot-in-Command remains solely responsible for verifying weight, balance, and regulatory fuel requirements before engine start.
+              </div>
             </div>
           )}
 

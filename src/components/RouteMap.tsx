@@ -409,18 +409,45 @@ export const RouteMap: React.FC<RouteMapProps> = ({
             navLog && navLog.legs[0] ? navLog.legs[0].altitude : 0
           );
 
+          // VFR entry requirement synthesis
+          let vfrReqText = 'Uncontrolled airspace (Class G). Continuous listening watch advised on FIS frequency.';
+          let vfrReqBadge = '<span class="sector-vfr-badge badge-vfr-free">Class G · Open VFR</span>';
+
+          if (as.type === 'RESTRICTED' || as.type === 'PROHIBITED') {
+            vfrReqText = 'Flight prohibited or strictly conditional upon active airspace status & explicit ATC/military authorization.';
+            vfrReqBadge = '<span class="sector-vfr-badge badge-vfr-clearance">Restricted · Clearance Mandatory</span>';
+          } else if (as.type === 'DANGER') {
+            vfrReqText = 'Caution: Operational hazard / military activity. Check active NOTAMs and maintain listening watch.';
+            vfrReqBadge = '<span class="sector-vfr-badge badge-vfr-listen">Danger Area · Extreme Caution</span>';
+          } else if (as.classification === 'C') {
+            vfrReqText = 'ATC Clearance mandatory before entry. Continuous two-way radio comms & Transponder Mode S required.';
+            vfrReqBadge = '<span class="sector-vfr-badge badge-vfr-clearance">Class C · Clearance Mandatory</span>';
+          } else if (as.classification === 'D') {
+            vfrReqText = 'ATC Clearance required prior to entering CTR/TMA. Establish two-way communication with Tower/Approach.';
+            vfrReqBadge = '<span class="sector-vfr-badge badge-vfr-clearance">Class D · Two-Way Comms Required</span>';
+          } else if (as.type === 'ATZ') {
+            vfrReqText = 'Aerodrome Traffic Zone: Contact local AFIS/TWR/Unicom frequency before crossing boundaries.';
+            vfrReqBadge = '<span class="sector-vfr-badge badge-vfr-listen">ATZ · Radio Call Required</span>';
+          }
+
           let conflictHtml = '';
           if (navLog && navLog.legs.length > 0) {
+            let hasConflict = false;
             for (let i = 0; i < navLog.legs.length; i++) {
               const c = checkLegAirspaceConflict(navLog.legs[i], i, as);
               if (c) {
                 if (c.status === 'PENETRATING') {
-                  conflictHtml = `<div class="airspace-popup-alert alert-pen">⚠️ Leg ${i + 1} (${c.legFrom}→${c.legTo}) enters at ${c.legAltitudeFt.toLocaleString()} ft!</div>`;
+                  conflictHtml = `<div class="airspace-popup-alert alert-pen">⚠️ ROUTE PENETRATION: Leg ${i + 1} (${c.legFrom}→${c.legTo}) enters at ${c.legAltitudeFt.toLocaleString()} ft MSL!</div>`;
+                  hasConflict = true;
                   break;
                 } else if (c.status === 'CLIPPING') {
-                  conflictHtml = `<div class="airspace-popup-alert alert-clip">⚡ Leg ${i + 1} clears within ${c.verticalClearanceFt} ft</div>`;
+                  conflictHtml = `<div class="airspace-popup-alert alert-clip">⚡ MARGINAL CLEARANCE: Leg ${i + 1} clears within ${c.verticalClearanceFt} ft</div>`;
+                  hasConflict = true;
                 }
               }
+            }
+            if (!hasConflict) {
+              conflictHtml = `<div class="airspace-popup-alert alert-clip" style="border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.1); color: #86efac;">✓ Route clears this airspace sector vertically / laterally</div>`;
             }
           }
 
@@ -435,9 +462,19 @@ export const RouteMap: React.FC<RouteMapProps> = ({
                 <span>Vertical Limits:</span>
                 <strong>${as.lowerLimitLabel} — ${as.upperLimitLabel}</strong>
               </div>
+              <div class="sector-vfr-req-box">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                  <span class="sector-vfr-req-title">VFR Entry Rule:</span>
+                  ${vfrReqBadge}
+                </div>
+                <div>${vfrReqText}</div>
+              </div>
               ${
                 as.frequency
-                  ? `<div class="sector-freq-row"><span>ATC Contact:</span> <strong>${as.frequency}</strong></div>`
+                  ? `<div class="sector-freq-row" style="display: flex; align-items: center; justify-content: space-between; margin-top: 2px;">
+                       <span>ATC Contact:</span>
+                       <span class="sector-atc-contact-btn" title="VHF Frequency">${as.frequency}</span>
+                     </div>`
                   : ''
               }
               <div class="sector-advisory-row">
