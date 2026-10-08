@@ -33,8 +33,6 @@ export interface RouteMapProps {
   onToggleOnlyRouteAirspaces?: (onlyRoute: boolean) => void;
   isVisible?: boolean;
   alternateAirport?: Waypoint | null;
-  showRangeRings?: boolean;
-  onToggleRangeRings?: (show: boolean) => void;
 }
 
 const TILE_LAYERS: Record<
@@ -191,19 +189,12 @@ export const RouteMap: React.FC<RouteMapProps> = ({
   onToggleOnlyRouteAirspaces,
   isVisible = true,
   alternateAirport,
-  showRangeRings: externalShowRangeRings,
-  onToggleRangeRings,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const routeLayerGroupRef = useRef<L.LayerGroup | null>(null);
   const airspaceLayerGroupRef = useRef<L.LayerGroup | null>(null);
-
-  const [internalShowRangeRings, setInternalShowRangeRings] = useState<boolean>(true);
-  const showRangeRings =
-    externalShowRangeRings !== undefined ? externalShowRangeRings : internalShowRangeRings;
-  const setShowRangeRings = onToggleRangeRings || setInternalShowRangeRings;
 
   const [internalFullscreen, setInternalFullscreen] = useState<boolean>(false);
   const isFullscreen = externalIsFullscreen !== undefined ? externalIsFullscreen : internalFullscreen;
@@ -739,67 +730,7 @@ export const RouteMap: React.FC<RouteMapProps> = ({
         .addTo(routeGroup);
     }
 
-    // 5. Automated Divert / Alternate Range Rings (Fuel & Best Glide)
-    if (showRangeRings && waypoints.length > 0) {
-      const centerWp =
-        activeLegIndex !== null && navLog?.legs[activeLegIndex]
-          ? navLog.legs[activeLegIndex].to
-          : waypoints[waypoints.length - 1];
-      const centerLat = centerWp.latitude;
-      const centerLon = centerWp.longitude;
-
-      const cruiseAlt =
-        activeLegIndex !== null && navLog?.legs[activeLegIndex]
-          ? navLog.legs[activeLegIndex].altitude
-          : navLog?.legs[0]?.altitude ?? 4500;
-      const groundElev = centerWp.elevation ?? 500;
-      const aglFt = Math.max(1000, cruiseAlt - groundElev);
-
-      // 1:10 Best Glide Cone (~1.64 NM per 1,000 ft AGL)
-      const glideRadiusNm = (aglFt / 6076.12) * 10;
-      const glideRadiusMeters = glideRadiusNm * 1852;
-
-      const glideCircle = L.circle([centerLat, centerLon], {
-        radius: glideRadiusMeters,
-        color: '#06b6d4',
-        weight: 2,
-        dashArray: '5, 5',
-        fillColor: '#06b6d4',
-        fillOpacity: 0.12,
-      }).addTo(routeGroup);
-
-      glideCircle.bindPopup(
-        `<div class="map-popup">
-           <strong style="color: #06b6d4;">🔵 Emergency Best Glide Cone (1:10)</strong><br/>
-           <span>Max Powerless Glide Radius: <strong>${glideRadiusNm.toFixed(1)} NM</strong> (~${(glideRadiusNm * 1.852).toFixed(1)} km)</span><br/>
-           <span>Reference Altitude: ${aglFt.toLocaleString()} ft AGL (${cruiseAlt.toLocaleString()} ft MSL)</span>
-         </div>`
-      );
-
-      // 45-min Reserve Divert Range Ring (0.75h * TAS)
-      const tas = navLog?.legs[0]?.groundSpeed ?? 105;
-      const divertRadiusNm = 0.75 * tas;
-      const divertRadiusMeters = divertRadiusNm * 1852;
-
-      const divertCircle = L.circle([centerLat, centerLon], {
-        radius: divertRadiusMeters,
-        color: '#f59e0b',
-        weight: 1.8,
-        dashArray: '8, 6',
-        fillColor: '#f59e0b',
-        fillOpacity: 0.05,
-      }).addTo(routeGroup);
-
-      divertCircle.bindPopup(
-        `<div class="map-popup">
-           <strong style="color: #f59e0b;">🟠 45-Min Reserve Diversion Radius</strong><br/>
-           <span>Safe Range on Final Reserve: <strong>${divertRadiusNm.toFixed(1)} NM</strong></span><br/>
-           <span>Speed Base: ${tas} KT TAS</span>
-         </div>`
-      );
-    }
-
-    // 6. Plot Alternate Aerodrome and Diversion Leg
+    // 5. Plot Alternate Aerodrome and Diversion Leg
     if (alternateAirport) {
       const altIcon = createAlternateMarkerIcon(alternateAirport);
       L.marker([alternateAirport.latitude, alternateAirport.longitude], { icon: altIcon })
@@ -850,7 +781,7 @@ export const RouteMap: React.FC<RouteMapProps> = ({
       const bounds = L.latLngBounds(allPlotPoints);
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 12 });
     }
-  }, [waypoints, navLog, activeLegIndex, onSelectLeg, alternateAirport, showRangeRings]);
+  }, [waypoints, navLog, activeLegIndex, onSelectLeg, alternateAirport]);
 
   return (
     <div className={`route-map-container ${isFullscreen ? 'is-fullscreen' : ''}`}>
@@ -1024,15 +955,6 @@ export const RouteMap: React.FC<RouteMapProps> = ({
 
         <div className="map-layer-section">
           <div className="map-layer-buttons">
-            <button
-              type="button"
-              className={`layer-btn range-rings-btn ${showRangeRings ? 'active' : ''}`}
-              onClick={() => setShowRangeRings(!showRangeRings)}
-              title="Toggle Glide & Fuel Endurance Range Rings"
-            >
-              <span className="layer-btn-icon">⭕</span>
-              <span>{showRangeRings ? 'Rings: ON' : 'Rings: OFF'}</span>
-            </button>
             <button
               type="button"
               className="layer-btn offline-cache-trigger-btn"

@@ -9501,12 +9501,7 @@ body.map-fullscreen .tactical-panel-card {
   line-height: 1.5;
 }
 
-/* Range Rings Button & VSD HUD Chips */
-.range-rings-btn.active {
-  background: rgba(6, 182, 212, 0.2) !important;
-  border-color: rgba(6, 182, 212, 0.6) !important;
-  color: #22d3ee !important;
-}
+/* VSD HUD Chips */
 
 .vsd-hud-toc {
   border-color: rgba(56, 189, 248, 0.35) !important;
