@@ -11,6 +11,7 @@ import {
   RunwayWindResult,
   SavedFlight,
   AlternatePlan,
+  FuelCalculationValues,
 } from './types';
 import { ScratchpadView } from './components/ScratchpadView';
 import { DisclaimerModal } from './components/DisclaimerModal';
@@ -429,6 +430,59 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
     navLog.alternatePlan = alternatePlan;
   }
 
+  // ─── Editable Fuel Calculations & Overrides State ───
+  const [fuelOverrides, setFuelOverrides] = useState<Partial<FuelCalculationValues>>({});
+
+  const fuelCalculations: FuelCalculationValues = useMemo(() => {
+    const reserveMode = fuelOverrides.reserveMode ?? 'day';
+    const fuelFlow = profile.fuelFlow > 0 ? profile.fuelFlow : 0;
+
+    // Standard auto-calculated defaults
+    const defaultTaxi = alternatePlan?.taxiFuel ?? (fuelFlow > 0 ? Number(((fuelFlow * 0.4) * 0.25).toFixed(1)) : 0.8);
+    const defaultTrip = navLog ? Number(navLog.totalFuel.toFixed(1)) : 0;
+    const defaultContingency = alternatePlan?.contingencyFuel ?? Number(Math.max(defaultTrip * 0.05, (5 / 60) * fuelFlow).toFixed(1));
+    const defaultAlternate = alternatePlan ? Number(alternatePlan.fuelBurn.toFixed(1)) : 0;
+    const reserveMinutes = reserveMode === 'day' ? 30 : 45;
+    const defaultFinalReserve = Number(((reserveMinutes / 60) * fuelFlow).toFixed(1));
+    const defaultExtra = 0;
+
+    const taxi = fuelOverrides.taxiFuel !== undefined ? fuelOverrides.taxiFuel : defaultTaxi;
+    const trip = fuelOverrides.tripFuel !== undefined ? fuelOverrides.tripFuel : defaultTrip;
+    const contingency = fuelOverrides.contingencyFuel !== undefined ? fuelOverrides.contingencyFuel : defaultContingency;
+    const alternate = fuelOverrides.alternateFuel !== undefined ? fuelOverrides.alternateFuel : defaultAlternate;
+    const finalReserve = fuelOverrides.finalReserveFuel !== undefined ? fuelOverrides.finalReserveFuel : defaultFinalReserve;
+    const extra = fuelOverrides.extraFuel !== undefined ? fuelOverrides.extraFuel : defaultExtra;
+
+    const sumComponents = Number((taxi + trip + contingency + alternate + finalReserve + extra).toFixed(1));
+    const totalRequired = fuelOverrides.totalFuelRequired !== undefined ? fuelOverrides.totalFuelRequired : sumComponents;
+
+    const defaultFob = totalRequired > 0 ? Number((totalRequired * 1.2).toFixed(1)) : 0;
+    const fob = fuelOverrides.fob !== undefined ? fuelOverrides.fob : defaultFob;
+
+    const isCustomized = Object.keys(fuelOverrides).length > 0;
+
+    return {
+      taxiFuel: taxi,
+      tripFuel: trip,
+      contingencyFuel: contingency,
+      alternateFuel: alternate,
+      finalReserveFuel: finalReserve,
+      extraFuel: extra,
+      totalFuelRequired: totalRequired,
+      fob: fob,
+      reserveMode: reserveMode,
+      isCustomized,
+    };
+  }, [fuelOverrides, profile.fuelFlow, alternatePlan, navLog]);
+
+  const handleUpdateFuelCalculation = useCallback((updates: Partial<FuelCalculationValues>) => {
+    setFuelOverrides((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const handleResetFuelCalculation = useCallback(() => {
+    setFuelOverrides({});
+  }, []);
+
   // ─── Save & Load Flight Actions ───
   const handleSaveFlight = useCallback(async () => {
     if (!routeInput.trim()) {
@@ -690,6 +744,9 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
             alternateAltitude={alternateAltitude}
             onAlternateAltitudeChange={handleAlternateAltitudeChange}
             alternatePlan={alternatePlan}
+            fuelCalculations={fuelCalculations}
+            onUpdateFuelCalculation={handleUpdateFuelCalculation}
+            onResetFuelCalculation={handleResetFuelCalculation}
           />
         )}
 
@@ -714,6 +771,8 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
           profile={profile}
           onClose={() => setIsKneeboardOpen(false)}
           plannedAlternate={alternatePlan}
+          fuelCalculations={fuelCalculations}
+          onUpdateFuelCalculation={handleUpdateFuelCalculation}
         />
       )}
 

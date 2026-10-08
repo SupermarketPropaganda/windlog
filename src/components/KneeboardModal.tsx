@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { NavLogSummary, AircraftProfile, AlternatePlan } from '../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { NavLogSummary, AircraftProfile, AlternatePlan, FuelCalculationValues } from '../types';
 import { useAdBreak } from '../context/AdContext';
 import { computeAlternatePlan } from '../engine/navlog-engine';
 import { getAirportWaypoint } from '../data/airport-runways';
@@ -9,6 +9,8 @@ export interface KneeboardModalProps {
   profile: AircraftProfile;
   onClose: () => void;
   plannedAlternate?: AlternatePlan | null;
+  fuelCalculations?: FuelCalculationValues | null;
+  onUpdateFuelCalculation?: (updates: Partial<FuelCalculationValues>) => void;
 }
 
 const formatMinutesSeconds = (seconds: number) => {
@@ -23,10 +25,13 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
   profile,
   onClose,
   plannedAlternate,
+  fuelCalculations,
+  onUpdateFuelCalculation,
 }) => {
-  const [taxiFuelInput, setTaxiFuelInput] = useState(
-    profile.fuelUnit === 'gph' ? '1.0' : '4.0'
-  );
+  const [taxiFuelInput, setTaxiFuelInput] = useState(() => {
+    if (fuelCalculations) return fuelCalculations.taxiFuel.toFixed(1);
+    return profile.fuelUnit === 'gph' ? '1.0' : '4.0';
+  });
   const initialAltIcao =
     plannedAlternate?.toAirport.identifier ||
     navLog?.alternatePlan?.toAirport.identifier ||
@@ -34,42 +39,72 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
   const [alternateAirport, setAlternateAirport] = useState(initialAltIcao);
   const [remarksText, setRemarksText] = useState('');
 
+  // Keep alternateAirport synced if plannedAlternate arrives
+  useEffect(() => {
+    if (plannedAlternate && !alternateAirport) {
+      setAlternateAirport(plannedAlternate.toAirport.identifier);
+    }
+  }, [plannedAlternate, alternateAirport]);
+
   const fuelUnitLabel = profile.fuelUnit === 'gph' ? 'gal' : 'l';
   const fuelRate = profile.fuelFlow > 0 ? profile.fuelFlow : 0;
   const legs = navLog?.legs || [];
 
   // ─── Dynamic Alternate Plan Navigation Computation ───
   const activeAltPlan: AlternatePlan | null = useMemo(() => {
+    const trimmed = alternateAirport.trim().toUpperCase();
     if (
       plannedAlternate &&
-      plannedAlternate.toAirport.identifier.toUpperCase() === alternateAirport.toUpperCase().trim()
+      (!trimmed || plannedAlternate.toAirport.identifier.toUpperCase() === trimmed)
     ) {
       return plannedAlternate;
     }
     if (
       navLog?.alternatePlan &&
-      navLog.alternatePlan.toAirport.identifier.toUpperCase() === alternateAirport.toUpperCase().trim()
+      (!trimmed || navLog.alternatePlan.toAirport.identifier.toUpperCase() === trimmed)
     ) {
       return navLog.alternatePlan;
     }
-    if (!alternateAirport.trim() || legs.length === 0) return null;
+    if (!trimmed || legs.length === 0) return plannedAlternate || navLog?.alternatePlan || null;
 
     const destWp = legs[legs.length - 1].to;
-    const altWp = getAirportWaypoint(alternateAirport.trim());
-    if (!altWp) return null;
+    const altWp = getAirportWaypoint(trimmed);
+    if (!altWp) return plannedAlternate || navLog?.alternatePlan || null;
 
     const lastWind = legs[legs.length - 1].wind || null;
     return computeAlternatePlan(destWp, altWp, profile, lastWind, 2500, navLog?.totalFuel || 0);
   }, [alternateAirport, plannedAlternate, navLog, legs, profile]);
 
-  // ─── SOP Fuel Calculations ───
-  const tripFuel = navLog ? navLog.totalFuel : 0;
-  const taxiFuel = parseFloat(taxiFuelInput) || 0;
-  const contingencyFuel = activeAltPlan ? activeAltPlan.contingencyFuel : tripFuel * 0.05;
-  const holdingFuel = activeAltPlan ? activeAltPlan.finalReserveFuel : 0.75 * fuelRate;
-  const alternateFuel = activeAltPlan ? activeAltPlan.fuelBurn : 0;
-  const totalFuelRequired =
-    tripFuel + alternateFuel + taxiFuel + contingencyFuel + holdingFuel;
+  // ─── SOP Fuel Calculations (using edited fuelCalculations or calculated fallbacks) ───
+  const tripFuel = fuelCalculations !== undefined && fuelCalculations !== null
+    ? fuelCalculations.tripFuel
+    : (navLog ? navLog.totalFuel : 0);
+
+  const taxiFuel = fuelCalculations !== undefined && fuelCalculations !== null
+    ? fuelCalculations.taxiFuel
+    : (parseFloat(taxiFuelInput) || 0);
+
+  const contingencyFuel = fuelCalculations !== undefined && fuelCalculations !== null
+    ? fuelCalculations.contingencyFuel
+    : (activeAltPlan ? activeAltPlan.contingencyFuel : tripFuel * 0.05);
+
+  const holdingFuel = fuelCalculations !== undefined && fuelCalculations !== null
+    ? fuelCalculations.finalReserveFuel
+    : (activeAltPlan ? activeAltPlan.finalReserveFuel : 0.75 * fuelRate);
+
+  const alternateFuel = fuelCalculations !== undefined && fuelCalculations !== null
+    ? fuelCalculations.alternateFuel
+    : (activeAltPlan ? activeAltPlan.fuelBurn : 0);
+
+  const extraFuel = fuelCalculations !== undefined && fuelCalculations !== null
+    ? fuelCalculations.extraFuel
+    : 0;
+
+  const totalFuelRequired = fuelCalculations !== undefined && fuelCalculations !== null
+    ? fuelCalculations.totalFuelRequired
+    : (tripFuel + alternateFuel + taxiFuel + contingencyFuel + holdingFuel + extraFuel);
+
+  const fob = fuelCalculations?.fob ?? 0;
 
   const { triggerAdBreak } = useAdBreak();
 
@@ -108,9 +143,15 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
               Taxi Fuel ({fuelUnitLabel}):
               <input
                 type="number"
-                step="0.5"
+                step="0.1"
                 value={taxiFuelInput}
-                onChange={(e) => setTaxiFuelInput(e.target.value)}
+                onChange={(e) => {
+                  setTaxiFuelInput(e.target.value);
+                  const val = parseFloat(e.target.value);
+                  if (!isNaN(val) && val >= 0) {
+                    onUpdateFuelCalculation?.({ taxiFuel: val });
+                  }
+                }}
                 style={{ width: '60px' }}
               />
             </label>
@@ -118,7 +159,7 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
               Alternate Ident:
               <input
                 type="text"
-                placeholder="LPPT"
+                placeholder={activeAltPlan?.toAirport.identifier || "LPPT"}
                 value={alternateAirport}
                 onChange={(e) => setAlternateAirport(e.target.value.toUpperCase())}
                 style={{ width: '70px', textTransform: 'uppercase' }}
@@ -246,8 +287,12 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
               <div className="sop-alternate-header-bar">
                 <span className="alt-title">ALTERNATE</span>
                 <div className="alt-totals-wrapper">
-                  <span className="alt-total-label">TOTAL</span>
-                  <span className="alt-fuel-label">FUEL</span>
+                  <span className="alt-total-label">
+                    TOTAL{activeAltPlan ? `: ${activeAltPlan.distance.toFixed(1)} NM` : ''}
+                  </span>
+                  <span className="alt-fuel-label">
+                    FUEL{activeAltPlan ? `: ${activeAltPlan.fuelBurn.toFixed(1)} ${fuelUnitLabel.toUpperCase()}` : ''}
+                  </span>
                 </div>
               </div>
               <table className="sop-table alternate-table">
@@ -377,15 +422,31 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
                     <td className="fuel-val-cell">{contingencyFuel.toFixed(1)} {fuelUnitLabel}</td>
                   </tr>
                   <tr>
-                    <td className="fuel-label-cell">45 min. HOLDING</td>
+                    <td className="fuel-label-cell">
+                      {fuelCalculations?.reserveMode === 'day' ? '30 min. HOLDING' : '45 min. HOLDING'}
+                    </td>
                     <td className="fuel-val-cell">{holdingFuel.toFixed(1)} {fuelUnitLabel}</td>
                   </tr>
+                  {extraFuel > 0 && (
+                    <tr>
+                      <td className="fuel-label-cell">EXTRA FUEL</td>
+                      <td className="fuel-val-cell">{extraFuel.toFixed(1)} {fuelUnitLabel}</td>
+                    </tr>
+                  )}
                   <tr className="fuel-total-row">
                     <td className="fuel-label-cell fuel-total-header">TOTAL FUEL REQUIRED</td>
                     <td className="fuel-val-cell fuel-total-val">
                       {totalFuelRequired.toFixed(1)} {fuelUnitLabel}
                     </td>
                   </tr>
+                  {fob > 0 && (
+                    <tr>
+                      <td className="fuel-label-cell" style={{ background: '#172554', fontSize: '8px' }}>FOB / RAMP LOAD</td>
+                      <td className="fuel-val-cell" style={{ fontWeight: 800, color: '#1e3a8a' }}>
+                        {fob.toFixed(1)} {fuelUnitLabel}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

@@ -95,6 +95,21 @@ export interface Wind {
   speed: number;     // knots
 }
 
+// ─── Fuel Calculations & SOP Management ───
+
+export interface FuelCalculationValues {
+  taxiFuel: number;
+  tripFuel: number;
+  contingencyFuel: number;
+  alternateFuel: number;
+  finalReserveFuel: number;
+  extraFuel: number;
+  totalFuelRequired: number;
+  fob: number;
+  reserveMode: 'day' | 'night';
+  isCustomized?: boolean;
+}
+
 export type WindMode = 'auto' | 'manual';
 
 export interface WindState {

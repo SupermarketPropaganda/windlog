@@ -8,6 +8,7 @@ import {
   NavLogSummary,
   Waypoint,
   AlternatePlan,
+  FuelCalculationValues,
 } from '../types';
 import { getAllCandidateAlternates, getAirportWaypoint } from '../data/airport-runways';
 import { findNearestCandidateAlternates, getSemicircularOptions } from '../engine/navlog-engine';
@@ -75,6 +76,11 @@ export interface ScratchpadViewProps {
   onAlternateAltitudeChange?: (alt: number) => void;
   alternatePlan?: AlternatePlan | null;
 
+  /** Fuel Calculations & Overrides */
+  fuelCalculations?: FuelCalculationValues;
+  onUpdateFuelCalculation?: (updates: Partial<FuelCalculationValues>) => void;
+  onResetFuelCalculation?: () => void;
+
   /** Temporary toast message */
   toastMessage: string | null;
 }
@@ -106,42 +112,79 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
   // Alternate ICAO input state
   const [customAltIcao, setCustomAltIcao] = useState<string>('');
 
-  // Standard ICAO / EASA Fuel Policy State
-  const [fuelReserveMode, setFuelReserveMode] = useState<'day' | 'night'>('day');
-  const [fobInput, setFobInput] = useState<string>('');
+  // Fuel Calculations & Overrides
+  const [localReserveMode, setLocalReserveMode] = useState<'day' | 'night'>('day');
+  const [fuelEditDrafts, setFuelEditDrafts] = useState<Record<string, string>>({});
 
   const hasWaypoints = props.resolvedWaypoints.length > 0;
   const fuelUnitLabel = props.profile.fuelUnit === 'gph' ? 'gal' : 'L';
 
-  // Standard ICAO/EASA Fuel Policy Calculation
-  const fuelBreakdown = useMemo(() => {
+  const effectiveFuel: FuelCalculationValues = useMemo(() => {
+    if (props.fuelCalculations) {
+      return props.fuelCalculations;
+    }
     const fuelFlow = props.profile.fuelFlow > 0 ? props.profile.fuelFlow : 0;
     const taxi = props.alternatePlan?.taxiFuel ?? (fuelFlow > 0 ? Number(((fuelFlow * 0.4) * 0.25).toFixed(1)) : 0.8);
-    const trip = props.navLog ? props.navLog.totalFuel : 0;
-    // ICAO Annex 6 / EASA: Higher of 5% trip fuel or 5 min holding
-    const contingency = props.alternatePlan?.contingencyFuel ?? Math.max(trip * 0.05, (5 / 60) * fuelFlow);
-    const alternate = props.alternatePlan ? props.alternatePlan.fuelBurn : 0;
-    const finalReserveMinutes = fuelReserveMode === 'day' ? 30 : 45;
-    const finalReserve = (finalReserveMinutes / 60) * fuelFlow;
-    const minRequired = taxi + trip + contingency + alternate + finalReserve;
-    const parsedFob = parseFloat(fobInput);
-    const fob = !isNaN(parsedFob) ? parsedFob : (minRequired > 0 ? Number((minRequired * 1.2).toFixed(1)) : 0);
-    const margin = fob - minRequired;
-    const enduranceSec = fuelFlow > 0 && fob > 0 ? (fob / fuelFlow) * 3600 : 0;
+    const trip = props.navLog ? Number(props.navLog.totalFuel.toFixed(1)) : 0;
+    const contingency = props.alternatePlan?.contingencyFuel ?? Number(Math.max(trip * 0.05, (5 / 60) * fuelFlow).toFixed(1));
+    const alternate = props.alternatePlan ? Number(props.alternatePlan.fuelBurn.toFixed(1)) : 0;
+    const reserveMinutes = localReserveMode === 'day' ? 30 : 45;
+    const finalReserve = Number(((reserveMinutes / 60) * fuelFlow).toFixed(1));
+    const extra = 0;
+    const totalRequired = Number((taxi + trip + contingency + alternate + finalReserve + extra).toFixed(1));
+    const fob = totalRequired > 0 ? Number((totalRequired * 1.2).toFixed(1)) : 0;
 
     return {
-      taxi,
-      trip,
-      contingency,
-      alternate,
-      finalReserveMinutes,
-      finalReserve,
-      minRequired,
+      taxiFuel: taxi,
+      tripFuel: trip,
+      contingencyFuel: contingency,
+      alternateFuel: alternate,
+      finalReserveFuel: finalReserve,
+      extraFuel: extra,
+      totalFuelRequired: totalRequired,
       fob,
-      margin,
-      enduranceSec,
+      reserveMode: localReserveMode,
+      isCustomized: false,
     };
-  }, [props.profile.fuelFlow, props.alternatePlan, props.navLog, fuelReserveMode, fobInput]);
+  }, [props.fuelCalculations, props.profile.fuelFlow, props.alternatePlan, props.navLog, localReserveMode]);
+
+  const fuelMargin = Number((effectiveFuel.fob - effectiveFuel.totalFuelRequired).toFixed(1));
+  const fuelEnduranceSec = props.profile.fuelFlow > 0 && effectiveFuel.fob > 0
+    ? (effectiveFuel.fob / props.profile.fuelFlow) * 3600
+    : 0;
+
+  const getFuelDisplayVal = (key: keyof FuelCalculationValues, currentVal: number): string => {
+    if (fuelEditDrafts[key] !== undefined) {
+      return fuelEditDrafts[key];
+    }
+    return currentVal.toFixed(1);
+  };
+
+  const handleFuelEditChange = (key: keyof FuelCalculationValues, rawStr: string) => {
+    setFuelEditDrafts((prev) => ({ ...prev, [key]: rawStr }));
+    const parsed = parseFloat(rawStr);
+    if (!isNaN(parsed) && parsed >= 0) {
+      props.onUpdateFuelCalculation?.({ [key]: parsed });
+    }
+  };
+
+  const handleFuelEditBlur = (key: keyof FuelCalculationValues) => {
+    setFuelEditDrafts((prev) => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
+  };
+
+  const handleReserveModeToggle = (mode: 'day' | 'night') => {
+    setLocalReserveMode(mode);
+    props.onUpdateFuelCalculation?.({ reserveMode: mode });
+  };
+
+  const handleResetFuel = () => {
+    setFuelEditDrafts({});
+    props.onResetFuelCalculation?.();
+  };
 
   const destination = useMemo(() => {
     if (props.resolvedWaypoints.length > 1) {
@@ -428,35 +471,50 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
             </div>
           )}
 
-          {/* Standard ICAO / EASA Fuel Policy Breakdown Card */}
+          {/* Fuel Calculations Breakdown Card */}
           {props.navLog && props.navLog.legs.length > 0 && props.profile.fuelFlow > 0 && (
             <div className="icao-easa-fuel-policy-card">
               <div className="fuel-policy-top-bar">
                 <div className="fuel-policy-title-group">
                   <span className="fuel-policy-icon">⛽</span>
                   <div>
-                    <h4 className="fuel-policy-heading">ICAO / EASA STANDARD FUEL POLICY</h4>
+                    <h4 className="fuel-policy-heading">Fuel Calculations</h4>
                     <p className="fuel-policy-subheading">
                       Annex 6 / Part-NCO compliant dispatch calculations &amp; ramp reserves
                     </p>
                   </div>
                 </div>
 
-                <div className="fuel-reserve-switch-group">
-                  <button
-                    type="button"
-                    className={`fuel-reserve-btn ${fuelReserveMode === 'day' ? 'active' : ''}`}
-                    onClick={() => setFuelReserveMode('day')}
-                  >
-                    VFR Day (30m)
-                  </button>
-                  <button
-                    type="button"
-                    className={`fuel-reserve-btn ${fuelReserveMode === 'night' ? 'active' : ''}`}
-                    onClick={() => setFuelReserveMode('night')}
-                  >
-                    VFR Night (45m)
-                  </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {effectiveFuel.isCustomized && (
+                    <span className="fuel-customized-badge">Customized ✎</span>
+                  )}
+                  <div className="fuel-reserve-switch-group">
+                    <button
+                      type="button"
+                      className={`fuel-reserve-btn ${effectiveFuel.reserveMode === 'day' ? 'active' : ''}`}
+                      onClick={() => handleReserveModeToggle('day')}
+                    >
+                      VFR Day (30m)
+                    </button>
+                    <button
+                      type="button"
+                      className={`fuel-reserve-btn ${effectiveFuel.reserveMode === 'night' ? 'active' : ''}`}
+                      onClick={() => handleReserveModeToggle('night')}
+                    >
+                      VFR Night (45m)
+                    </button>
+                  </div>
+                  {effectiveFuel.isCustomized && (
+                    <button
+                      type="button"
+                      className="fuel-reset-btn"
+                      onClick={handleResetFuel}
+                      title="Reset all fuel figures back to calculated values"
+                    >
+                      ↺ Reset to Calculated
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -472,34 +530,137 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                   <tr>
                     <td>Taxi Allowance</td>
                     <td style={{ color: '#94a3b8' }}>10 min engine start, run-up &amp; taxi</td>
-                    <td className="val-policy-num">{fuelBreakdown.taxi.toFixed(1)}</td>
+                    <td className="val-policy-cell">
+                      <div className="fuel-input-inline-wrap">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          className="fuel-table-edit-input"
+                          value={getFuelDisplayVal('taxiFuel', effectiveFuel.taxiFuel)}
+                          onChange={(e) => handleFuelEditChange('taxiFuel', e.target.value)}
+                          onBlur={() => handleFuelEditBlur('taxiFuel')}
+                          aria-label="Taxi Allowance Fuel"
+                        />
+                        <span className="fuel-input-unit">{fuelUnitLabel}</span>
+                      </div>
+                    </td>
                   </tr>
                   <tr>
                     <td>Trip Fuel</td>
                     <td style={{ color: '#94a3b8' }}>Climb, cruise legs &amp; descent</td>
-                    <td className="val-policy-num">{fuelBreakdown.trip.toFixed(1)}</td>
+                    <td className="val-policy-cell">
+                      <div className="fuel-input-inline-wrap">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          className="fuel-table-edit-input"
+                          value={getFuelDisplayVal('tripFuel', effectiveFuel.tripFuel)}
+                          onChange={(e) => handleFuelEditChange('tripFuel', e.target.value)}
+                          onBlur={() => handleFuelEditBlur('tripFuel')}
+                          aria-label="Trip Fuel"
+                        />
+                        <span className="fuel-input-unit">{fuelUnitLabel}</span>
+                      </div>
+                    </td>
                   </tr>
                   <tr>
                     <td>Contingency Fuel</td>
                     <td style={{ color: '#94a3b8' }}>Higher of 5% trip or 5m cruise</td>
-                    <td className="val-policy-num">{fuelBreakdown.contingency.toFixed(1)}</td>
+                    <td className="val-policy-cell">
+                      <div className="fuel-input-inline-wrap">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          className="fuel-table-edit-input"
+                          value={getFuelDisplayVal('contingencyFuel', effectiveFuel.contingencyFuel)}
+                          onChange={(e) => handleFuelEditChange('contingencyFuel', e.target.value)}
+                          onBlur={() => handleFuelEditBlur('contingencyFuel')}
+                          aria-label="Contingency Fuel"
+                        />
+                        <span className="fuel-input-unit">{fuelUnitLabel}</span>
+                      </div>
+                    </td>
                   </tr>
                   <tr>
                     <td>Alternate Fuel</td>
                     <td style={{ color: '#94a3b8' }}>
                       {props.alternateAirport ? `Diversion to ${props.alternateAirport.identifier}` : 'No alternate selected (0.0)'}
                     </td>
-                    <td className="val-policy-num">{fuelBreakdown.alternate.toFixed(1)}</td>
+                    <td className="val-policy-cell">
+                      <div className="fuel-input-inline-wrap">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          className="fuel-table-edit-input"
+                          value={getFuelDisplayVal('alternateFuel', effectiveFuel.alternateFuel)}
+                          onChange={(e) => handleFuelEditChange('alternateFuel', e.target.value)}
+                          onBlur={() => handleFuelEditBlur('alternateFuel')}
+                          aria-label="Alternate Fuel"
+                        />
+                        <span className="fuel-input-unit">{fuelUnitLabel}</span>
+                      </div>
+                    </td>
                   </tr>
                   <tr>
                     <td>Final Reserve</td>
-                    <td style={{ color: '#94a3b8' }}>{fuelBreakdown.finalReserveMinutes} min holding reserve at cruise flow</td>
-                    <td className="val-policy-num">{fuelBreakdown.finalReserve.toFixed(1)}</td>
+                    <td style={{ color: '#94a3b8' }}>{effectiveFuel.reserveMode === 'day' ? 30 : 45} min holding reserve at cruise flow</td>
+                    <td className="val-policy-cell">
+                      <div className="fuel-input-inline-wrap">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          className="fuel-table-edit-input"
+                          value={getFuelDisplayVal('finalReserveFuel', effectiveFuel.finalReserveFuel)}
+                          onChange={(e) => handleFuelEditChange('finalReserveFuel', e.target.value)}
+                          onBlur={() => handleFuelEditBlur('finalReserveFuel')}
+                          aria-label="Final Reserve Fuel"
+                        />
+                        <span className="fuel-input-unit">{fuelUnitLabel}</span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Extra Fuel (Discretionary)</td>
+                    <td style={{ color: '#94a3b8' }}>Pilot-in-Command discretionary extra reserve</td>
+                    <td className="val-policy-cell">
+                      <div className="fuel-input-inline-wrap">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          className="fuel-table-edit-input"
+                          value={getFuelDisplayVal('extraFuel', effectiveFuel.extraFuel)}
+                          onChange={(e) => handleFuelEditChange('extraFuel', e.target.value)}
+                          onBlur={() => handleFuelEditBlur('extraFuel')}
+                          aria-label="Extra Discretionary Fuel"
+                        />
+                        <span className="fuel-input-unit">{fuelUnitLabel}</span>
+                      </div>
+                    </td>
                   </tr>
                   <tr className="fuel-row-total">
                     <td>MINIMUM REQUIRED RAMP FUEL</td>
                     <td style={{ color: '#2dd4bf' }}>Legal Minimum Departure Fuel</td>
-                    <td className="val-policy-total">{fuelBreakdown.minRequired.toFixed(1)}</td>
+                    <td className="val-policy-cell">
+                      <div className="fuel-input-inline-wrap">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          className="fuel-table-edit-input is-total"
+                          value={getFuelDisplayVal('totalFuelRequired', effectiveFuel.totalFuelRequired)}
+                          onChange={(e) => handleFuelEditChange('totalFuelRequired', e.target.value)}
+                          onBlur={() => handleFuelEditBlur('totalFuelRequired')}
+                          aria-label="Minimum Required Ramp Fuel"
+                        />
+                        <span className="fuel-input-unit" style={{ color: '#2dd4bf' }}>{fuelUnitLabel}</span>
+                      </div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -514,9 +675,10 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                       step="0.5"
                       min="0"
                       className="fuel-fob-input"
-                      value={fobInput}
-                      placeholder={fuelBreakdown.fob.toFixed(1)}
-                      onChange={(e) => setFobInput(e.target.value)}
+                      value={getFuelDisplayVal('fob', effectiveFuel.fob)}
+                      placeholder={effectiveFuel.fob.toFixed(1)}
+                      onChange={(e) => handleFuelEditChange('fob', e.target.value)}
+                      onBlur={() => handleFuelEditBlur('fob')}
                     />
                     <span style={{ fontFamily: 'var(--font-mono, monospace)', fontWeight: 700, color: '#f8fafc' }}>
                       {fuelUnitLabel}
@@ -528,23 +690,23 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
                   <span className="fuel-fob-label">Fuel Margin / Extra</span>
                   <div
                     className={`fuel-margin-pill ${
-                      fuelBreakdown.margin >= 0 ? 'margin-positive' : 'margin-negative'
+                      fuelMargin >= 0 ? 'margin-positive' : 'margin-negative'
                     }`}
                   >
-                    <span>{fuelBreakdown.margin >= 0 ? '✓' : '⚠️'}</span>
+                    <span>{fuelMargin >= 0 ? '✓' : '⚠️'}</span>
                     <span>
-                      {fuelBreakdown.margin >= 0 ? '+' : ''}
-                      {fuelBreakdown.margin.toFixed(1)} {fuelUnitLabel}
+                      {fuelMargin >= 0 ? '+' : ''}
+                      {fuelMargin.toFixed(1)} {fuelUnitLabel}
                     </span>
                     <span style={{ fontSize: '0.72rem', opacity: 0.85 }}>
-                      ({fuelBreakdown.margin >= 0 ? 'Excess' : 'DEFICIT'})
+                      ({fuelMargin >= 0 ? 'Excess' : 'DEFICIT'})
                     </span>
                   </div>
                 </div>
 
                 <div className="fuel-endurance-badge">
                   <span className="fuel-fob-label">Total Aircraft Endurance</span>
-                  <span className="fuel-endurance-val">{formatTime(fuelBreakdown.enduranceSec)}</span>
+                  <span className="fuel-endurance-val">{formatTime(fuelEnduranceSec)}</span>
                 </div>
               </div>
 
