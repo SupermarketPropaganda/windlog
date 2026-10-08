@@ -197,7 +197,7 @@ describe('WindLog MVP Features Suite', () => {
     });
   });
 
-  describe('4. Waypoint Reordering & Insertion Logic', () => {
+  describe('4. Waypoint Cursor Drag-and-Drop Reordering Logic', () => {
     it('moves waypoint earlier (left) in route list correctly', () => {
       const route = 'LPCS LPEV LPBJ';
       const parts = route.trim().split(/\s+/);
@@ -216,12 +216,14 @@ describe('WindLog MVP Features Suite', () => {
       expect(parts.join(' ')).toBe('LPEV LPCS LPBJ');
     });
 
-    it('inserts a new waypoint at specific index', () => {
-      const route = 'LPCS LPBJ';
+    it('reorders waypoints via cursor drag and drop from source index to target index', () => {
+      const route = 'LPCS ESP LPEV LPBJ';
       const parts = route.trim().split(/\s+/);
-      // Insert LPEV at index 1
-      parts.splice(1, 0, 'LPEV');
-      expect(parts.join(' ')).toBe('LPCS LPEV LPBJ');
+      const draggedIndex = 3; // LPBJ
+      const targetIndex = 1; // position before ESP
+      const [item] = parts.splice(draggedIndex, 1);
+      parts.splice(targetIndex, 0, item);
+      expect(parts.join(' ')).toBe('LPCS LPBJ ESP LPEV');
     });
   });
 
