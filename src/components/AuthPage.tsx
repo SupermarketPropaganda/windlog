@@ -8,23 +8,20 @@ export interface AuthPageProps {
   onNavigate: (view: ActiveView) => void;
   profile?: AircraftProfile;
   onProfileChange?: (profile: AircraftProfile) => void;
-  initialTab?: 'signin' | 'register' | 'profile' | 'security';
 }
 
-type AuthTab = 'signin' | 'register' | 'forgot' | 'profile' | 'security';
+type AuthTab = 'signin' | 'register' | 'forgot' | 'profile';
 
 export const AuthPage: React.FC<AuthPageProps> = ({
   onNavigate,
   profile,
   onProfileChange,
-  initialTab,
 }) => {
   const {
     user,
     isAuthenticated,
     signIn,
     signUp,
-    signOut,
     resetPasswordWithNew,
     changePassword,
     updateProfile,
@@ -54,26 +51,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // In CockpitSuite, an account is always required. Profile dashboard manages Preferences and Security.
-  const [activeTab, setActiveTab] = useState<AuthTab>(() => {
-    if (initialTab === 'security') return 'security';
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash.toLowerCase();
-      if (hash === '#security' || hash === '#account') return 'security';
-    }
-    return 'profile';
-  });
+  // Legacy account/security links open the remaining cockpit preferences view.
+  const [activeTab, setActiveTab] = useState<AuthTab>('profile');
 
-  // Listen for hash changes if user navigates via URL
   useEffect(() => {
-    const handleHash = () => {
-      const hash = window.location.hash.toLowerCase();
-      if (hash === '#security' || hash === '#account') {
-        setActiveTab('security');
-      } else {
-        setActiveTab('profile');
-      }
-    };
+    const handleHash = () => setActiveTab('profile');
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
@@ -425,13 +407,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             onClick={() => setActiveTab('profile')}
           >
             <span className="auth-tab-icon">⚙️</span> Cockpit Preferences &amp; Defaults
-          </button>
-          <button
-            type="button"
-            className={`auth-mode-tab ${activeTab === 'security' ? 'active' : ''}`}
-            onClick={() => setActiveTab('security')}
-          >
-            <span className="auth-tab-icon">☁️</span> Account &amp; Security
           </button>
         </div>
       </div>
@@ -1269,129 +1244,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         </>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────
-          5. ACCOUNT & SECURITY VIEW (AUTHENTICATED)
-          ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'security' && user && (
-        <div className="auth-focused-card-wrapper">
-          <div className="auth-focused-card wide">
-            <div className="auth-card-top-brand">
-              <div className="auth-airplane-logo">☁️</div>
-              <h2 className="auth-title">Account &amp; Security</h2>
-              <p className="auth-subtitle">
-                Manage your credentials, pilot security, and cloud sync status
-              </p>
-            </div>
-
-            <div className="profile-authenticated-info">
-              <div className="profile-info-row">
-                <span className="profile-info-label">Pilot Callsign / Display Name:</span>
-                <span className="profile-info-value">{user.displayName || 'Pilot'}</span>
-              </div>
-
-              <div className="profile-info-row">
-                <span className="profile-info-label">Email Address:</span>
-                <span className="profile-info-value">
-                  {user.email} <span className="profile-verified-tag">Signed In</span>
-                </span>
-              </div>
-
-              <div className="profile-info-row">
-                <span className="profile-info-label">Member Since:</span>
-                <span className="profile-info-value">
-                  {new Date(user.createdAt).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </span>
-              </div>
-
-              <div className="profile-info-row">
-                <span className="profile-info-label">Last Flight Deck Login:</span>
-                <span className="profile-info-value">
-                  {new Date(user.lastLoginAt).toLocaleString(undefined, {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </span>
-              </div>
-
-              {/* Password Change Form */}
-              <div className="auth-password-change-box">
-                <h3 className="profile-subheading">Change Account Password</h3>
-                {passwordChangeError && (
-                  <div className="auth-feedback-banner error">{passwordChangeError}</div>
-                )}
-                {passwordChangeSuccess && (
-                  <div className="auth-feedback-banner success">{passwordChangeSuccess}</div>
-                )}
-
-                <form onSubmit={handleChangePasswordSubmit} className="profile-password-form">
-                  <div className="profile-field">
-                    <label className="profile-label">Current Password</label>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      className="profile-input"
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      required
-                      placeholder="••••••••"
-                    />
-                  </div>
-
-                  <div className="profile-input-row">
-                    <div className="profile-field">
-                      <label className="profile-label">New Password (min 6 chars)</label>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        className="profile-input"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        placeholder="••••••••"
-                      />
-                    </div>
-
-                    <div className="profile-field">
-                      <label className="profile-label">Confirm New Password</label>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        className="profile-input"
-                        value={confirmNewPassword}
-                        onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        placeholder="••••••••"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="profile-btn-row">
-                    <button type="submit" className="profile-save-btn">
-                      Update Account Password
-                    </button>
-                  </div>
-                </form>
-              </div>
-
-              <div className="auth-danger-zone">
-                <button
-                  type="button"
-                  className="profile-signout-btn full"
-                  onClick={async () => {
-                    await signOut();
-                    onNavigate('landing');
-                  }}
-                >
-                  Sign Out of Flight Deck
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
