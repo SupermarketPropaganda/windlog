@@ -271,27 +271,12 @@ describe('Pilot Authentication and Flight Deck Session Workflow', () => {
       ).rejects.toThrow(/incorrect/i);
     });
 
-    it('resets password directly with new password via resetPasswordWithNew', async () => {
-      // Pilot forgot password and requests reset with new password
+    it('does not allow password replacement without proof of account ownership', async () => {
       await authService.signOut();
-
-      await authService.resetPasswordWithNew(
-        'safety.officer@aeroclube.org',
-        'RecoveredPassword2026!'
-      );
-
-      // Verify pilot can now sign in with recovered password
-      const loggedIn = await authService.signIn({
-        email: 'safety.officer@aeroclube.org',
-        password: 'RecoveredPassword2026!',
-      });
+      await expect(authService.resetPasswordWithNew('safety.officer@aeroclube.org', 'StolenPassword123'))
+        .rejects.toThrow(/connected account provider/i);
+      const loggedIn = await authService.signIn('safety.officer@aeroclube.org', 'InitialPassword1');
       expect(loggedIn.id).toBe(pilotId);
-    });
-
-    it('fails resetPasswordWithNew for non-existent account', async () => {
-      await expect(
-        authService.resetPasswordWithNew('phantom@nowhere.com', 'NewPassword123!')
-      ).rejects.toThrow(/no pilot account found/i);
     });
   });
 
@@ -315,6 +300,54 @@ describe('Pilot Authentication and Flight Deck Session Workflow', () => {
       expect(guest.isAnonymous).toBe(true);
       expect(authService.getCurrentUser()?.isAnonymous).toBe(true);
       expect(authService.isAuthenticated()).toBe(true);
+    });
+  });
+
+  describe('6. Federated OAuth Authentication (Google Single Sign-On)', () => {
+    it('automatically registers a new pilot upon first OAuth sign-in', async () => {
+      const user = await authService.signInWithOAuthUser({
+        email: 'pilot.google@gmail.com',
+        displayName: 'Google Aviator',
+        provider: 'Google',
+      });
+
+      expect(user).toBeDefined();
+      expect(user.email).toBe('pilot.google@gmail.com');
+      expect(user.displayName).toBe('Google Aviator');
+      expect(user.isAnonymous).toBe(false);
+      expect(authService.isAuthenticated()).toBe(true);
+      expect(authService.getCurrentUser()?.id).toBe(user.id);
+    });
+
+    it('authenticates and re-identifies an existing pilot upon subsequent OAuth sign-in', async () => {
+      // First sign-in
+      const firstLogin = await authService.signInWithOAuthUser({
+        email: 'returning.pilot@gmail.com',
+        displayName: 'Returning Pilot',
+        provider: 'Google',
+      });
+
+      await authService.signOut();
+      expect(authService.isAuthenticated()).toBe(false);
+
+      // Second sign-in with same email
+      const secondLogin = await authService.signInWithOAuthUser({
+        email: 'returning.pilot@gmail.com',
+        displayName: 'Returning Pilot Updated',
+        provider: 'Google',
+      });
+
+      expect(secondLogin.id).toBe(firstLogin.id);
+      expect(secondLogin.email).toBe('returning.pilot@gmail.com');
+      expect(authService.isAuthenticated()).toBe(true);
+    });
+  });
+
+  describe('7. Email delivery configuration', () => {
+    it('does not grant access using a code generated in the same browser', async () => {
+      await expect(authService.requestMagicCode('pilot@example.com')).rejects.toThrow(/connected account provider/i);
+      await expect(authService.signInWithMagicCode('pilot@example.com', '123-456')).rejects.toThrow(/connected account provider/i);
+      expect(authService.isAuthenticated()).toBe(false);
     });
   });
 });

@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: './', // Ensures relative asset paths for GitHub Pages / subfolder hosting
   build: {
+    rollupOptions: { input: ['index.html', 'windlog.html'] },
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,

@@ -8,7 +8,7 @@ export interface AuthPageProps {
   onNavigate: (view: ActiveView) => void;
   profile?: AircraftProfile;
   onProfileChange?: (profile: AircraftProfile) => void;
-  initialTab?: 'signin' | 'register' | 'profile';
+  initialTab?: 'signin' | 'register' | 'profile' | 'security';
 }
 
 type AuthTab = 'signin' | 'register' | 'forgot' | 'profile' | 'security';
@@ -54,47 +54,29 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Determine initial active tab based on authentication state, prop, or URL hash
+  // In CockpitSuite, an account is always required. Profile dashboard manages Preferences and Security.
   const [activeTab, setActiveTab] = useState<AuthTab>(() => {
-    const isRealUser = isAuthenticated && user && !user.id.startsWith('guest_');
-    if (isRealUser) return 'profile';
-
-    if (initialTab) return initialTab;
+    if (initialTab === 'security') return 'security';
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.toLowerCase();
-      if (hash === '#login' || hash === '#signin') return 'signin';
-      if (hash === '#register' || hash === '#signup') return 'register';
-      if (hash === '#profile' || hash === '#settings') return 'profile';
+      if (hash === '#security' || hash === '#account') return 'security';
     }
-    return 'signin';
+    return 'profile';
   });
 
   // Listen for hash changes if user navigates via URL
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.toLowerCase();
-      const isRealUser = isAuthenticated && user && !user.id.startsWith('guest_');
-      if (hash === '#login' || hash === '#signin') {
-        setActiveTab('signin');
-      } else if (hash === '#register' || hash === '#signup') {
-        setActiveTab('register');
-      } else if (hash === '#profile' || hash === '#settings') {
-        setActiveTab('profile');
-      } else if (isRealUser) {
+      if (hash === '#security' || hash === '#account') {
+        setActiveTab('security');
+      } else {
         setActiveTab('profile');
       }
     };
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
-  }, [isAuthenticated, user]);
-
-  // If user signs in or out, align the active tab
-  useEffect(() => {
-    const isRealUser = isAuthenticated && user && !user.id.startsWith('guest_');
-    if (isRealUser && (activeTab === 'signin' || activeTab === 'register' || activeTab === 'forgot')) {
-      setActiveTab('profile');
-    }
-  }, [isAuthenticated, user]);
+  }, []);
 
   // ─── Change Password State (Authenticated Pilots) ───
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -308,7 +290,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setIsSubmitting(true);
 
     try {
-      const signedInUser = await signIn(signInEmail, signInPassword);
+      const signedInUser = await signIn(signInEmail, signInPassword, rememberMe);
       const pilotTitle = signedInUser.displayName || signedInUser.email.split('@')[0];
       setProfileSuccessMsg(`Welcome back, Captain ${pilotTitle}! Authentication verified.`);
       setTimeout(() => {
@@ -417,7 +399,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     }
   };
 
-  const isRealPilotUser = Boolean(isAuthenticated && user && !user.id.startsWith('guest_'));
   const displayName = editDisplayName || user?.displayName || (user?.email ? user.email.split('@')[0] : 'Pilot');
   const initials =
     displayName
@@ -437,65 +418,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
       {/* Mode Switcher Navigation Bar */}
       <div className="auth-mode-selector-bar">
-        {!isRealPilotUser ? (
-          <div className="auth-mode-tabs">
-            <button
-              type="button"
-              className={`auth-mode-tab ${activeTab === 'signin' ? 'active' : ''}`}
-              onClick={() => {
-                clearError();
-                setProfileErrorMsg(null);
-                setActiveTab('signin');
-              }}
-            >
-              <span className="auth-tab-icon">🔑</span> Sign In
-            </button>
-            <button
-              type="button"
-              className={`auth-mode-tab ${activeTab === 'register' ? 'active' : ''}`}
-              onClick={() => {
-                clearError();
-                setProfileErrorMsg(null);
-                setActiveTab('register');
-              }}
-            >
-              <span className="auth-tab-icon">📝</span> Create Pilot Account
-            </button>
-            <button
-              type="button"
-              className={`auth-mode-tab ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => {
-                clearError();
-                setProfileErrorMsg(null);
-                setActiveTab('profile');
-              }}
-            >
-              <span className="auth-tab-icon">⚙️</span> Cockpit Defaults
-            </button>
-            {activeTab === 'forgot' && (
-              <button type="button" className="auth-mode-tab active">
-                <span className="auth-tab-icon">🔄</span> Reset Password
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="auth-mode-tabs">
-            <button
-              type="button"
-              className={`auth-mode-tab ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab('profile')}
-            >
-              <span className="auth-tab-icon">⚙️</span> Cockpit Preferences &amp; Defaults
-            </button>
-            <button
-              type="button"
-              className={`auth-mode-tab ${activeTab === 'security' ? 'active' : ''}`}
-              onClick={() => setActiveTab('security')}
-            >
-              <span className="auth-tab-icon">☁️</span> Account &amp; Security
-            </button>
-          </div>
-        )}
+        <div className="auth-mode-tabs">
+          <button
+            type="button"
+            className={`auth-mode-tab ${activeTab === 'profile' ? 'active' : ''}`}
+            onClick={() => setActiveTab('profile')}
+          >
+            <span className="auth-tab-icon">⚙️</span> Cockpit Preferences &amp; Defaults
+          </button>
+          <button
+            type="button"
+            className={`auth-mode-tab ${activeTab === 'security' ? 'active' : ''}`}
+            onClick={() => setActiveTab('security')}
+          >
+            <span className="auth-tab-icon">☁️</span> Account &amp; Security
+          </button>
+        </div>
       </div>
 
       {/* Error & Feedback Banners */}
@@ -524,7 +462,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           1. FOCUSED SIGN IN VIEW
           ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'signin' && (
+      {false && activeTab === 'signin' && (
         <div className="auth-focused-card-wrapper">
           <div className="auth-focused-card">
             <div className="auth-card-top-brand">
@@ -648,7 +586,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           2. FOCUSED CREATE PILOT ACCOUNT (REGISTER) VIEW
           ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'register' && (
+      {false && activeTab === 'register' && (
         <div className="auth-focused-card-wrapper">
           <div className="auth-focused-card wide">
             <div className="auth-card-top-brand">
@@ -815,7 +753,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           3. FORGOT / RESET PASSWORD VIEW
           ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'forgot' && (
+      {false && activeTab === 'forgot' && (
         <div className="auth-focused-card-wrapper">
           <div className="auth-focused-card">
             <div className="auth-card-top-brand">
@@ -923,8 +861,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <div className="profile-header-meta">
                 <div className="profile-name-row">
                   <h1 className="profile-name-title">{displayName}</h1>
-                  <span className={`profile-status-badge ${isRealPilotUser ? 'cloud' : 'guest'}`}>
-                    {isRealPilotUser ? '☁ Cloud Synced' : '💾 Local Guest Pilot'}
+                  <span className="profile-status-badge cloud">
+                    Pilot Account
                   </span>
                 </div>
                 <div className="profile-meta-subline">
@@ -1042,7 +980,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     <span className="email-text">
                       Email: {user?.email || (editDisplayName ? `${editDisplayName.toLowerCase().replace(/\s+/g, '')}@cockpit.aero` : 'pilot@cockpit.aero')}
                     </span>
-                    <span className="verified-tag">✓ Verified</span>
+                    <span className="verified-tag">Signed In</span>
                   </div>
                 </div>
 
@@ -1334,7 +1272,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       {/* ─────────────────────────────────────────────────────────────
           5. ACCOUNT & SECURITY VIEW (AUTHENTICATED)
           ───────────────────────────────────────────────────────────── */}
-      {activeTab === 'security' && isRealPilotUser && user && (
+      {activeTab === 'security' && user && (
         <div className="auth-focused-card-wrapper">
           <div className="auth-focused-card wide">
             <div className="auth-card-top-brand">
@@ -1352,9 +1290,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               </div>
 
               <div className="profile-info-row">
-                <span className="profile-info-label">Verified Email Address:</span>
+                <span className="profile-info-label">Email Address:</span>
                 <span className="profile-info-value">
-                  {user.email} <span className="profile-verified-tag">✓ Verified</span>
+                  {user.email} <span className="profile-verified-tag">Signed In</span>
                 </span>
               </div>
 
@@ -1444,7 +1382,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                   className="profile-signout-btn full"
                   onClick={async () => {
                     await signOut();
-                    setActiveTab('signin');
+                    onNavigate('landing');
                   }}
                 >
                   Sign Out of Flight Deck

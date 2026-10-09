@@ -47,7 +47,7 @@ describe('Backstage Authentication Service & Provider', () => {
     expect(user.displayName).toBe('Pete Mitchell');
     expect(user.pilotLicense).toBe('CPL-IR');
     expect(user.homeBaseAirport).toBe('KNSI');
-    expect(user.emailVerified).toBe(true);
+    expect(user.emailVerified).toBe(false);
   });
 
   it('enforces unique email constraint', async () => {
@@ -129,11 +129,11 @@ describe('Backstage Authentication Service & Provider', () => {
 
     // Registered user
     const res1 = await adapter.resetPassword('iceman@topgun.aero');
-    expect(res1.success).toBe(true);
+    expect(res1.success).toBe(false);
 
     // Unregistered user (must return success to prevent email enumeration attacks)
     const res2 = await adapter.resetPassword('nobody@sky.com');
-    expect(res2.success).toBe(true);
+    expect(res2.success).toBe(false);
   });
 
   it('allows password changes with current password verification', async () => {

@@ -55,5 +55,8 @@ export interface AuthProviderAdapter {
   updateProfile(userId: string, updates: Partial<User>): Promise<User>;
   changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void>;
   getCurrentSession(): Promise<AuthSession>;
+  signInWithOAuthUser?(profile: { email: string; displayName?: string; provider: string }): Promise<User>;
+  requestMagicCode?(email: string): Promise<{ code: string; expiresAt: number }>;
+  signInWithMagicCode?(email: string, code: string): Promise<User>;
 }
 

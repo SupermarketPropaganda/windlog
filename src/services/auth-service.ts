@@ -65,7 +65,9 @@ export const safeStorage = {
         localStorage.setItem(key, value);
         return;
       }
-    } catch {}
+    } catch {
+      throw new Error('Unable to save your account. Please allow browser storage and try again.');
+    }
     memoryFallbackStore.set(key, value);
   },
   removeItem: (key: string): void => {
@@ -87,6 +89,17 @@ export const safeStorage = {
   },
 };
 
+
+function getTabSession(): string | null {
+  try { return typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(STORAGE_SESSION_KEY) : null; }
+  catch { return null; }
+}
+function clearStoredSession(): void {
+  safeStorage.removeItem(STORAGE_SESSION_KEY);
+  safeStorage.removeItem('windlog_active_user'); // Obsolete standalone landing session.
+  try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(STORAGE_SESSION_KEY); } catch {}
+}
+
 /**
  * Generates a session token.
  */
@@ -97,7 +110,7 @@ function generateToken(userId: string): string {
 }
 
 /**
- * Default Local Auth Provider implementation storing encrypted credentials in localStorage.
+ * Default Local Auth Provider implementation storing salted password hashes in localStorage. This is a local profile store, not server authentication.
  * Ready to be swapped with Supabase, Firebase, or external API via setAuthProviderAdapter.
  */
 export class LocalAuthProviderAdapter implements AuthProviderAdapter {
@@ -105,21 +118,6 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
     try {
       const data = safeStorage.getItem(STORAGE_USERS_KEY);
       const users: Record<string, StoredUserRecord> = data ? JSON.parse(data) : {};
-      // Purge any legacy demo or hardcoded pilot records if previously stored
-      let modified = false;
-      for (const k of Object.keys(users)) {
-        if (
-          k.includes('master') ||
-          k.includes('demo') ||
-          users[k]?.user?.email?.endsWith('@windlog.aero')
-        ) {
-          delete users[k];
-          modified = true;
-        }
-      }
-      if (modified) {
-        this.saveUsers(users);
-      }
       return users;
     } catch {
       return {};
@@ -127,16 +125,12 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
   }
 
   private saveUsers(users: Record<string, StoredUserRecord>): void {
-    try {
-      safeStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
-    } catch (e) {
-      console.error('Failed to save users database:', e);
-    }
+    safeStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
   }
 
   async signUp(credentials: AuthCredentials): Promise<User> {
     const email = credentials.email.trim().toLowerCase();
-    if (!email || !email.includes('@') || !email.includes('.')) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new Error('Please provide a valid email address.');
     }
     if (!credentials.password || credentials.password.length < 6) {
@@ -165,7 +159,7 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
       homeBaseAirport: credentials.homeBaseAirport?.trim().toUpperCase() || undefined,
       createdAt: new Date().toISOString(),
       lastLoginAt: new Date().toISOString(),
-      emailVerified: true,
+      emailVerified: false,
       isAnonymous: false,
       preferences: credentials.preferences,
     };
@@ -176,7 +170,13 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
       passwordHash,
     };
 
-    this.saveUsers(users);
+    // Re-read after hashing so concurrent registration cannot overwrite another account.
+    const latest = this.getUsers();
+    if (Object.values(latest).some(r => r.user.email.toLowerCase() === email)) {
+      throw new Error('An account with this email already exists. Please sign in instead.');
+    }
+    latest[userId] = users[userId];
+    this.saveUsers(latest);
     return newUser;
   }
 
@@ -209,46 +209,11 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
     // Adapter-specific cleanup if needed
   }
 
-  async resetPassword(email: string): Promise<{ success: boolean; message: string }> {
-    const normalizedEmail = email.trim().toLowerCase();
-    const users = this.getUsers();
-    Object.values(users).find(
-      (r) => r.user.email.toLowerCase() === normalizedEmail
-    );
-
-    // Uniform response prevents user enumeration attacks
-    return {
-      success: true,
-      message: 'If an account exists with this email, password reset instructions have been generated.',
-    };
+  async resetPassword(_email: string): Promise<{ success: boolean; message: string }> {
+    return { success: false, message: 'Email recovery requires a connected account provider. Your account is stored only in this browser.' };
   }
-
-  async resetPasswordWithNew(email: string, newPassword: string): Promise<{ success: boolean; message: string }> {
-    const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail || !normalizedEmail.includes('@') || !normalizedEmail.includes('.')) {
-      throw new Error('Please enter a valid email address.');
-    }
-    if (!newPassword || newPassword.length < 6) {
-      throw new Error('New password must be at least 6 characters long.');
-    }
-    const users = this.getUsers();
-    const record = Object.values(users).find(
-      (r) => r.user.email.toLowerCase() === normalizedEmail
-    );
-    if (!record) {
-      throw new Error('No pilot account found matching this email address.');
-    }
-
-    const newSalt = generateSalt(16);
-    record.salt = newSalt;
-    record.passwordHash = await hashPassword(newPassword, newSalt);
-    users[record.user.id] = record;
-    this.saveUsers(users);
-
-    return {
-      success: true,
-      message: 'Password reset successfully. You may now sign in with your new credentials.',
-    };
+  async resetPasswordWithNew(_email: string, _newPassword: string): Promise<{ success: boolean; message: string }> {
+    throw new Error('Email recovery requires a connected account provider. Use Change Password with your current password.');
   }
 
   async updateProfile(userId: string, updates: Partial<User>): Promise<User> {
@@ -295,7 +260,7 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
 
   async getCurrentSession(): Promise<AuthSession> {
     try {
-      const stored = safeStorage.getItem(STORAGE_SESSION_KEY);
+      const stored = getTabSession() || safeStorage.getItem(STORAGE_SESSION_KEY);
       if (!stored) {
         return { user: null, token: null, expiresAt: null, isAuthenticated: false };
       }
@@ -306,23 +271,79 @@ export class LocalAuthProviderAdapter implements AuthProviderAdapter {
       }
 
       // Check expiry
-      if (Date.now() > session.expiresAt) {
-        safeStorage.removeItem(STORAGE_SESSION_KEY);
+      if (!Number.isFinite(session.expiresAt) || Date.now() >= session.expiresAt) {
+        clearStoredSession();
         return { user: null, token: null, expiresAt: null, isAuthenticated: false };
       }
 
       // Refresh user details from database
       const users = this.getUsers();
       const freshRecord = users[session.user.id];
-      if (freshRecord) {
-        session.user = freshRecord.user;
+      if (!freshRecord && !session.user.isAnonymous) {
+        clearStoredSession();
+        return { user: null, token: null, expiresAt: null, isAuthenticated: false };
       }
+      if (freshRecord) session.user = freshRecord.user;
 
       return { ...session, isAuthenticated: true };
     } catch {
       return { user: null, token: null, expiresAt: null, isAuthenticated: false };
     }
   }
+
+  async signInWithOAuthUser(profile: { email: string; displayName?: string; provider: string }): Promise<User> {
+    const email = profile.email.trim().toLowerCase();
+    if (!email || !email.includes('@')) {
+      throw new Error('Valid email address required.');
+    }
+    const users = this.getUsers();
+    let record = Object.values(users).find(
+      (r) => r.user.email.toLowerCase() === email
+    );
+
+    if (!record) {
+      const entropy = generateSalt(16);
+      const userId = `pilot_${Date.now()}_${entropy}`;
+      const salt = generateSalt(16);
+      const passwordHash = await hashPassword(`OAUTH_${profile.provider}_${entropy}`, salt);
+
+      const newUser: User = {
+        id: userId,
+        email,
+        displayName: profile.displayName?.trim() || email.split('@')[0],
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        emailVerified: true,
+        isAnonymous: false,
+      };
+
+      record = {
+        user: newUser,
+        salt,
+        passwordHash,
+      };
+      users[userId] = record;
+      this.saveUsers(users);
+    } else {
+      record.user.lastLoginAt = new Date().toISOString();
+      if (profile.displayName && (!record.user.displayName || record.user.displayName === record.user.email.split('@')[0])) {
+        record.user.displayName = profile.displayName.trim();
+      }
+      users[record.user.id] = record;
+      this.saveUsers(users);
+    }
+
+    return record.user;
+  }
+
+  async requestMagicCode(_email: string): Promise<{ code: string; expiresAt: number }> {
+    throw new Error('Email access codes require a connected account provider. Please sign in with your password.');
+  }
+  async signInWithMagicCode(_email: string, _code: string): Promise<User> {
+    throw new Error('Email access codes require a connected account provider. Please sign in with your password.');
+  }
+
+
 }
 
 /**
@@ -339,9 +360,18 @@ class AuthService {
   };
   private listeners = new Set<(session: AuthSession) => void>();
   private initialized = false;
+  private rememberSession = true;
 
   constructor() {
     this.initSession();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (event) => {
+        if (event.key === STORAGE_SESSION_KEY || event.key === STORAGE_USERS_KEY || event.key === null) {
+          void this.initSession();
+        }
+      });
+      window.addEventListener('focus', () => { void this.initSession(); });
+    }
   }
 
   async init(): Promise<void> {
@@ -351,6 +381,7 @@ class AuthService {
   async initSession(): Promise<void> {
     try {
       this.currentSession = await this.adapter.getCurrentSession();
+      this.rememberSession = !getTabSession();
     } catch {
       this.currentSession = { user: null, token: null, expiresAt: null, isAuthenticated: false };
     } finally {
@@ -368,16 +399,21 @@ class AuthService {
   }
 
   private saveSession(session: AuthSession): void {
-    this.currentSession = session;
     try {
       if (session.isAuthenticated && session.token) {
-        safeStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(session));
+        clearStoredSession();
+        if (!this.rememberSession && typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(session));
+        } else {
+          safeStorage.setItem(STORAGE_SESSION_KEY, JSON.stringify(session));
+        }
       } else {
-        safeStorage.removeItem(STORAGE_SESSION_KEY);
+        clearStoredSession();
       }
-    } catch (e) {
-      console.error('Failed to save session:', e);
+    } catch {
+      throw new Error('Unable to save your session. Please allow browser storage and try again.');
     }
+    this.currentSession = session;
     this.notifyListeners();
   }
 
@@ -392,6 +428,7 @@ class AuthService {
   }
 
   async signUp(credentials: AuthCredentials): Promise<User> {
+    this.rememberSession = true;
     const user = await this.adapter.signUp(credentials);
     const token = generateToken(user.id);
     const expiresAt = Date.now() + SESSION_DURATION_MS;
@@ -414,11 +451,13 @@ class AuthService {
 
   async signIn(
     emailOrCreds: string | { email: string; password: string },
-    maybePassword?: string
+    maybePassword?: string,
+    rememberMe = true
   ): Promise<User> {
     const email = typeof emailOrCreds === 'string' ? emailOrCreds : emailOrCreds.email;
     const password = typeof emailOrCreds === 'string' ? (maybePassword || '') : emailOrCreds.password;
     const user = await this.adapter.signIn(email, password);
+    this.rememberSession = rememberMe;
     const token = generateToken(user.id);
     const expiresAt = Date.now() + SESSION_DURATION_MS;
 
@@ -544,6 +583,61 @@ class AuthService {
       user: updated,
     });
     return updated;
+  }
+
+  async signInWithOAuthUser(profile: { email: string; displayName?: string; provider: string }): Promise<User> {
+    if (!this.adapter.signInWithOAuthUser) {
+      throw new Error('OAuth authentication not supported by current adapter.');
+    }
+    const user = await this.adapter.signInWithOAuthUser(profile);
+    const token = generateToken(user.id);
+    const expiresAt = Date.now() + SESSION_DURATION_MS;
+
+    this.saveSession({
+      user,
+      token,
+      expiresAt,
+      isAuthenticated: true,
+    });
+
+    try {
+      await migrateGuestFlightsToUser(user.id);
+    } catch (e) {
+      console.warn('Flight migration notice:', e);
+    }
+
+    return user;
+  }
+
+  async requestMagicCode(email: string): Promise<{ code: string; expiresAt: number }> {
+    if (!this.adapter.requestMagicCode) {
+      throw new Error('Magic codes not supported by current adapter.');
+    }
+    return this.adapter.requestMagicCode(email);
+  }
+
+  async signInWithMagicCode(email: string, code: string): Promise<User> {
+    if (!this.adapter.signInWithMagicCode) {
+      throw new Error('Magic codes not supported by current adapter.');
+    }
+    const user = await this.adapter.signInWithMagicCode(email, code);
+    const token = generateToken(user.id);
+    const expiresAt = Date.now() + SESSION_DURATION_MS;
+
+    this.saveSession({
+      user,
+      token,
+      expiresAt,
+      isAuthenticated: true,
+    });
+
+    try {
+      await migrateGuestFlightsToUser(user.id);
+    } catch (e) {
+      console.warn('Flight migration notice:', e);
+    }
+
+    return user;
   }
 
   getCurrentSession(): AuthSession {

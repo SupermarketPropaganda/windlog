@@ -21,6 +21,7 @@ import { MassBalanceView } from './components/MassBalanceView';
 import { RunwayWindView } from './components/RunwayWindView';
 import { SavedFlightsView } from './components/SavedFlightsView';
 import { AuthPage } from './components/AuthPage';
+import { LandingPage } from './components/LandingPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AdProvider, useAdBreak } from './context/AdContext';
 import { AdInterstitialModal } from './components/ads/AdInterstitialModal';
@@ -33,6 +34,7 @@ import { CURRENT_LEGAL_VERSION } from './data/legal-terms';
 import { computeNavLog, computeAlternatePlan } from './engine/navlog-engine';
 import { getAirportWaypoint } from './data/airport-runways';
 import { parseRouteString } from './utils/route-parser';
+import { viewFromHash } from './utils/app-navigation';
 import { decodeRouteFromUrl, copyShareableRouteLink } from './utils/url-route';
 import { initStorage, getStorageItemSync, setStorageItem } from './data/storage-manager';
 import { CURRENT_DATABASE_METADATA } from './data/airac-meta';
@@ -129,7 +131,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   const [routeInput, setRouteInput] = useState(loadRouteInput);
   const [showDisclaimer, setShowDisclaimer] = useState<boolean>(() => {
     try {
-      const acceptedVersion = localStorage.getItem('windlog_legal_version_accepted');
+      const acceptedVersion = getStorageItemSync('windlog_legal_version_accepted', '') || localStorage.getItem('windlog_legal_version_accepted');
       return acceptedVersion !== CURRENT_LEGAL_VERSION;
     } catch {
       return true;
@@ -794,54 +796,48 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
 // ─── Top-Level Application Orchestrator ───
 
 function CockpitApp() {
-  const { isLoading } = useAuth();
-  const [cockpitView, setCockpitView] = useState<ActiveView>(() => {
-    if (typeof window !== 'undefined') {
-      const hash = window.location.hash;
-      if (hash === '#auth' || hash === '#login' || hash === '#signup') return 'auth';
-      if (hash === '#saved-flights') return 'saved-flights';
-      if (hash === '#mass-balance') return 'mass-balance';
-      if (hash === '#runway-wind') return 'runway-wind';
-    }
-    return 'navlog';
-  });
+  const { isLoading, isAuthenticated, user } = useAuth();
+  const [cockpitView, setCockpitView] = useState<ActiveView>(() => viewFromHash(window.location.hash));
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => { if (!isLoading) setIsReady(true); }, [isLoading]);
 
-  // Handle URL hash navigation
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash;
-      if (hash === '#auth' || hash === '#login' || hash === '#signup') {
-        setCockpitView('auth');
-      } else if (hash === '#saved-flights') {
-        setCockpitView('saved-flights');
-      } else if (hash === '#mass-balance') {
-        setCockpitView('mass-balance');
-      } else if (hash === '#runway-wind') {
-        setCockpitView('runway-wind');
-      } else if (hash === '#navlog' || hash === '' || hash === '#') {
-        setCockpitView('navlog');
-      }
-    };
+    const handleHashChange = () => setCockpitView(viewFromHash(window.location.hash));
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  if (isLoading) {
+  const navigate = (view: ActiveView) => {
+    setCockpitView(view);
+    // Retain shared route data until the planner has read it.
+    if (view === 'navlog' && decodeRouteFromUrl()) return;
+    const hash = view === 'auth' ? '#profile' : '#' + view;
+    window.history.pushState(null, '', window.location.pathname + window.location.search + hash);
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  };
+
+  if (!isReady && isLoading) {
     return (
-      <div className="db-loading-screen">
-        <div className="db-loading-spinner" />
-        <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.1rem' }}>
-          WindLog Flight Planning Suite
+      <div className="pure-black-root">
+        <div style={{ color: '#ffffff', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px', letterSpacing: '0.1em' }}>
+          Windlog.
         </div>
       </div>
     );
   }
 
-  // Load CockpitSuite directly with pinned fixed sidebar and full flight planning suite
+  // Pure black minimalist landing page with finished authentication
+  // An account is always required: unauthenticated pilots must sign in or register first
+  const isRealUser = Boolean(isAuthenticated && user && !user.isAnonymous && !user.id.startsWith('guest_'));
+  if (cockpitView === 'landing' || !isRealUser) {
+    return <LandingPage onNavigate={navigate} />;
+  }
+
+  // Load CockpitSuite for flight planning, mass & balance, and navlog
   return (
     <CockpitSuite
       activeView={cockpitView}
-      onChangeView={setCockpitView}
+      onChangeView={navigate}
     />
   );
 }

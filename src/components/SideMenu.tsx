@@ -60,7 +60,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   const handleSignOut = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await signOut();
-    onChangeView('navlog');
+    onChangeView('landing');
   };
 
   return (
@@ -99,11 +99,16 @@ export const SideMenu: React.FC<SideMenuProps> = ({
       <aside className={`gemini-sidebar no-print ${isOpen ? 'open' : 'closed'}`}>
         {/* Header with Title and Mobile Collapse Button */}
         <div className="gemini-sidebar-header">
-          <div className="gemini-sidebar-brand">
+          <div
+            className="gemini-sidebar-brand"
+            onClick={() => handleSelect('landing')}
+            style={{ cursor: 'pointer' }}
+            title="Return to Home (Windlog.)"
+          >
             <span className="gemini-brand-icon">✈</span>
             <div className="gemini-brand-text">
-              <span className="gemini-brand-title">WindLog</span>
-              <span className="gemini-brand-sub">Cockpit Suite</span>
+              <span className="gemini-brand-title">Windlog.</span>
+              <span className="gemini-brand-sub">Home // Cockpit</span>
             </div>
           </div>
 
@@ -130,28 +135,19 @@ export const SideMenu: React.FC<SideMenuProps> = ({
           </button>
         </div>
 
-        {/* Pilot Profile Card with Sign Out / Sign In */}
+        {/* Pilot Profile Card */}
         <div
           className={`gemini-pilot-card ${activeView === 'auth' ? 'active' : ''}`}
-          onClick={() => {
-            if (!user || user.id.startsWith('guest_')) {
-              window.location.hash = '#login';
-            } else {
-              window.location.hash = '#profile';
-            }
-            handleSelect('auth');
-          }}
-          title="View / Edit Pilot Profile"
+          onClick={() => handleSelect('auth')}
+          title="View / Edit Pilot Profile & Cockpit Settings"
         >
           <div className="gemini-pilot-avatar">
             {(user?.displayName || user?.email || 'P')[0].toUpperCase()}
           </div>
           <div className="gemini-pilot-meta">
             <div className="gemini-pilot-name">
-              <span>{user?.displayName || user?.email || 'Guest Pilot'}</span>
-              {user && !user.id.startsWith('guest_') && (
-                <span className="pilot-verified-badge">✓ Verified</span>
-              )}
+              <span>{user?.displayName || user?.email || 'Captain'}</span>
+              <span className="pilot-verified-badge">Signed In</span>
               {isPro && (
                 <span
                   style={{
@@ -169,38 +165,20 @@ export const SideMenu: React.FC<SideMenuProps> = ({
               )}
             </div>
             <div className="gemini-pilot-sub">
-              {user?.pilotLicense ? user.pilotLicense : 'Click to Sign In / Settings'}
+              {user?.email || 'Pilot Profile & Cockpit Settings'}
             </div>
-            {user && !user.id.startsWith('guest_') && (
-              <div className="gemini-pilot-member-since">
-                MEMBER SINCE {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase() : 'SEP 20, 2026'}
-              </div>
-            )}
+            <div className="gemini-pilot-member-since">
+              MEMBER SINCE {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase() : 'OCT 2026'}
+            </div>
           </div>
-          {user && !user.id.startsWith('guest_') ? (
-            <button
-              type="button"
-              className="gemini-pilot-signout-btn"
-              onClick={handleSignOut}
-              title="Sign Out of Cockpit"
-            >
-              Sign Out
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="gemini-pilot-signout-btn"
-              style={{ color: '#2dd4bf', borderColor: 'rgba(45, 212, 191, 0.4)' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.location.hash = '#login';
-                handleSelect('auth');
-              }}
-              title="Sign In or Register"
-            >
-              Sign In
-            </button>
-          )}
+          <button
+            type="button"
+            className="gemini-pilot-signout-btn"
+            onClick={handleSignOut}
+            title="Sign Out of Cockpit"
+          >
+            Sign Out
+          </button>
         </div>
 
         {/* Navigation Section */}

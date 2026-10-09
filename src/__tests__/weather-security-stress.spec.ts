@@ -481,14 +481,14 @@ describe('QA Stress Test & Security Audit Suite', () => {
       // Request 3: Malformed email
       const malformedResult = await adapter.resetPassword('random-text-probe');
 
-      // Both must succeed and return the EXACT same response message to prevent email enumeration
-      expect(existingUserResult.success).toBe(true);
-      expect(nonExistentUserResult.success).toBe(true);
-      expect(malformedResult.success).toBe(true);
+      // Unconfigured recovery returns the same unavailable response without revealing account existence
+      expect(existingUserResult.success).toBe(false);
+      expect(nonExistentUserResult.success).toBe(false);
+      expect(malformedResult.success).toBe(false);
 
       expect(existingUserResult.message).toBe(nonExistentUserResult.message);
       expect(existingUserResult.message).toBe(malformedResult.message);
-      expect(existingUserResult.message).toContain('If an account exists with this email');
+      expect(existingUserResult.message).toContain('connected account provider');
       expect(existingUserResult.message).not.toContain('registered.pilot@cockpit.aero'); // Never leak email in response
     });
 

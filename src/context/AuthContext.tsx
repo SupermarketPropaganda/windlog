@@ -9,7 +9,7 @@ export interface AuthContextType {
   isLoading: boolean;
   error: string | null;
   clearError: () => void;
-  signIn: (email: string, password: string) => Promise<User>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<User>;
   signInAsGuest: () => Promise<User>;
   signUp: (credentials: AuthCredentials) => Promise<User>;
   signOut: () => Promise<void>;
@@ -17,6 +17,9 @@ export interface AuthContextType {
   resetPasswordWithNew: (email: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<User>;
+  signInWithOAuthUser: (profile: { email: string; displayName?: string; provider: string }) => Promise<User>;
+  requestMagicCode: (email: string) => Promise<{ code: string; expiresAt: number }>;
+  signInWithMagicCode: (email: string, code: string) => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -36,11 +39,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const clearError = useCallback(() => setError(null), []);
 
-  const signIn = useCallback(async (email: string, password: string): Promise<User> => {
+  const signIn = useCallback(async (email: string, password: string, rememberMe = true): Promise<User> => {
     setIsLoading(true);
     setError(null);
     try {
-      const user = await authService.signIn(email, password);
+      const user = await authService.signIn(email, password, rememberMe);
       return user;
     } catch (err: any) {
       const msg = err?.message || 'Failed to sign in. Please check your credentials.';
@@ -146,6 +149,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  const signInWithOAuthUser = useCallback(
+    async (profile: { email: string; displayName?: string; provider: string }): Promise<User> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        return await authService.signInWithOAuthUser(profile);
+      } catch (err: any) {
+        const msg = err?.message || 'Failed to authenticate via OAuth provider.';
+        setError(msg);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  const requestMagicCode = useCallback(async (email: string): Promise<{ code: string; expiresAt: number }> => {
+    setError(null);
+    try {
+      return await authService.requestMagicCode(email);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to generate access code.';
+      setError(msg);
+      throw err;
+    }
+  }, []);
+
+  const signInWithMagicCode = useCallback(async (email: string, code: string): Promise<User> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      return await authService.signInWithMagicCode(email, code);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to authenticate with verification code.';
+      setError(msg);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -163,6 +208,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         resetPasswordWithNew,
         changePassword,
         updateProfile,
+        signInWithOAuthUser,
+        requestMagicCode,
+        signInWithMagicCode,
       }}
     >
       {children}

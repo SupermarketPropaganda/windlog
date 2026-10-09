@@ -100,7 +100,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 WindLog includes a comprehensive unit, integration, and mathematical stress-testing suite powered by Vitest:
 
 ```bash
-# Run all 81 test suites
+# Run all test suites
 npm test
 
 # Run tests in watch mode
@@ -118,6 +118,18 @@ npm run build
 # Preview production bundle locally
 npm run preview
 ```
+
+---
+
+## Landing Page and Pilot Accounts
+
+The production build includes both `windlog.html` (the standalone landing page) and `index.html` (the React application). Serve both from the same directory and origin. Registration and sign-in use the same authentication service and open `index.html#navlog`. The React landing page also supports `#signin` and `#register`.
+
+Accounts, password hashes, and saved flights are stored in the current browser. This is a local pilot profile system, not a server-backed identity or access-control service. Accounts do not synchronize between browsers or devices. Clearing site data removes them. Checked **Remember this flight bag** stores a 30-day session in local storage; unchecked keeps the session in the current tab across navigation and refresh. Signing out removes the session from both page entry points.
+
+Email password recovery and magic links require a connected account provider and are unavailable with the local adapter. Change Password requires the current password. Google sign-in requires a configured `VITE_GOOGLE_CLIENT_ID` and an authorized origin; without configuration, the UI directs pilots to email/password. Live Google consent has not been validated with production credentials.
+
+Authentication regression tests cover session handoff, remember-me, sign-out, stale sessions, duplicate registration, browser storage failure, and URL routing. Run `npm test` and `npm run build` before deployment. Browser verification also covers both registration forms, failed and successful sign-in, cross-tab sign-out, profile updates, dashboard refresh, shared routes, and mobile layout.
 
 ---
 
