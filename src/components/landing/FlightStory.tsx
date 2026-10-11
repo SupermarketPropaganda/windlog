@@ -49,7 +49,7 @@ export function FlightStory() {
   };
   return <section ref={ref} className={`wl-story ${reduced ? 'wl-story-reduced' : ''}`} id="flight-story" aria-label="An example flight plan, revealed as you scroll">
     <div className="wl-story-sticky">
-      <div className="wl-story-top"><span className="wl-eyebrow">02 / FROM WAYPOINT TO FLIGHT PLAN</span><span className="wl-example"><i /> Illustrative flight · Portugal</span></div>
+      <div className="wl-story-top"><span className="wl-example"><i /> Illustrative flight · Portugal</span></div>
       <nav className="wl-chapters" aria-label="Flight planning steps">{chapters.map((chapter, i) => <button key={chapter.label} className={stage === i ? 'is-active' : ''} onClick={() => jump(i)} aria-current={stage === i ? 'step' : undefined}><span>0{i+1}</span>{chapter.label}<b /></button>)}</nav>
       <div className="wl-story-layout">
         <div className="wl-chart">
@@ -77,7 +77,7 @@ export function FlightStory() {
           <div className="wl-chart-bottom"><span><i /> {stage === 3 ? 'Route complete' : 'Tracing the flight'} </span><span>{Math.round(traced * DEMO_TOTALS.distance)} / {Math.round(DEMO_TOTALS.distance)} NM</span></div>
         </div>
         <aside className="wl-flight-copy">
-          <div className="wl-chapter-copy" aria-live="polite"><span className="wl-eyebrow">0{stage+1} / {chapters[stage].label.toUpperCase()}</span><h2>{chapters[stage].title}</h2><p>{chapters[stage].body}</p></div>
+          <div className="wl-chapter-copy" aria-live="polite"><h2>{chapters[stage].title}</h2><p>{chapters[stage].body}</p></div>
           <div className="wl-leg-label"><span>ACTIVE LEG</span><b>{leg.from.identifier} → {leg.to.identifier}</b></div>
           <dl className="wl-metrics">
             <div><dt>Magnetic track</dt><dd>{degrees(magneticTrack)}<small>M</small></dd></div>
