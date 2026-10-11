@@ -98,8 +98,8 @@
 @media(max-width:600px) and (max-height:760px) { .wl-route-chart { height:180px; }.wl-chapter-copy h2 { font-size:21px; }.wl-chapter-copy p { font-size:10px; }.wl-story-layout { gap:12px; }.wl-metrics dd { font-size:16px; }.wl-metrics>div { padding:7px 0; }.wl-story-top { margin-bottom:8px; }.wl-chapters button { padding:8px 0; } }
 @media(prefers-reduced-motion:reduce) { .wl-page * { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }
 .wl-story-title { font-size:clamp(28px,3.5vw,46px); font-weight:430; letter-spacing:-1.5px; line-height:1.1; margin:0 0 25px!important; }
-.wl-story-description p { color:#b5c4c7; font-size:14px; line-height:1.75; }
-.wl-story-description p+p { margin-top:14px; color:#94adb5; }
+.wl-story-description p { color:#edf3f2; font-size:14px; line-height:1.75; }
+.wl-story-description p+p { margin-top:14px; }
 .wl-story-scroll { text-align:center; color:#c5e5df; font:11px/1.5 var(--font-mono); letter-spacing:.04em; margin-top:12px!important; }
 .wl-story { margin-top:65px; }
 @media(max-width:600px) { .wl-story-title { font-size:28px; margin-bottom:18px!important; }.wl-story-description p { font-size:11px; line-height:1.6; }.wl-story-description p+p { margin-top:8px; }.wl-story-scroll { font-size:9px; letter-spacing:0; }.wl-story { margin-top:35px; } }
