@@ -33,7 +33,6 @@ export function LandingExperience({ signedIn, pilotName, onSignIn, onRegister, o
       </div>
       <div className="wl-hero-foot"><button className="wl-scroll-cue" onClick={() => scrollTo('flight-story')}>SCROLL TO EXPLORE <Arrow down /></button></div>
     </section>
-    <section className="wl-intro"><div><h2>A route becomes<br />a flight plan.</h2></div><p>Windlog is your VFR planning workspace. Build a route, understand the wind, and bring your headings, times, and fuel into one readable navigation log.<br /><br /><span>Follow a short flight across Portugal to see it come together.</span></p></section>
     <FlightStory />
     <section className="wl-log-section" aria-labelledby="wl-log-title">
       <div className="wl-section-heading"><div><h2 id="wl-log-title">Ready for your flight bag.</h2></div><p>The same route. A clear navigation log.<br />Built from the calculations you just followed.</p></div>

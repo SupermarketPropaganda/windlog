@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { DEMO_LEGS, DEMO_POINTS, DEMO_TOTALS, degrees, minutes, project } from './demo-flight';
 
-const chapters = [
-  { label: 'The route', title: 'Every flight starts with a line.', body: 'Connect your departure, waypoints, and destination. Windlog turns your route into individual legs, ready to calculate.' },
-  { label: 'The wind', title: 'The air has a direction, too.', body: 'Add the wind at your cruising altitude. See how it changes your groundspeed and the direction your aircraft needs to face.' },
-  { label: 'The heading', title: 'Point the nose. Hold the track.', body: 'Wind correction keeps you on track. Magnetic variation translates your true heading into the magnetic heading for each leg.' },
-  { label: 'The flight plan', title: 'A clear picture of the journey.', body: 'Distance, time, and fuel come together in your navigation log. Every leg calculated. Every number in its place.' },
-];
-
 export function FlightStory() {
   const ref = useRef<HTMLElement>(null);
   const [progress, setProgress] = useState(0);
@@ -28,7 +21,6 @@ export function FlightStory() {
     window.addEventListener('resize', schedule); update();
     return () => { cancelAnimationFrame(raf); window.removeEventListener('scroll', schedule); window.removeEventListener('resize', schedule); media.removeEventListener('change', updateMotion); };
   }, []);
-  const stage = reduced ? 3 : Math.min(3, Math.floor(progress * 4));
   const traced = reduced ? 1 : Math.min(1, .035 + progress * 1.06);
   const lengths = DEMO_POINTS.slice(1).map((p, i) => Math.hypot(p[0] - DEMO_POINTS[i][0], p[1] - DEMO_POINTS[i][1]));
   const total = lengths.reduce((a, b) => a + b, 0);
@@ -42,15 +34,10 @@ export function FlightStory() {
   const path = DEMO_POINTS.map((p, i) => `${i ? 'L' : 'M'}${p[0]},${p[1]}`).join(' ');
   const coast = [[39.9,-9.03],[39.65,-9.09],[39.48,-9.26],[39.36,-9.41],[39.1,-9.42],[38.8,-9.49],[38.7,-9.43],[38.7,-9.15],[38.76,-9.1],[38.85,-8.94],[38.68,-9.03],[38.55,-9.2],[38.43,-9.2],[38.42,-8.98],[38.2,-8.9],[38,-8.9]].map(([lat,lon]) => project(lat,lon));
   const coastPath = coast.map((p,i) => `${i?'L':'M'}${p[0]},${p[1]}`).join(' ');
-  const jump = (chapter: number) => {
-    if (!ref.current) return;
-    const top = ref.current.getBoundingClientRect().top + window.scrollY;
-    window.scrollTo({ top: top + ((chapter + .1) / 4) * (ref.current.offsetHeight - window.innerHeight), behavior: reduced ? 'auto' : 'smooth' });
-  };
   return <section ref={ref} className={`wl-story ${reduced ? 'wl-story-reduced' : ''}`} id="flight-story" aria-label="An example flight plan, revealed as you scroll">
     <div className="wl-story-sticky">
       <div className="wl-story-top"><span className="wl-example"><i /> Illustrative flight · Portugal</span></div>
-      <nav className="wl-chapters" aria-label="Flight planning steps">{chapters.map((chapter, i) => <button key={chapter.label} className={stage === i ? 'is-active' : ''} onClick={() => jump(i)} aria-current={stage === i ? 'step' : undefined}><span>0{i+1}</span>{chapter.label}<b /></button>)}</nav>
+      <h2 className="wl-story-title">A route becomes a flight plan.</h2>
       <div className="wl-story-layout">
         <div className="wl-chart">
           <div className="wl-chart-top"><span>LPCS <b>→</b> LPSO <b>→</b> LPEV</span><small>C172 / 3,500 FT</small></div>
@@ -66,32 +53,32 @@ export function FlightStory() {
             <path d={path} fill="none" stroke="#75d6d2" strokeOpacity=".22" strokeWidth="1.5" strokeDasharray="5 7" />
             <path data-testid="traced-route" d={path} fill="none" stroke="#8ee9e0" strokeWidth="2.5" pathLength="1" strokeDasharray="1" strokeDashoffset={1-traced} />
             {DEMO_POINTS.map(([x,y], i) => <g key={i} transform={`translate(${x} ${y})`}><circle r="14" fill="#10262d" stroke="#8ee9e0" strokeOpacity=".22" /><circle r="4" fill="#c3f6e9" /><text x={i === 1 ? 19 : -20} y={i === 1 ? -13 : 32} className="wl-airport-code">{['LPCS','LPSO','LPEV'][i]}</text><text x={i === 1 ? 19 : -20} y={i === 1 ? 5 : 50} className="wl-airport-name">{['Cascais','Ponte de Sor','Évora'][i]}</text></g>)}
-            {stage >= 1 && <g className="wl-wind-vector" transform="translate(110 98)"><path d="M0 0H70 M61 -6L70 0L61 6" /><path d="M-8 12H42" opacity=".35" /><text x="0" y="-15">WIND 270°T / 15 KT</text></g>}
+            <g className="wl-wind-vector" transform="translate(110 98)"><path d="M0 0H70 M61 -6L70 0L61 6" /><path d="M-8 12H42" opacity=".35" /><text x="0" y="-15">WIND 270°T / 15 KT</text></g>
             <g transform={`translate(${plane[0]} ${plane[1]})`}>
-              {stage >= 2 && <><path d="M0 0V-85" stroke="#f8fafc" strokeDasharray="4 4" opacity=".4" transform={`rotate(${leg.trueTrack})`} /><path d="M0 0V-72" stroke="#8ee9e0" strokeWidth="1.5" opacity=".8" transform={`rotate(${leg.trueHeading})`} /></>}
+              <><path d="M0 0V-85" stroke="#f8fafc" strokeDasharray="4 4" opacity=".4" transform={`rotate(${leg.trueTrack})`} /><path d="M0 0V-72" stroke="#8ee9e0" strokeWidth="1.5" opacity=".8" transform={`rotate(${leg.trueHeading})`} /></>
               <circle r="21" fill="#9cf3e3" opacity=".07" />
-              <path d="M0 -17 L3 -5 L15 3 L15 6 L3 2 L2 11 L6 14 L6 16 L0 14 L-6 16 L-6 14 L-2 11 L-3 2 L-15 6 L-15 3 L-3 -5 Z" fill="#e3fff5" transform={`rotate(${stage >= 1 ? leg.trueHeading : leg.trueTrack})`} />
+              <path d="M0 -17 L3 -5 L15 3 L15 6 L3 2 L2 11 L6 14 L6 16 L0 14 L-6 16 L-6 14 L-2 11 L-3 2 L-15 6 L-15 3 L-3 -5 Z" fill="#e3fff5" transform={`rotate(${leg.trueHeading})`} />
             </g>
             <text x="25" y="496" className="wl-chart-scale">SCHEMATIC / NOT FOR NAVIGATION</text><path d="M552 489H642 M552 485V493 M642 485V493" stroke="#6e8892" /><text x="596" y="479" textAnchor="middle" className="wl-chart-scale">~20 NM</text>
           </svg>
-          <div className="wl-chart-bottom"><span><i /> {stage === 3 ? 'Route complete' : 'Tracing the flight'} </span><span>{Math.round(traced * DEMO_TOTALS.distance)} / {Math.round(DEMO_TOTALS.distance)} NM</span></div>
+          <div className="wl-chart-bottom"><span><i /> {traced >= 1 ? 'Route complete' : 'Tracing the flight'} </span><span>{Math.round(traced * DEMO_TOTALS.distance)} / {Math.round(DEMO_TOTALS.distance)} NM</span></div>
         </div>
         <aside className="wl-flight-copy">
-          <div className="wl-chapter-copy" aria-live="polite"><h2>{chapters[stage].title}</h2><p>{chapters[stage].body}</p></div>
+          <div className="wl-story-description"><p>Windlog is your VFR planning workspace. Build a route, understand the wind, and bring your headings, times, and fuel into one readable navigation log.</p><p>Follow a short flight across Portugal to see it come together.</p></div>
           <div className="wl-leg-label"><span>ACTIVE LEG</span><b>{leg.from.identifier} → {leg.to.identifier}</b></div>
           <dl className="wl-metrics">
             <div><dt>Magnetic track</dt><dd>{degrees(magneticTrack)}<small>M</small></dd></div>
-            <div className={stage < 2 ? 'is-pending' : ''}><dt>Magnetic heading</dt><dd>{stage >= 2 ? degrees(leg.magneticHeading) : '—'}<small>M</small></dd></div>
-            <div className={stage < 1 ? 'is-pending' : ''}><dt>Wind correction</dt><dd>{stage >= 1 ? `${leg.windCorrectionAngle > 0 ? '+' : ''}${leg.windCorrectionAngle.toFixed(1)}°` : '—'}</dd></div>
-            <div className={stage < 2 ? 'is-pending' : ''}><dt>Mag. variation</dt><dd>{stage >= 2 ? `${Math.abs(leg.magneticVariation).toFixed(1)}°` : '—'}<small>{leg.magneticVariation < 0 ? 'W' : 'E'}</small></dd></div>
+            <div><dt>Magnetic heading</dt><dd>{degrees(leg.magneticHeading)}<small>M</small></dd></div>
+            <div><dt>Wind correction</dt><dd>{`${leg.windCorrectionAngle > 0 ? '+' : ''}${leg.windCorrectionAngle.toFixed(1)}°`}</dd></div>
+            <div><dt>Mag. variation</dt><dd>{`${Math.abs(leg.magneticVariation).toFixed(1)}°`}<small>{leg.magneticVariation < 0 ? 'W' : 'E'}</small></dd></div>
             <div><dt>Leg distance</dt><dd>{leg.distance.toFixed(1)}<small>NM</small></dd></div>
-            <div className={stage < 1 ? 'is-pending' : ''}><dt>Groundspeed</dt><dd>{stage >= 1 ? Math.round(leg.groundSpeed) : '—'}<small>KT</small></dd></div>
+            <div><dt>Groundspeed</dt><dd>{Math.round(leg.groundSpeed)}<small>KT</small></dd></div>
           </dl>
-          <div className="wl-leg-result"><span>LEG TIME <b>{stage === 3 ? minutes(leg.ete) : '—'}</b></span><span>LEG FUEL <b>{stage === 3 ? `${leg.fuelBurn.toFixed(1)} US gal` : '—'}</b></span></div>
+          <div className="wl-leg-result"><span>LEG TIME <b>{minutes(leg.ete)}</b></span><span>LEG FUEL <b>{`${leg.fuelBurn.toFixed(1)} US gal`}</b></span></div>
           <p className="wl-demo-note">Example wind, not a live forecast. 105 KT TAS · 8.5 US gal/h. Calculated by Windlog.</p>
         </aside>
       </div>
-      <div className="wl-story-progress"><span style={{ width: `${progress*100}%` }} /></div>
+      <div className="wl-story-progress" role="progressbar" aria-label="Flight animation progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(traced*100)}><span style={{ width: `${traced*100}%` }} /></div><p className="wl-story-scroll">{reduced ? 'Scroll to continue ↓' : traced >= 1 ? 'Flight complete · Keep scrolling to explore ↓' : 'Scroll to fly the route · Keep scrolling to continue ↓'}</p>
     </div>
   </section>;
 }
