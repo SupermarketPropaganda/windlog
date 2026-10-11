@@ -123,7 +123,12 @@ npm run preview
 
 ## Landing Page and Pilot Accounts
 
-The production build includes both `windlog.html` (the standalone landing page) and `index.html` (the React application). Serve both from the same directory and origin. Registration and sign-in use the same authentication service and open `index.html#navlog`. The React landing page also supports `#signin` and `#register`.
+The landing page combines an original procedural WebGL cloud background with a scroll-driven LPCS–LPSO–LPEV route demonstration. The demonstration uses Windlog's navigation engine with illustrative winds (270° true at 15 kt), a C172 at 105 kt TAS, 3,500 ft, and 8.5 US gal/h. The chart is schematic; the displayed cruise totals exclude taxi, climb, descent, alternate fuel, and reserves. These example conditions are not a live forecast.
+
+The sky has a pause control, pauses rendering offscreen, and falls back to a static sky when WebGL is unavailable. Reduced-motion preferences and short viewports use a static completed route. Both layouts preserve sign-in and registration and open the dashboard at the top of the page.
+
+
+The production build includes both `windlog.html` and `index.html`, which share the same React landing experience and authentication forms. Serve both from the same directory and origin. Registration and sign-in use the same authentication service and open `index.html#navlog`. The React landing page also supports `#signin` and `#register`.
 
 Accounts, password hashes, and saved flights are stored in the current browser. This is a local pilot profile system, not a server-backed identity or access-control service. Accounts do not synchronize between browsers or devices. Clearing site data removes them. Checked **Remember this flight bag** stores a 30-day session in local storage; unchecked keeps the session in the current tab across navigation and refresh. Signing out removes the session from both page entry points.
 

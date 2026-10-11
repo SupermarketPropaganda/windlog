@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { LandingExperience } from './landing/LandingExperience';
 import { ActiveView } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { safeStorage } from '../services/auth-service';
@@ -88,6 +89,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const [confirmAccountPassword, setConfirmAccountPassword] = useState('');
   const [accountFeedback, setAccountFeedback] = useState<{ message: string; isError?: boolean } | null>(null);
   const [isSubmittingAccount, setIsSubmittingAccount] = useState(false);
+
+  // Keep a scrollable landing page behind an accessible, focused auth dialog.
+  useEffect(() => {
+    if (modalView === 'none') return;
+    const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    document.body.style.overflow = 'hidden';
+    const dialog = document.querySelector<HTMLElement>('.pure-black-modal-backdrop');
+    const focusable = () => Array.from(dialog?.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), a[href], select, textarea, [tabindex="0"]') || []).filter(el => el.offsetParent !== null);
+    const timer = window.setTimeout(() => { (dialog?.querySelector<HTMLElement>('input') || focusable()[0])?.focus(); }, 0);
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', trapFocus);
+    return () => { window.clearTimeout(timer); document.body.style.overflow = previousOverflow; document.removeEventListener('keydown', trapFocus); previousFocus?.focus({ preventScroll: true }); };
+  }, [modalView]);
 
   // Sync profile fields with logged-in user
   useEffect(() => {
@@ -489,7 +511,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   };
 
   return (
-    <div className="pure-black-root" role="main">
+    <div className="windlog-landing" id="landing">
       {/* ─── Toast Notification ─── */}
       {notification && (
         <div
@@ -501,73 +523,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* ─── CENTERSTAGE: PURE BLACK MINIMAL HERO ─── */}
-      <div className="pure-black-center">
-        <h1 className="pure-black-title" aria-label="Windlog">
-          Windlog.
-        </h1>
-
-        {/* ─── Trigger: 'sign in // register' or Logged-in Flight Controls ─── */}
-        {!isAuthenticated || !user || user.id.startsWith('guest_') ? (
-          <div className="pure-black-actions">
-            <button
-              type="button"
-              className="pure-black-link"
-              onClick={() => {
-                setModalView('signin');
-                setSignInError(null);
-              }}
-              aria-haspopup="dialog"
-            >
-              sign in
-            </button>
-            <span className="pure-black-slash" aria-hidden="true">//</span>
-            <button
-              type="button"
-              className="pure-black-link"
-              onClick={() => {
-                setModalView('register');
-                setRegError(null);
-              }}
-              aria-haspopup="dialog"
-            >
-              register
-            </button>
-          </div>
-        ) : (
-          <div className="pure-black-auth-container">
-            <div className="pure-black-user-badge">
-              <span className="pulse-dot" />
-              <span>capt. {user.displayName || user.email} // signed in</span>
-            </div>
-            <div className="pure-black-actions">
-              <button
-                type="button"
-                className="pure-black-link primary-enter"
-                onClick={() => onNavigate('navlog')}
-              >
-                enter cockpit &rarr;
-              </button>
-              <span className="pure-black-slash" aria-hidden="true">//</span>
-              <button
-                type="button"
-                className="pure-black-link"
-                onClick={() => setModalView('account')}
-              >
-                pilot account
-              </button>
-              <span className="pure-black-slash" aria-hidden="true">//</span>
-              <button
-                type="button"
-                className="pure-black-link"
-                onClick={handleSignOut}
-              >
-                sign out
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      <LandingExperience
+        signedIn={Boolean(isAuthenticated && user && !user.isAnonymous && !user.id.startsWith('guest_'))}
+        pilotName={user?.displayName}
+        onSignIn={() => { setModalView('signin'); setSignInError(null); }}
+        onRegister={() => { setModalView('register'); setRegError(null); }}
+        onEnter={() => onNavigate('navlog')}
+        onAccount={() => setModalView('account')}
+        onSignOut={handleSignOut}
+      />
 
       {/* ─── READY-TO-SHIP AUTHENTICATION MODAL ─── */}
       {modalView !== 'none' && (

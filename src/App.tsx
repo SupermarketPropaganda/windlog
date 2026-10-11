@@ -808,6 +808,12 @@ function CockpitApp() {
   }, []);
 
   const navigate = (view: ActiveView) => {
+    if (window.location.pathname.endsWith('/windlog.html') && view !== 'landing') {
+      const hash = view === 'navlog' && decodeRouteFromUrl() ? window.location.hash : '#' + (view === 'auth' ? 'profile' : view);
+      window.location.assign('./index.html' + hash);
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
     setCockpitView(view);
     // Retain shared route data until the planner has read it.
     if (view === 'navlog' && decodeRouteFromUrl()) return;
