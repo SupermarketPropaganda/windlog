@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { CloudSky } from './CloudSky';
 import { FlightStory } from './FlightStory';
 import { DEMO_LEGS, DEMO_TOTALS, degrees, minutes } from './demo-flight';
@@ -17,26 +16,24 @@ function Arrow({ down = false }: { down?: boolean }) { return <svg width="17" he
 function PlaneMark() { return <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 19 12 29 19 29 22 19 18 18 26 22 29 16 28 10 29 14 26 13 18 3 22 3 19 13 12Z" fill="currentColor" /></svg>; }
 
 export function LandingExperience({ signedIn, pilotName, onSignIn, onRegister, onEnter, onAccount, onSignOut }: Props) {
-  const [paused, setPaused] = useState(false);
   const start = signedIn ? onEnter : onRegister;
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   return <main className="wl-page">
     <section className="wl-hero" aria-labelledby="wl-title">
-      <CloudSky paused={paused} />
+      <CloudSky />
       <header className="wl-nav">
         <a className="wl-brand" href="#landing" aria-label="Windlog home"><PlaneMark /><span>Windlog.</span></a>
         <nav className="wl-nav-middle" aria-label="Explore Windlog"><button onClick={() => scrollTo('flight-story')}>The flight plan</button><button onClick={() => scrollTo('cockpit-tools')}>The cockpit</button></nav>
         <div className="wl-nav-actions">{signedIn ? <><button onClick={onAccount} className="wl-text-button">Pilot account</button><button onClick={onSignOut} className="wl-text-button">Sign out</button></> : <><button onClick={onSignIn} className="wl-text-button">Sign in</button><button onClick={onRegister} className="wl-nav-register">Register <Arrow /></button></>}</div>
       </header>
       <div className="wl-hero-content">
-        <p className="wl-eyebrow"><span className="wl-status-dot" /> A CLEARER WAY TO PLAN YOUR FLIGHT</p>
         <h1 id="wl-title">Windlog<span>.</span></h1>
         <p className="wl-hero-heading">More sky. Less guesswork.</p>
         <p className="wl-hero-description">Your route, the wind, every heading.<br />VFR flight planning, brought together.</p>
         <div className="wl-hero-actions"><button className="wl-button wl-button-dark" onClick={start}>{signedIn ? 'Enter your cockpit' : 'Plan your first flight'}<Arrow /></button><button className="wl-explore" onClick={() => scrollTo('flight-story')}>See how it works <Arrow down /></button></div>
         {signedIn && <p className="wl-welcome">Welcome back, {pilotName || 'pilot'}.</p>}
       </div>
-      <div className="wl-hero-foot"><span>BUILT FOR THE WAY YOU FLY</span><button className="wl-scroll-cue" onClick={() => scrollTo('flight-story')}>SCROLL TO EXPLORE <Arrow down /></button><button className="wl-motion" onClick={() => setPaused(!paused)} aria-pressed={paused}>{paused ? '▷ Play sky' : 'Ⅱ Pause sky'}</button></div>
+      <div className="wl-hero-foot"><span>BUILT FOR THE WAY YOU FLY</span><button className="wl-scroll-cue" onClick={() => scrollTo('flight-story')}>SCROLL TO EXPLORE <Arrow down /></button></div>
     </section>
     <section className="wl-intro"><div><span className="wl-eyebrow">01 / THE BIG PICTURE</span><h2>A route becomes<br />a flight plan.</h2></div><p>Windlog is your VFR planning workspace. Build a route, understand the wind, and bring your headings, times, and fuel into one readable navigation log.<br /><br /><span>Follow a short flight across Portugal to see it come together.</span></p></section>
     <FlightStory />

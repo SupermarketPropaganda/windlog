@@ -40,10 +40,8 @@ void main(){
  gl_FragColor=vec4(sky,1.);
 }`;
 
-export function CloudSky({ paused }: { paused: boolean }) {
+export function CloudSky() {
   const ref = useRef<HTMLCanvasElement>(null);
-  const pausedRef = useRef(paused);
-  useEffect(() => { pausedRef.current = paused; }, [paused]);
   useEffect(() => {
     const canvas = ref.current;
     if (!canvas) return;
@@ -85,7 +83,7 @@ export function CloudSky({ paused }: { paused: boolean }) {
       raf = requestAnimationFrame(frame);
       if (now - previous < 33) return;
       const delta = Math.min(now - previous, 100); previous = now;
-      const animate = visible && !document.hidden && !pausedRef.current && !motion.matches;
+      const animate = visible && !document.hidden && !motion.matches;
       if (lost || (!dirty && !animate)) return;
       if (animate) elapsed += delta / 1000;
       gl.uniform2f(res, canvas.width, canvas.height); gl.uniform1f(clock, elapsed);
