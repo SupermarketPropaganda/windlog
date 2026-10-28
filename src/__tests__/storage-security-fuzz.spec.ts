@@ -202,7 +202,7 @@ describe('StorageManager & DBCache Security Fuzzing & Audit', () => {
 
     it('tests importUserData with __proto__, constructor, and prototype payloads', async () => {
       const maliciousPayload = JSON.stringify({
-        app: 'WindLog',
+        app: 'GustLog',
         schemaVersion: 1,
         exportedAt: new Date().toISOString(),
         data: {
@@ -254,27 +254,27 @@ describe('StorageManager & DBCache Security Fuzzing & Audit', () => {
 
     it('handles missing data object or invalid data types (array, primitive, string)', async () => {
       // Missing data
-      const missingData = JSON.stringify({ app: 'WindLog', schemaVersion: 1 });
+      const missingData = JSON.stringify({ app: 'GustLog', schemaVersion: 1 });
       const res1 = await importUserData(missingData);
       expect(res1.success).toBe(false);
 
       // data is null
-      const nullData = JSON.stringify({ app: 'WindLog', data: null });
+      const nullData = JSON.stringify({ app: 'GustLog', data: null });
       const res2 = await importUserData(nullData);
       expect(res2.success).toBe(false);
 
       // data is a primitive number
-      const numData = JSON.stringify({ app: 'WindLog', data: 42 });
+      const numData = JSON.stringify({ app: 'GustLog', data: 42 });
       const res3 = await importUserData(numData);
       console.log('[Fuzz Test] importUserData with number data:', res3);
 
       // data is a string
-      const strData = JSON.stringify({ app: 'WindLog', data: 'malicious_string' });
+      const strData = JSON.stringify({ app: 'GustLog', data: 'malicious_string' });
       const res4 = await importUserData(strData);
       console.log('[Fuzz Test] importUserData with string data:', res4);
 
       // data is an array
-      const arrData = JSON.stringify({ app: 'WindLog', data: ['val1', 'val2'] });
+      const arrData = JSON.stringify({ app: 'GustLog', data: ['val1', 'val2'] });
       const res5 = await importUserData(arrData);
       console.log('[Fuzz Test] importUserData with array data:', res5);
     });
@@ -282,11 +282,11 @@ describe('StorageManager & DBCache Security Fuzzing & Audit', () => {
     it('fuzzes massive JSON payloads (10MB+ payload)', async () => {
       const largeString = 'X'.repeat(10 * 1024 * 1024); // 10MB
       const massivePayload = JSON.stringify({
-        app: 'WindLog',
+        app: 'GustLog',
         schemaVersion: 1,
         exportedAt: new Date().toISOString(),
         data: {
-          windlog_large_test: largeString,
+          gustlog_large_test: largeString,
         },
       });
 
@@ -296,7 +296,7 @@ describe('StorageManager & DBCache Security Fuzzing & Audit', () => {
       console.log(`[Fuzz Test] 10MB payload import took ${duration}ms, result:`, result.success);
 
       expect(typeof result.success).toBe('boolean');
-      await removeStorageItem('windlog_large_test');
+      await removeStorageItem('gustlog_large_test');
     });
 
     it('tests malformed aircraft profile structures', async () => {
@@ -311,21 +311,21 @@ describe('StorageManager & DBCache Security Fuzzing & Audit', () => {
 
       for (let i = 0; i < malformedProfiles.length; i++) {
         const payload = JSON.stringify({
-          app: 'WindLog',
+          app: 'GustLog',
           schemaVersion: 1,
           data: {
-            windlog_profile: malformedProfiles[i],
+            gustlog_profile: malformedProfiles[i],
           },
         });
 
         const result = await importUserData(payload);
         expect(result.success).toBe(true);
 
-        const stored = getStorageItemSync('windlog_profile', null);
+        const stored = getStorageItemSync('gustlog_profile', null);
         expect(stored).toEqual(malformedProfiles[i]);
       }
 
-      await removeStorageItem('windlog_profile');
+      await removeStorageItem('gustlog_profile');
     });
   });
 

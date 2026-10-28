@@ -92,7 +92,7 @@ describe('Duolingo-Style Ad Service and Flight Deck Pro Subsystem', () => {
     });
   });
 
-  describe('3. Aviation Sponsor & WindLog Pro Catalog', () => {
+  describe('3. Aviation Sponsor & GustLog Pro Catalog', () => {
     it('contains valid high-quality aviation sponsors and Pro upsell cards', () => {
       expect(AVIATION_ADS_CATALOG.length).toBeGreaterThanOrEqual(4);
 
@@ -115,7 +115,7 @@ describe('Duolingo-Style Ad Service and Flight Deck Pro Subsystem', () => {
 
       const proAd = adService.getNextAd(true);
       expect(proAd.isProUpsell).toBe(true);
-      expect(proAd.sponsorName).toContain('WindLog');
+      expect(proAd.sponsorName).toContain('GustLog');
     });
   });
 });

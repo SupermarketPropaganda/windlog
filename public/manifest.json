@@ -1,6 +1,6 @@
 {
-  "name": "WindLog — VFR Flight Planning",
-  "short_name": "WindLog",
+  "name": "GustLog — VFR Flight Planning",
+  "short_name": "GustLog",
   "description": "Tactile wind-corrected VFR nav log generator and flight planning engine",
   "start_url": "./",
   "scope": "./",

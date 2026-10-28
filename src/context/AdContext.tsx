@@ -99,7 +99,10 @@ export const AdProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
       // 3. Trigger 5-second countdown interstitial
       clearTimer();
-      const ad = adService.getNextAd();
+      let ad = adService.getNextAd();
+      if (ad.isProUpsell) {
+        ad = adService.getNextAd();
+      }
       setCurrentAd(ad);
       setPlacement(p);
       setTitle(t || 'Compiling Flight Dispatch Document...');

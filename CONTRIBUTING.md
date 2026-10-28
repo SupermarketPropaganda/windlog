@@ -1,6 +1,6 @@
-# Contributing to WindLog ✈️
+# Contributing to GustLog ✈️
 
-Thank you for your interest in contributing to **WindLog**! We welcome contributions from pilots, software engineers, and aviation enthusiasts.
+Thank you for your interest in contributing to **GustLog**! We welcome contributions from pilots, software engineers, and aviation enthusiasts.
 
 ---
 
@@ -8,8 +8,8 @@ Thank you for your interest in contributing to **WindLog**! We welcome contribut
 
 1. **Fork and clone the repository:**
    ```bash
-   git clone https://github.com/<your-username>/windlog.git
-   cd windlog
+   git clone https://github.com/<your-username>/gustlog.git
+   cd gustlog
    ```
 
 2. **Install dependencies:**
@@ -31,7 +31,7 @@ Thank you for your interest in contributing to **WindLog**! We welcome contribut
 
 ## 📐 Aeronautical Math & Physics Standards
 
-WindLog adheres to strict aviation industry standards:
+GustLog adheres to strict aviation industry standards:
 * **Magnetic Declination**: Evaluated against NOAA WMM2025 ground truths.
 * **Wind Triangles**: Uses exact spherical trigonometry and E6B vector equations.
 * **Semicircular Rules**: Standard ICAO VFR cruising levels ($000^\circ-179^\circ$ Odd+500, $180^\circ-359^\circ$ Even+500).
@@ -51,4 +51,4 @@ Before submitting a Pull Request:
 
 ## 📄 License
 
-By contributing to WindLog, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).
+By contributing to GustLog, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).

@@ -1,16 +1,13 @@
-# ✈️ WindLog — Tactile VFR Flight Planning & Navigation Log Engine
+# ✈️ GustLog — Tactile VFR Flight Planning & Navigation Log Engine
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?style=flat-square&logo=github)](https://supermarketpropaganda.github.io/windlog/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Build & Test](https://img.shields.io/badge/tests-81%20passed-success?style=flat-square)](https://github.com/SupermarketPropaganda/windlog/actions)
+[![Build & Test](https://img.shields.io/badge/tests-81%20passed-success?style=flat-square)](https://github.com/SupermarketPropaganda/gustlog/actions)
 [![Magnetic Model](https://img.shields.io/badge/magnetic%20model-WMM2025%20(NOAA)-blue?style=flat-square)](https://www.ngdc.noaa.gov/geomag/WMM/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3-61dafb?style=flat-square&logo=react)](https://reactjs.org/)
-[![PWA Ready](https://img.shields.io/badge/PWA-Offline%20Cockpit%20Ready-emerald?style=flat-square)](https://github.com/SupermarketPropaganda/windlog)
+[![PWA Ready](https://img.shields.io/badge/PWA-Offline%20Cockpit%20Ready-emerald?style=flat-square)](https://github.com/SupermarketPropaganda/gustlog)
 
-**WindLog** is an open-source, tactile VFR flight planning scratchpad, navigation log generator, and weight-and-balance cockpit suite built for general aviation pilots, flight instructors, and aviation enthusiasts. It combines natural language route parsing, live altitude-dependent winds aloft, real-time magnetic declination calculations via **WMM2025**, an interactive tactical map with satellite and terrain views, a 2D vertical flight cross-section profile, a full **Mass & Balance (Weight & Balance)** calculator with CG envelopes, a dedicated **Runway Wind & Crosswind** tool, and printable **Aviation SOP Form 002 Kneeboard (PDF)** export.
-
-🌐 **Live Application:** [https://supermarketpropaganda.github.io/windlog/](https://supermarketpropaganda.github.io/windlog/)
+**GustLog** is an open-source, tactile VFR flight planning scratchpad, navigation log generator, and weight-and-balance cockpit suite built for general aviation pilots, flight instructors, and aviation enthusiasts. It combines natural language route parsing, live altitude-dependent winds aloft, real-time magnetic declination calculations via **WMM2025**, an interactive tactical map with satellite and terrain views, a 2D vertical flight cross-section profile, a full **Mass & Balance (Weight & Balance)** calculator with CG envelopes, a dedicated **Runway Wind & Crosswind** tool, and printable **Aviation SOP Form 002 Kneeboard (PDF)** export.
 
 ---
 
@@ -32,7 +29,7 @@
   * Maximum Demonstrated Crosswind safety limits with green/amber/red warning thresholds.
   * Reciprocal runway analysis recommending the best runway for takeoff and landing.
 * **📄 Printable Pilot Kneeboard / PDF Mode (SOP Form 002):**
-  Pre-populates an official flight school standard operating procedure navigation log and fuel management kneeboard sheet formatted for **A4 Landscape** printing and iPad saving.
+  Generates a supplemental navigation log and fuel management kneeboard sheet formatted for **A4 Landscape** printing and iPad saving.
 * **🌍 84,000+ Global Waypoints SQLite Engine:**
   Bundled client-side SQLite database running via WebAssembly (WASM) for instant (<1ms) offline lookups of international ICAO airports, VORs, NDBs, and NAV Portugal VFR reporting points.
 * **💨 Live Altitude-Specific Winds Aloft:**
@@ -40,7 +37,7 @@
 * **🧭 NOAA WMM2025 Magnetic Declination Model:**
   Computes continuous UTC decimal-year magnetic variation directly in the browser with full spherical harmonic expansion matching NOAA ground truth.
 * **📐 ICAO Semicircular Cruising Level Guidance:**
-  Recommends legal VFR cruising altitudes based on magnetic track ($000^\circ - 179^\circ$: Odd thousands $+ 500\text{ ft}$; $180^\circ - 359^\circ$: Even thousands $+ 500\text{ ft}$).
+  Suggests example VFR cruising altitudes for independent verification based on magnetic track ($000^\circ - 179^\circ$: Odd thousands $+ 500\text{ ft}$; $180^\circ - 359^\circ$: Even thousands $+ 500\text{ ft}$).
 * **🗺️ Tactical Interactive Map (Leaflet):**
   Aviation markers (Airports ✈, VRPs ◆, Custom waypoints ★), dashed flight paths with active leg highlights, midpoint wind vector pills (`↘ 8kt`), and 1-click layer switching (**Dark Tactical**, **Satellite Imagery**, **Terrain / Topo**, and **Street**).
 * **📈 2D Vertical Altitude Profile:**
@@ -81,8 +78,8 @@
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/SupermarketPropaganda/windlog.git
-cd windlog
+git clone https://github.com/SupermarketPropaganda/gustlog.git
+cd gustlog
 
 # 2. Install dependencies
 npm install
@@ -97,7 +94,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## 🧪 Testing
 
-WindLog includes a comprehensive unit, integration, and mathematical stress-testing suite powered by Vitest:
+GustLog includes a comprehensive unit, integration, and mathematical stress-testing suite powered by Vitest:
 
 ```bash
 # Run all test suites
@@ -123,12 +120,12 @@ npm run preview
 
 ## Landing Page and Pilot Accounts
 
-The landing page combines an original procedural WebGL cloud background with a scroll-driven LPCS–LPSO–LPEV route demonstration. The demonstration uses Windlog's navigation engine with illustrative winds (270° true at 15 kt), a C172 at 105 kt TAS, 3,500 ft, and 8.5 US gal/h. The chart is schematic; the displayed cruise totals exclude taxi, climb, descent, alternate fuel, and reserves. These example conditions are not a live forecast.
+The landing page combines an original procedural WebGL cloud background with a scroll-driven LPCS–LPSO–LPEV route demonstration. The demonstration uses Gustlog's navigation engine with illustrative winds (270° true at 15 kt), a C172 at 105 kt TAS, 3,500 ft, and 8.5 US gal/h. The chart is schematic; the displayed cruise totals exclude taxi, climb, descent, alternate fuel, and reserves. These example conditions are not a live forecast.
 
 The sky has a pause control, pauses rendering offscreen, and falls back to a static sky when WebGL is unavailable. Reduced-motion preferences and short viewports use a static completed route. Both layouts preserve sign-in and registration and open the dashboard at the top of the page.
 
 
-The production build includes both `windlog.html` and `index.html`, which share the same React landing experience and authentication forms. Serve both from the same directory and origin. Registration and sign-in use the same authentication service and open `index.html#navlog`. The React landing page also supports `#signin` and `#register`.
+The production build includes both `gustlog.html` and `index.html`, which share the same React landing experience and authentication forms. Serve both from the same directory and origin. Registration and sign-in use the same authentication service and open `index.html#navlog`. The React landing page also supports `#signin` and `#register`.
 
 Accounts, password hashes, and saved flights are stored in the current browser. This is a local pilot profile system, not a server-backed identity or access-control service. Accounts do not synchronize between browsers or devices. Clearing site data removes them. Checked **Remember this flight bag** stores a 30-day session in local storage; unchecked keeps the session in the current tab across navigation and refresh. Signing out removes the session from both page entry points.
 
@@ -141,3 +138,10 @@ Authentication regression tests cover session handoff, remember-me, sign-out, st
 ## 📄 License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+
+## Legal documents
+
+The current review draft is version 2026.10.11. The canonical terms, aviation notice and separate privacy notice live in `src/data/legal-terms.ts`; reviewable Markdown copies and release requirements are in `docs/legal/`. They are accessible from the landing footer, registration and cockpit, with downloads and direct `#terms` / `#privacy` links. Kneeboard outputs carry the safety notice and version.
+
+The cockpit requires affirmative safety and agreement acknowledgements for each local profile and document version. These browser-local records are not a tamper-resistant legal audit trail. Operator identity, service address, contact activation and deployment-specific privacy disclosures remain unresolved; this draft is not ready for public release. Paid-plan terms are intentionally deferred until the business model is defined.

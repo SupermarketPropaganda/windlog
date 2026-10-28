@@ -64,7 +64,7 @@ export function FlightStory() {
           <div className="wl-chart-bottom"><span><i /> {traced >= 1 ? 'Route complete' : 'Tracing the flight'} </span><span>{Math.round(traced * DEMO_TOTALS.distance)} / {Math.round(DEMO_TOTALS.distance)} NM</span></div>
         </div>
         <aside className="wl-flight-copy">
-          <div className="wl-story-description"><p>Windlog is your VFR planning workspace. Build a route, understand the wind, and bring your headings, times, and fuel into one readable navigation log.</p><p>Follow a short flight across Portugal to see it come together.</p></div>
+          <div className="wl-story-description"><p>Gustlog is your VFR planning workspace. Build a route, understand the wind, and bring your headings, times, and fuel into one readable navigation log.</p><p>Follow a short flight across Portugal to see it come together.</p></div>
           <div className="wl-leg-label"><span>ACTIVE LEG</span><b>{leg.from.identifier} → {leg.to.identifier}</b></div>
           <dl className="wl-metrics">
             <div><dt>Magnetic track</dt><dd>{degrees(magneticTrack)}<small>M</small></dd></div>
@@ -75,7 +75,7 @@ export function FlightStory() {
             <div><dt>Groundspeed</dt><dd>{Math.round(leg.groundSpeed)}<small>KT</small></dd></div>
           </dl>
           <div className="wl-leg-result"><span>LEG TIME <b>{minutes(leg.ete)}</b></span><span>LEG FUEL <b>{`${leg.fuelBurn.toFixed(1)} US gal`}</b></span></div>
-          <p className="wl-demo-note">Example wind, not a live forecast. 105 KT TAS · 8.5 US gal/h. Calculated by Windlog.</p>
+          <p className="wl-demo-note">Example wind, not a live forecast. 105 KT TAS · 8.5 US gal/h. Calculated by Gustlog.</p>
         </aside>
       </div>
       <div className="wl-story-progress" role="progressbar" aria-label="Flight animation progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(traced*100)}><span style={{ width: `${traced*100}%` }} /></div><p className="wl-story-scroll">{reduced ? 'Scroll to continue ↓' : traced >= 1 ? 'Flight complete · Keep scrolling to explore ↓' : 'Scroll to fly the route · Keep scrolling to continue ↓'}</p>

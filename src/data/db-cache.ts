@@ -5,7 +5,7 @@
  * tracks download progress, and validates SQLite binary integrity.
  */
 
-const DB_NAME = 'windlog_db_cache_v1';
+const DB_NAME = 'gustlog_db_cache_v1';
 const STORE_NAME = 'sqlite_blobs';
 const CACHE_KEY = 'waypoints_sqlite';
 

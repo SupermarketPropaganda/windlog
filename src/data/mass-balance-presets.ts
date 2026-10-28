@@ -169,7 +169,7 @@ export const MASS_BALANCE_PRESETS: MassBalanceProfile[] = [
 
 import { getStorageItemSync, setStorageItem } from './storage-manager';
 
-const CUSTOM_MB_STORAGE_KEY = 'windlog_custom_mb_profiles';
+const CUSTOM_MB_STORAGE_KEY = 'gustlog_custom_mb_profiles';
 
 export function loadSavedCustomProfiles(): MassBalanceProfile[] {
   return getStorageItemSync<MassBalanceProfile[]>(CUSTOM_MB_STORAGE_KEY, []);

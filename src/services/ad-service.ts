@@ -17,31 +17,31 @@ export interface AdItem {
   perks?: string[];
 }
 
-const STORAGE_PRO_KEY = 'windlog_user_is_pro';
-const STORAGE_LAST_AD_KEY = 'windlog_ad_last_shown_time';
-const STORAGE_ACTION_COUNT_KEY = 'windlog_ad_action_count';
-const STORAGE_TEST_BYPASS_COOLDOWN_KEY = 'windlog_ad_bypass_cooldown';
+const STORAGE_PRO_KEY = 'gustlog_user_is_pro';
+const STORAGE_LAST_AD_KEY = 'gustlog_ad_last_shown_time';
+const STORAGE_ACTION_COUNT_KEY = 'gustlog_ad_action_count';
+const STORAGE_TEST_BYPASS_COOLDOWN_KEY = 'gustlog_ad_bypass_cooldown';
 
 // Cooldown between interstitial ads (60 seconds for comfortable demo, configurable)
 export const AD_COOLDOWN_MS = 60 * 1000;
 
-// Aviation sponsor catalog and Super Duolingo-style WindLog Pro upsell cards
+// Aviation sponsor catalog and Super Duolingo-style GustLog Pro upsell cards
 export const AVIATION_ADS_CATALOG: AdItem[] = [
   {
-    id: 'windlog_pro_primary',
+    id: 'gustlog_pro_primary',
     isProUpsell: true,
-    sponsorName: 'WindLog Flight Deck Pro',
+    sponsorName: 'GustLog Flight Deck Pro',
     badge: '👑 SUPER PILOT UPGRADE',
-    title: 'Instant 0-Second Downloads Forever',
+    title: 'Try exports without sponsor countdowns',
     tagline:
-      'Skip all 5-second countdowns, unlock unlimited cloud hangar slots, offline ICAO navigation data, and 100% ad-free flight planning.',
+      'Try the free Pro demonstration: skip sponsor countdowns and cards. Flights remain stored in this browser; no subscription is created.',
     ctaText: 'Upgrade to Flight Deck Pro ➔',
     icon: '⚡',
     themeColor: '#f59e0b',
     accentGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.05) 100%)',
     perks: [
       'Instant 0s PDF & Kneeboard exports',
-      'Unlimited saved flight hangar slots',
+      'Local saved flight storage',
       '100% ad-free cockpit experience',
       'Offline European aeronautical database',
     ],
@@ -77,18 +77,18 @@ export const AVIATION_ADS_CATALOG: AdItem[] = [
     perks: ['Worldwide airport database', 'NEXRAD radar overlay', 'Emergency Direct-To navigation'],
   },
   {
-    id: 'windlog_pro_secondary',
+    id: 'gustlog_pro_secondary',
     isProUpsell: true,
-    sponsorName: 'WindLog Flight Deck Pro',
+    sponsorName: 'GustLog Flight Deck Pro',
     badge: '👑 SUPER PILOT UPGRADE',
     title: 'Fly Without Interruptions',
     tagline:
-      'Never wait on clearance countdowns. Export high-resolution A4 SOP Form 002 kneeboards in a single instant click with Pro.',
-    ctaText: 'Unlock Instant Dispatch ➔',
+      'Try supplemental A4 navigation log exports without sponsor countdowns in the free Pro demonstration.',
+    ctaText: 'Try the free Pro demo ➔',
     icon: '✈️',
     themeColor: '#10b981',
     accentGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(4, 120, 87, 0.05) 100%)',
-    perks: ['Zero wait times', 'Priority weather calculations', 'Multi-device cloud logbook sync'],
+    perks: ['Skip sponsor countdowns', 'Existing weather planning tools', 'Local flight storage; no cloud sync'],
   },
   {
     id: 'lightspeed_zulu',
@@ -111,7 +111,7 @@ class AdService {
   private adRotationIndex = 0;
 
   /**
-   * Checks if current pilot has WindLog Pro subscription.
+   * Checks if current pilot has GustLog Pro subscription.
    * Pro pilots bypass all ads and countdowns completely.
    */
   isPro(): boolean {
@@ -196,7 +196,7 @@ class AdService {
   }
 
   /**
-   * Selects an ad item rotating between commercial aviation partners and WindLog Pro upsell.
+   * Selects an ad item rotating between commercial aviation partners and GustLog Pro upsell.
    */
   getNextAd(preferProUpsell?: boolean): AdItem {
     if (preferProUpsell) {

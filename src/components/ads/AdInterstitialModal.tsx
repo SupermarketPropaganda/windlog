@@ -12,7 +12,6 @@ export const AdInterstitialModal: React.FC = () => {
     isFinished,
     closeAdBreak,
     proceedAction,
-    openProModal,
   } = useAdBreak();
 
   if (!isAdActive || !currentAd) {
@@ -140,18 +139,7 @@ export const AdInterstitialModal: React.FC = () => {
           </div>
 
           <div className="ad-sponsor-actions">
-            {currentAd.isProUpsell ? (
-              <button
-                type="button"
-                className="ad-sponsor-cta-btn pro"
-                onClick={() => {
-                  closeAdBreak();
-                  openProModal();
-                }}
-              >
-                {currentAd.ctaText}
-              </button>
-            ) : currentAd.ctaUrl ? (
+            {currentAd.ctaUrl ? (
               <a
                 href={currentAd.ctaUrl}
                 target="_blank"
@@ -174,24 +162,6 @@ export const AdInterstitialModal: React.FC = () => {
           >
             {actionButtonText}
           </button>
-        </div>
-
-        {/* Super Duolingo Upsell Bar */}
-        <div className="ad-pro-footer-banner">
-          <span className="ad-pro-crown">👑</span>
-          <span className="ad-pro-text">
-            Tired of waiting? Skip all 5-second countdowns forever with{' '}
-            <button
-              type="button"
-              className="ad-pro-link-btn"
-              onClick={() => {
-                closeAdBreak();
-                openProModal();
-              }}
-            >
-              WindLog Flight Deck Pro
-            </button>
-          </span>
         </div>
       </div>
     </div>

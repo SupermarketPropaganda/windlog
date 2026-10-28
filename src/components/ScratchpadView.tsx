@@ -16,7 +16,7 @@ import { greatCircleDistance } from '../engine/coordinate-math';
 import { AircraftBar } from './AircraftBar';
 import { WindPanel } from './WindPanel';
 import { NavLogRow } from './NavLogRow';
-import { RouteChipsBuilder } from './RouteChipsBuilder';
+import { RouteChipsBuilder, PlannerSectionTab } from './RouteChipsBuilder';
 import { CoordPrompt } from './CoordPrompt';
 import { RouteMap, AirspaceFilterType } from './RouteMap';
 import { AltitudeProfile } from './AltitudeProfile';
@@ -102,6 +102,7 @@ const formatTime = (seconds: number): string => {
 export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<'map' | 'profile'>('map');
+  const [plannerSection, setPlannerSection] = useState<PlannerSectionTab>('flight');
 
   // Unified Airspace Filtering State shared between Tactical Map and Altitude Profile
   const [showAirspaces, setShowAirspaces] = useState<boolean>(true);
@@ -256,17 +257,28 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
           onReverseRoute={props.onReverseRoute}
           onClearRoute={props.onClearRoute}
           onTokenClick={props.onTokenClick}
+          activeSection={plannerSection}
+          onSectionChange={setPlannerSection}
+          legsCount={props.navLog?.legs.length ?? 0}
+          alternateIdentifier={props.alternateAirport?.identifier ?? null}
+          totalRequiredFuelLabel={
+            props.profile.fuelFlow > 0 && effectiveFuel.totalFuelRequired > 0
+              ? `${effectiveFuel.totalFuelRequired.toFixed(1)} ${fuelUnitLabel}`
+              : null
+          }
         />
       </div>
 
       {/* Responsive Main Layout:
-          - Desktop & iPad: 2 Columns (Left: NavLog & Summary, Right: Map & Vertical Profile)
-          - Mobile: Single Column (NavLog & Summary, then Map, then Vertical Profile below) */}
+          - Desktop & iPad: 2 Columns (Left: Active Planner Section, Right: Map & Vertical Profile)
+          - Mobile: Single Column */}
       <div className={`flight-dashboard-grid ${hasWaypoints ? 'with-sidebar' : 'single-col'}`}>
-        {/* Left Column: NavLog Legs & Summary */}
+        {/* Left Column: Selected Planner Section (Flight, Alternates, or Fuel) */}
         <div className="dashboard-left-col">
-          <div className="navlog-list">
-            {/* Integrated Climb Phase (DEP ➔ TOC) */}
+          {plannerSection === 'flight' && (
+            <>
+              <div className="navlog-list">
+                {/* Integrated Climb Phase (DEP ➔ TOC) */}
             {props.navLog?.climbDescent && props.navLog.legs.length > 0 && (
               <div className="navlog-phase-card phase-climb">
                 <div className="phase-card-header">
@@ -411,68 +423,69 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
               </div>
             )}
 
-            {(!props.navLog || props.navLog.legs.length === 0) &&
-              props.routeInput.trim().length > 0 && (
-                <div className="empty-navlog-hint">
-                  Type at least 2 valid waypoints to generate the flight navigation log.
-                </div>
-              )}
-          </div>
-
-          {/* Clean Flight & Fuel Summary */}
-          {props.navLog && props.navLog.legs.length > 0 && (
-            <div className="navlog-summary-container">
-              <div className="navlog-summary">
-                <div className="summary-item">
-                  <div className="summary-label">Total Distance</div>
-                  <div className="summary-val">{props.navLog.totalDistance.toFixed(1)} nm</div>
-                </div>
-                <div className="summary-item">
-                  <div className="summary-label">Total ETE</div>
-                  <div className="summary-val">{formatTime(props.navLog.totalEte)}</div>
-                </div>
-                <div className="summary-item">
-                  <div className="summary-label">Total Legs</div>
-                  <div className="summary-val">{props.navLog.legs.length}</div>
-                </div>
-                {props.profile.fuelFlow > 0 && (
-                  <div className="summary-item">
-                    <div className="summary-label">Trip Fuel</div>
-                    <div className="summary-val val-fuel">
-                      {props.navLog.totalFuel.toFixed(1)} {fuelUnitLabel}
-                    </div>
+                {(!props.navLog || props.navLog.legs.length === 0) && (
+                  <div className="empty-navlog-hint">
+                    Type at least 2 valid waypoints to generate the flight navigation log.
                   </div>
                 )}
               </div>
 
-              {/* TOC & TOD Flight Telemetry */}
-              {props.navLog.climbDescent && (
-                <div className="navlog-climb-summary">
-                  <div className="climb-summary-chip toc-chip" title="Top of Climb from Departure">
-                    <span className="chip-indicator">▲</span>
-                    <span className="chip-label">TOC:</span>
-                    <span className="chip-val">{props.navLog.climbDescent.climbDistanceNm.toFixed(1)} NM</span>
-                    <span className="chip-detail">
-                      ({formatTime(props.navLog.climbDescent.climbTimeSeconds)} • {props.navLog.climbDescent.climbFuelBurn.toFixed(1)} {fuelUnitLabel})
-                    </span>
+              {/* Clean Flight & Fuel Summary */}
+              {props.navLog && props.navLog.legs.length > 0 && (
+                <div className="navlog-summary-container">
+                  <div className="navlog-summary">
+                    <div className="summary-item">
+                      <div className="summary-label">Total Distance</div>
+                      <div className="summary-val">{props.navLog.totalDistance.toFixed(1)} nm</div>
+                    </div>
+                    <div className="summary-item">
+                      <div className="summary-label">Total ETE</div>
+                      <div className="summary-val">{formatTime(props.navLog.totalEte)}</div>
+                    </div>
+                    <div className="summary-item">
+                      <div className="summary-label">Total Legs</div>
+                      <div className="summary-val">{props.navLog.legs.length}</div>
+                    </div>
+                    {props.profile.fuelFlow > 0 && (
+                      <div className="summary-item">
+                        <div className="summary-label">Trip Fuel</div>
+                        <div className="summary-val val-fuel">
+                          {props.navLog.totalFuel.toFixed(1)} {fuelUnitLabel}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="climb-summary-chip tod-chip" title="Top of Descent into Destination">
-                    <span className="chip-indicator">▼</span>
-                    <span className="chip-label">TOD:</span>
-                    <span className="chip-val">
-                      {(props.navLog.totalDistance - props.navLog.climbDescent.todDistanceNm).toFixed(1)} NM out
-                    </span>
-                    <span className="chip-detail">
-                      ({formatTime(props.navLog.climbDescent.descentTimeSeconds)} • {props.navLog.climbDescent.descentFuelBurn.toFixed(1)} {fuelUnitLabel})
-                    </span>
-                  </div>
+
+                  {/* TOC & TOD Flight Telemetry */}
+                  {props.navLog.climbDescent && (
+                    <div className="navlog-climb-summary">
+                      <div className="climb-summary-chip toc-chip" title="Top of Climb from Departure">
+                        <span className="chip-indicator">▲</span>
+                        <span className="chip-label">TOC:</span>
+                        <span className="chip-val">{props.navLog.climbDescent.climbDistanceNm.toFixed(1)} NM</span>
+                        <span className="chip-detail">
+                          ({formatTime(props.navLog.climbDescent.climbTimeSeconds)} • {props.navLog.climbDescent.climbFuelBurn.toFixed(1)} {fuelUnitLabel})
+                        </span>
+                      </div>
+                      <div className="climb-summary-chip tod-chip" title="Top of Descent into Destination">
+                        <span className="chip-indicator">▼</span>
+                        <span className="chip-label">TOD:</span>
+                        <span className="chip-val">
+                          {(props.navLog.totalDistance - props.navLog.climbDescent.todDistanceNm).toFixed(1)} NM out
+                        </span>
+                        <span className="chip-detail">
+                          ({formatTime(props.navLog.climbDescent.descentTimeSeconds)} • {props.navLog.climbDescent.descentFuelBurn.toFixed(1)} {fuelUnitLabel})
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
 
           {/* Fuel Calculations Breakdown Card */}
-          {props.navLog && props.navLog.legs.length > 0 && props.profile.fuelFlow > 0 && (
+          {plannerSection === 'fuel' && (
             <div className="icao-easa-fuel-policy-card">
               <div className="fuel-policy-top-bar">
                 <div className="fuel-policy-title-group">
@@ -717,7 +730,7 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
           )}
 
           {/* Alternate Aerodrome & Diversion Planning Hub */}
-          {hasWaypoints && destination && (
+          {plannerSection === 'alternates' && (
             <div className="alternate-planning-hub">
               <div className="alt-hub-header">
                 <div className="alt-hub-title-group">
@@ -745,37 +758,39 @@ export const ScratchpadView: React.FC<ScratchpadViewProps> = (props) => {
               </div>
 
               {/* Quick Candidate Suggestion Pills */}
-              <div className="alt-candidates-bar">
-                <span className="alt-candidates-label">Nearby Aerodromes:</span>
-                <div className="alt-pills-list">
-                  {nearestAlternates.map((cand) => {
-                    const isSelected = props.alternateAirport?.identifier === cand.identifier;
-                    const distNm = destination
-                      ? Math.round(
-                          greatCircleDistance(
-                            destination.latitude,
-                            destination.longitude,
-                            cand.latitude,
-                            cand.longitude
-                          ) / 1852
-                        )
-                      : 0;
-                    return (
-                      <button
-                        key={cand.identifier}
-                        type="button"
-                        className={`alt-pill-btn ${isSelected ? 'active' : ''}`}
-                        onClick={() => props.onAlternateAirportChange?.(cand)}
-                        title={`${cand.name} (${cand.identifier})`}
-                      >
-                        <span className="alt-pill-icao">{cand.identifier}</span>
-                        <span className="alt-pill-dist">{distNm} NM</span>
-                        {isSelected && <span className="alt-pill-check">✓</span>}
-                      </button>
-                    );
-                  })}
+              {destination && nearestAlternates.length > 0 && (
+                <div className="alt-candidates-bar">
+                  <span className="alt-candidates-label">Nearby Aerodromes:</span>
+                  <div className="alt-pills-list">
+                    {nearestAlternates.map((cand) => {
+                      const isSelected = props.alternateAirport?.identifier === cand.identifier;
+                      const distNm = destination
+                        ? Math.round(
+                            greatCircleDistance(
+                              destination.latitude,
+                              destination.longitude,
+                              cand.latitude,
+                              cand.longitude
+                            )
+                          )
+                        : 0;
+                      return (
+                        <button
+                          key={cand.identifier}
+                          type="button"
+                          className={`alt-pill-btn ${isSelected ? 'active' : ''}`}
+                          onClick={() => props.onAlternateAirportChange?.(cand)}
+                          title={`${cand.name} (${cand.identifier})`}
+                        >
+                          <span className="alt-pill-icao">{cand.identifier}</span>
+                          <span className="alt-pill-dist">{distNm} NM</span>
+                          {isSelected && <span className="alt-pill-check">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Alternate Aerodrome Selector & Diversion Altitude */}
               <div className="alt-controls-grid">

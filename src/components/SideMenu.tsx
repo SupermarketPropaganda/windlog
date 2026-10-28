@@ -1,7 +1,6 @@
 import React from 'react';
 import { ActiveView, NavLogSummary, MassBalanceResult, RunwayWindResult } from '../types';
 import { useAuth } from '../context/AuthContext';
-import { useAdBreak } from '../context/AdContext';
 
 export interface SideMenuProps {
   activeView: ActiveView;
@@ -33,7 +32,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({
   savedFlightsCount,
 }) => {
   const { user, signOut } = useAuth();
-  const { isPro, openProModal } = useAdBreak();
 
   const handleSelect = (view: ActiveView) => {
     onChangeView(view);
@@ -103,11 +101,11 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             className="gemini-sidebar-brand"
             onClick={() => handleSelect('landing')}
             style={{ cursor: 'pointer' }}
-            title="Return to Home (Windlog.)"
+            title="Return to Home (Gustlog.)"
           >
             <span className="gemini-brand-icon">✈</span>
             <div className="gemini-brand-text">
-              <span className="gemini-brand-title">Windlog.</span>
+              <span className="gemini-brand-title">Gustlog.</span>
               <span className="gemini-brand-sub">Home // Cockpit</span>
             </div>
           </div>
@@ -148,21 +146,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             <div className="gemini-pilot-name">
               <span>{user?.displayName || user?.email || 'Captain'}</span>
               <span className="pilot-verified-badge">Signed In</span>
-              {isPro && (
-                <span
-                  style={{
-                    marginLeft: '0.4rem',
-                    fontSize: '0.62rem',
-                    padding: '0.1rem 0.35rem',
-                    borderRadius: '4px',
-                    backgroundColor: 'rgba(194, 166, 103, 0.2)',
-                    color: '#c2a667',
-                    fontWeight: 800,
-                  }}
-                >
-                  PRO
-                </span>
-              )}
             </div>
             <div className="gemini-pilot-sub">
               {user?.email || 'Pilot Profile & Cockpit Settings'}
@@ -297,21 +280,6 @@ export const SideMenu: React.FC<SideMenuProps> = ({
             <button
               type="button"
               className="gemini-doc-link-btn"
-              onClick={openProModal}
-              title="WindLog Flight Deck Pro"
-              style={{ color: '#f59e0b' }}
-            >
-              <span>⭐ Flight Deck Pro</span>
-              <span
-                className="gemini-doc-badge"
-                style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }}
-              >
-                {isPro ? 'ACTIVE' : 'UPGRADE'}
-              </span>
-            </button>
-            <button
-              type="button"
-              className="gemini-doc-link-btn"
               onClick={handleKneeboard}
               title="Printable SOP Form 002 Kneeboard (PDF)"
             >
@@ -359,7 +327,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({
               {airacStatus || 'CURRENT'}
             </span>
           </div>
-          <div className="gemini-footer-version">WindLog v2.1 • WMM2025 • OPFS</div>
+          <div className="gemini-footer-version">GustLog v2.1 • WMM2025 • OPFS</div>
         </div>
       </aside>
     </>

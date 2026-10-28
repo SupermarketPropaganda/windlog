@@ -3,7 +3,7 @@ import { LandingExperience } from './landing/LandingExperience';
 import { ActiveView } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { safeStorage } from '../services/auth-service';
-import { CURRENT_LEGAL_VERSION, LEGAL_DOCUMENT_TITLE, LEGAL_SECTIONS } from '../data/legal-terms';
+import { CURRENT_LEGAL_VERSION, LEGAL_DOCUMENT_TITLE, LEGAL_SECTIONS, PRIVACY_DOCUMENT_TITLE, PRIVACY_SECTIONS, LEGAL_REVIEW_STATUS, downloadLegalDocument } from '../data/legal-terms';
 
 export interface LandingPageProps {
   onNavigate: (view: ActiveView) => void;
@@ -29,6 +29,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
 
   // ─── Modal State ───
   const [modalView, setModalView] = useState<ModalView>('none');
+  const [legalReturnView, setLegalReturnView] = useState<'none' | 'register'>('none');
+  const openLegal = (view: 'terms' | 'privacy') => {
+    setLegalReturnView(modalView === 'register' ? 'register' : 'none');
+    setModalView(view);
+  };
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // ─── Sign In Form State ───
@@ -53,7 +58,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const [googleClientId, setGoogleClientId] = useState(() => {
     return (
       (import.meta.env?.VITE_GOOGLE_CLIENT_ID as string) ||
-      safeStorage.getItem('windlog_google_client_id') ||
+      safeStorage.getItem('gustlog_google_client_id') ||
       ''
     );
   });
@@ -128,6 +133,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         setModalView('signin');
       } else if (hash === '#register' || hash === '#signup') {
         setModalView('register');
+      } else if (hash === '#terms' || hash === '#privacy') {
+        setLegalReturnView('none');
+        setModalView(hash === '#terms' ? 'terms' : 'privacy');
       } else if (hash === '#forgot') {
         setModalView('forgot');
       } else if (hash === '#account' || hash === '#profile') {
@@ -277,7 +285,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       setGoogleAuthError('Please enter a valid Google OAuth Client ID (format: xxxxx.apps.googleusercontent.com)');
       return;
     }
-    safeStorage.setItem('windlog_google_client_id', val);
+    safeStorage.setItem('gustlog_google_client_id', val);
     setGoogleClientId(val);
     setModalView('signin');
     showToast('Google Client ID configured. Connecting...');
@@ -328,7 +336,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
       return;
     }
     if (!regAgreeTerms) {
-      setRegError('You must agree to the Terms of Service & Privacy Policy.');
+      setRegError('Please agree to the Terms of Service and acknowledge the Privacy Notice.');
       return;
     }
 
@@ -366,7 +374,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
     e.preventDefault();
     setForgotFeedback(null);
     const entered = forgotCode.trim().replace(/\s+|-/g, '');
-    const expected = (forgotGeneratedCode || safeStorage.getItem(`windlog_reset_${forgotEmail.trim().toLowerCase()}`) || '').replace(/\s+|-/g, '');
+    const expected = (forgotGeneratedCode || safeStorage.getItem(`gustlog_reset_${forgotEmail.trim().toLowerCase()}`) || '').replace(/\s+|-/g, '');
 
     if (!entered || entered !== expected) {
       setForgotFeedback('Invalid verification code. Please check and try again.');
@@ -391,7 +399,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
     setIsSubmittingForgot(true);
     try {
       await resetPasswordWithNew(forgotEmail.trim(), forgotNewPassword);
-      safeStorage.removeItem(`windlog_reset_${forgotEmail.trim().toLowerCase()}`);
+      safeStorage.removeItem(`gustlog_reset_${forgotEmail.trim().toLowerCase()}`);
       setForgotStep(1);
       setModalView('signin');
       setSignInEmail(forgotEmail);
@@ -507,11 +515,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
   const handleSignOut = async () => {
     await signOut();
     closeModal();
-    showToast('Signed out of Windlog.');
+    showToast('Signed out of Gustlog.');
   };
 
   return (
-    <div className="windlog-landing" id="landing">
+    <div className="gustlog-landing" id="landing">
       {/* ─── Toast Notification ─── */}
       {notification && (
         <div
@@ -531,6 +539,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         onEnter={() => onNavigate('navlog')}
         onAccount={() => setModalView('account')}
         onSignOut={handleSignOut}
+        onTerms={() => openLegal('terms')}
+        onPrivacy={() => openLegal('privacy')}
       />
 
       {/* ─── READY-TO-SHIP AUTHENTICATION MODAL ─── */}
@@ -549,7 +559,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             {/* Modal Header */}
             <div className="pure-black-modal-header">
               <div className="pure-black-modal-brand" id="modalBrandHeading">
-                Windlog.
+                Gustlog.
               </div>
               <button
                 type="button"
@@ -811,21 +821,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                         className="pure-black-inline-link"
                         onClick={(e) => {
                           e.preventDefault();
-                          setModalView('terms');
+                          openLegal('terms');
                         }}
                       >
                         Terms of Service
                       </button>{' '}
-                      &amp;{' '}
+                      and acknowledge the{' '}
                       <button
                         type="button"
                         className="pure-black-inline-link"
                         onClick={(e) => {
                           e.preventDefault();
-                          setModalView('privacy');
+                          openLegal('privacy');
                         }}
                       >
-                        Privacy Policy
+                        Privacy Notice
                       </button>
                     </span>
                   </label>
@@ -1172,16 +1182,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             {(modalView === 'terms' || modalView === 'privacy') && (
               <div className="pure-black-legal-box">
                 <div className="pure-black-section-title">
-                  {modalView === 'terms' ? 'Terms of Service' : 'Privacy Policy'}
+                  {modalView === 'terms' ? 'Terms of Service' : 'Privacy Notice'}
                   <span className="pure-black-version-tag">
                     Version {CURRENT_LEGAL_VERSION}
                   </span>
                 </div>
                 <div className="pure-black-legal-scroll">
                   <div style={{ color: '#ffffff', fontWeight: 700, marginBottom: '12px', fontSize: '12px' }}>
-                    {LEGAL_DOCUMENT_TITLE}
+                    {modalView === 'privacy' ? PRIVACY_DOCUMENT_TITLE : LEGAL_DOCUMENT_TITLE}
                   </div>
-                  {LEGAL_SECTIONS.map((sec) => (
+                  <p>{LEGAL_REVIEW_STATUS}</p>
+                  <button type="button" className="pure-black-inline-link" onClick={() => downloadLegalDocument(modalView === 'privacy')}>Download this document</button>
+                  {(modalView === 'privacy' ? PRIVACY_SECTIONS : LEGAL_SECTIONS).map((sec) => (
                     <div key={sec.id} style={{ marginBottom: '16px' }}>
                       <div style={{ color: sec.isCallout ? '#f59e0b' : '#38bdf8', fontWeight: 600, fontSize: '11px', marginBottom: '6px' }}>
                         {sec.title}
@@ -1198,9 +1210,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
                   <button
                     type="button"
                     className="pure-black-back-btn"
-                    onClick={() => setModalView('register')}
+                    onClick={() => setModalView(legalReturnView)}
                   >
-                    &larr; Back to Registration
+                    {legalReturnView === 'register' ? 'Back to registration' : 'Close legal document'}
                   </button>
                 </div>
               </div>

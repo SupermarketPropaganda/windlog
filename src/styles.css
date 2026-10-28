@@ -7742,7 +7742,7 @@ body.map-fullscreen .tactical-panel-card {
 }
 
 /* ==========================================================================
-   WINDLOG PRO UPSELL MODAL ("SUPER DUOLINGO" SUITE)
+   GUSTLOG PRO UPSELL MODAL ("SUPER DUOLINGO" SUITE)
    ========================================================================== */
 
 .pro-modal-card {
@@ -8297,6 +8297,13 @@ body.map-fullscreen .tactical-panel-card {
   color: #ccfbf1;
 }
 
+.route-chip.not-found {
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  cursor: pointer;
+}
+
 .route-chip-remove-btn {
   background: transparent;
   border: none;
@@ -8323,6 +8330,69 @@ body.map-fullscreen .tactical-panel-card {
   flex: 1;
   min-width: 140px;
   text-transform: uppercase;
+}
+
+/* ─── Evenly Spaced Planner Section Tabs (Flight, Alternates, Fuel) ─── */
+.planner-section-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.planner-section-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  border-radius: 0.5rem;
+  background: #131822;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  font-family: var(--font-main, system-ui, sans-serif);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.planner-section-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #f1f5f9;
+}
+
+.planner-section-tab-btn.active {
+  background: rgba(20, 184, 166, 0.16);
+  border-color: rgba(45, 212, 191, 0.55);
+  color: #2dd4bf;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.18);
+}
+
+.planner-section-tab-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.planner-section-tab-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.12rem 0.48rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+}
+
+.planner-section-tab-btn.active .planner-section-tab-badge {
+  background: rgba(45, 212, 191, 0.16);
+  border-color: rgba(45, 212, 191, 0.4);
+  color: #5eead4;
 }
 
 .route-action-toolbar {
@@ -10919,3 +10989,11 @@ body.map-fullscreen .tactical-panel-card {
   justify-content: flex-start;
   margin-top: 8px;
 }
+
+.platform-safety-notice { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border-color, #53606c); font-size: 12px; line-height: 1.5; }
+.platform-safety-notice button { flex-shrink: 0; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.legal-view-tabs { flex-wrap: wrap; }
+.legal-modal-container { max-height: 94dvh; }
+.legal-modal-body { min-height: 0; }
+@media (max-width: 600px) { .platform-safety-notice { align-items: flex-start; flex-direction: column; } .disclaimer-title { font-size: 15px; } .disclaimer-checkboxes-card { font-size: 12px; padding: 10px; } }
+@media print { .platform-safety-notice { display: none; } }

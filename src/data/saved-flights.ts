@@ -1,7 +1,7 @@
 import { SavedFlight, Waypoint, AircraftProfile } from '../types';
 import { getStorageItemSync, setStorageItem } from './storage-manager';
 
-const STORAGE_SAVED_FLIGHTS_KEY = 'windlog_saved_flights';
+const STORAGE_SAVED_FLIGHTS_KEY = 'gustlog_saved_flights';
 
 let flightCounter = 0;
 

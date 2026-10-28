@@ -2,8 +2,8 @@ import { User, AuthSession, AuthCredentials, AuthProviderAdapter } from '../type
 import { migrateGuestFlightsToUser } from '../data/saved-flights';
 import { setStorageItem } from '../data/storage-manager';
 
-const STORAGE_USERS_KEY = 'windlog_auth_users';
-const STORAGE_SESSION_KEY = 'windlog_auth_session';
+const STORAGE_USERS_KEY = 'gustlog_auth_users';
+const STORAGE_SESSION_KEY = 'gustlog_auth_session';
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 interface StoredUserRecord {
@@ -29,7 +29,7 @@ export function generateSalt(length: number = 16): string {
  */
 export async function hashPassword(password: string, salt: string): Promise<string> {
   const enc = new TextEncoder();
-  const data = enc.encode(`${salt}__WINDLOG_SECRET__${password}`);
+  const data = enc.encode(`${salt}__GUSTLOG_SECRET__${password}`);
 
   if (typeof crypto !== 'undefined' && crypto.subtle) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -96,7 +96,7 @@ function getTabSession(): string | null {
 }
 function clearStoredSession(): void {
   safeStorage.removeItem(STORAGE_SESSION_KEY);
-  safeStorage.removeItem('windlog_active_user'); // Obsolete standalone landing session.
+  safeStorage.removeItem('gustlog_active_user'); // Obsolete standalone landing session.
   try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(STORAGE_SESSION_KEY); } catch {}
 }
 
@@ -478,19 +478,19 @@ class AuthService {
     if (user.preferences) {
       try {
         if (user.preferences.homeBaseAirport) {
-          setStorageItem('windlog_home_base', user.preferences.homeBaseAirport);
+          setStorageItem('gustlog_home_base', user.preferences.homeBaseAirport);
         }
         if (user.preferences.autoFillHomeBase !== undefined) {
-          setStorageItem('windlog_auto_home_base', user.preferences.autoFillHomeBase);
+          setStorageItem('gustlog_auto_home_base', user.preferences.autoFillHomeBase);
         }
         if (user.preferences.altimeterUnit) {
-          setStorageItem('windlog_altimeter_unit', user.preferences.altimeterUnit);
+          setStorageItem('gustlog_altimeter_unit', user.preferences.altimeterUnit);
         }
         if (user.preferences.reserveFuelMinutes) {
-          setStorageItem('windlog_reserve_fuel_mins', user.preferences.reserveFuelMinutes);
+          setStorageItem('gustlog_reserve_fuel_mins', user.preferences.reserveFuelMinutes);
         }
         if (user.preferences.defaultAircraftModel) {
-          setStorageItem('windlog_profile', {
+          setStorageItem('gustlog_profile', {
             aircraftModel: user.preferences.defaultAircraftModel,
             cruiseAltitude: user.preferences.defaultCruiseAltitude || 4500,
             tas: user.preferences.defaultTas || 105,

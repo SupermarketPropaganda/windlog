@@ -4,7 +4,7 @@ import { solveWindTriangle } from './wind-triangle';
 import { greatCircleDistance, initialBearing } from './coordinate-math';
 import { computeNavLog, getSemicircularOptions } from './navlog-engine';
 
-describe('WindLog Aeronautical Math Engine - Rigorous QA & Stress Test Suite', () => {
+describe('GustLog Aeronautical Math Engine - Rigorous QA & Stress Test Suite', () => {
   /* =========================================================================
    * SECTION 1: WMM2025 Magnetic Declination vs Global Ground Truths
    * ========================================================================= */

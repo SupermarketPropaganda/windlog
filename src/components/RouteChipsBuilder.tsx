@@ -1,6 +1,8 @@
 import React, { useState, useRef, KeyboardEvent } from 'react';
 import { RouteToken, Waypoint } from '../types';
 
+export type PlannerSectionTab = 'flight' | 'alternates' | 'fuel';
+
 export interface RouteChipsBuilderProps {
   routeInput: string;
   tokens: RouteToken[];
@@ -13,6 +15,11 @@ export interface RouteChipsBuilderProps {
   onReverseRoute: () => void;
   onClearRoute: () => void;
   onTokenClick: (token: RouteToken) => void;
+  activeSection?: PlannerSectionTab;
+  onSectionChange?: (section: PlannerSectionTab) => void;
+  legsCount?: number;
+  alternateIdentifier?: string | null;
+  totalRequiredFuelLabel?: string | null;
 }
 
 export const RouteChipsBuilder: React.FC<RouteChipsBuilderProps> = ({
@@ -26,6 +33,11 @@ export const RouteChipsBuilder: React.FC<RouteChipsBuilderProps> = ({
   onReverseRoute,
   onClearRoute,
   onTokenClick,
+  activeSection = 'flight',
+  onSectionChange,
+  legsCount,
+  alternateIdentifier,
+  totalRequiredFuelLabel,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -177,7 +189,10 @@ export const RouteChipsBuilder: React.FC<RouteChipsBuilderProps> = ({
                 <span className="route-chip-drag-handle" title="Hold & drag to reorder">
                   ⋮⋮
                 </span>
-                <span className="route-chip-label">{getChipLabel(token)}</span>
+                <span className="route-chip-label">
+                  {getChipLabel(token)}
+                  {token.status === 'not-found' ? ' ⚠️' : ''}
+                </span>
                 {token.altitudeOverride && (
                   <span className="route-chip-alt">/{token.altitudeOverride / 1000}k</span>
                 )}
@@ -223,6 +238,55 @@ export const RouteChipsBuilder: React.FC<RouteChipsBuilderProps> = ({
           />
         </div>
       </div>
+
+      {/* ─── Evenly Spaced Planner Section Tabs (Flight, Alternates, Fuel) ─── */}
+      {onSectionChange && (
+        <div className="planner-section-tabs" role="tablist" aria-label="Flight Planner Sections">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSection === 'flight'}
+            className={`planner-section-tab-btn ${activeSection === 'flight' ? 'active' : ''}`}
+            onClick={() => onSectionChange('flight')}
+          >
+            <span className="planner-section-tab-icon">✈</span>
+            <span className="planner-section-tab-label">Flight</span>
+            {typeof legsCount === 'number' && legsCount > 0 && (
+              <span className="planner-section-tab-badge">
+                {legsCount} {legsCount === 1 ? 'leg' : 'legs'}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSection === 'alternates'}
+            className={`planner-section-tab-btn ${activeSection === 'alternates' ? 'active' : ''}`}
+            onClick={() => onSectionChange('alternates')}
+          >
+            <span className="planner-section-tab-icon">🛬</span>
+            <span className="planner-section-tab-label">Alternates</span>
+            {alternateIdentifier && (
+              <span className="planner-section-tab-badge">{alternateIdentifier}</span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSection === 'fuel'}
+            className={`planner-section-tab-btn ${activeSection === 'fuel' ? 'active' : ''}`}
+            onClick={() => onSectionChange('fuel')}
+          >
+            <span className="planner-section-tab-icon">⛽</span>
+            <span className="planner-section-tab-label">Fuel</span>
+            {totalRequiredFuelLabel && (
+              <span className="planner-section-tab-badge">{totalRequiredFuelLabel}</span>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* ─── Elevated Action Toolbar ─── */}
       <div className="route-action-toolbar">
@@ -277,21 +341,6 @@ export const RouteChipsBuilder: React.FC<RouteChipsBuilderProps> = ({
           ✕ Clear
         </button>
       </div>
-
-      {/* ─── Waypoint Status Pills ─── */}
-      {tokens.length > 0 && (
-        <div className="route-status-pills">
-          {tokens.map((token, idx) => (
-            <span
-              key={`pill_${token.identifier}_${idx}`}
-              className={`route-status-pill ${token.status}`}
-              onClick={() => onTokenClick(token)}
-            >
-              {token.identifier} {token.status === 'resolved' ? '✓' : '⚠️'}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 };

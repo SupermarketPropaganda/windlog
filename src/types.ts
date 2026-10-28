@@ -74,6 +74,7 @@ export type FuelUnit = 'gph' | 'lph';
 
 export interface AircraftProfile {
   aircraftModel?: string; // e.g. "Cessna 172", "Piper PA-28", "Custom"
+  tailNumber?: string;    // e.g. "CS-DXB"
   cruiseAltitude: number; // feet MSL default
   tas: number;            // knots true airspeed
   fuelFlow: number;       // fuel burn rate in fuelUnit (e.g. 8.5 GPH or 32 L/h)

@@ -20,7 +20,7 @@ import {
   MassBalanceProfile,
 } from '../types';
 
-describe('WindLog MVP Features Suite', () => {
+describe('GustLog MVP Features Suite', () => {
   const sampleProfile: AircraftProfile = {
     aircraftModel: 'Cessna 172 Test',
     tas: 110,

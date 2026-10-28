@@ -32,7 +32,7 @@ export function encodeRouteToUrl(route: string, profile: AircraftProfile): strin
   const query = params.toString();
   const baseUrl = typeof window !== 'undefined'
     ? window.location.origin + window.location.pathname
-    : 'https://windlog.app/';
+    : 'https://gustlog.app/';
   return query ? `${baseUrl}#${query}` : baseUrl;
 }
 

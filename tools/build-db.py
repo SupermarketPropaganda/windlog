@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-WindLog Database Builder
+GustLog Database Builder
 ========================
 This script downloads airport and navaid data from OurAirports (CSV format)
-and compiles them into an optimized SQLite database for the WindLog application.
+and compiles them into an optimized SQLite database for the GustLog application.
 
 Output:
   public/waypoints.sqlite
@@ -25,7 +25,7 @@ from pathlib import Path
 AIRPORTS_URL = "https://davidmegginson.github.io/ourairports-data/airports.csv"
 NAVAIDS_URL = "https://davidmegginson.github.io/ourairports-data/navaids.csv"
 
-# Airport type mappings (OurAirports -> WindLog)
+# Airport type mappings (OurAirports -> GustLog)
 AIRPORT_TYPE_MAPPING = {
     "large_airport": "airport",
     "medium_airport": "airport",
@@ -34,7 +34,7 @@ AIRPORT_TYPE_MAPPING = {
     "seaplane_base": "airport",
 }
 
-# Navaid type mappings (OurAirports -> WindLog)
+# Navaid type mappings (OurAirports -> GustLog)
 NAVAID_TYPE_MAPPING = {
     "VOR": "vor",
     "VOR-DME": "vor-dme",
@@ -61,7 +61,7 @@ def download_csv(url: str, description: str) -> list[dict[str, str]]:
     print(f"Downloading {description} from:\n  {url} ...")
     req = urllib.request.Request(
         url,
-        headers={"User-Agent": "WindLog-Database-Builder/1.0"}
+        headers={"User-Agent": "GustLog-Database-Builder/1.0"}
     )
     start_time = time.time()
     with urllib.request.urlopen(req) as response:
@@ -275,7 +275,7 @@ def main() -> None:
     output_db_path = project_root / "public" / "waypoints.sqlite"
 
     print("=" * 60)
-    print(" WindLog Database Builder ")
+    print(" GustLog Database Builder ")
     print("=" * 60)
     print(f"Project root: {project_root}")
     print(f"Target DB:    {output_db_path}")

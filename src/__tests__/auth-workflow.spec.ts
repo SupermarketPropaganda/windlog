@@ -30,12 +30,12 @@ describe('Pilot Authentication and Flight Deck Session Workflow', () => {
     // Clear auth and session storage keys
     safeStorage.clear();
     localStorage.clear();
-    await removeStorageItem('windlog_auth_users');
-    await removeStorageItem('windlog_auth_session');
-    await removeStorageItem('windlog_saved_flights');
-    await removeStorageItem('windlog_home_base');
-    await removeStorageItem('windlog_profile');
-    await removeStorageItem('windlog_auto_home_base');
+    await removeStorageItem('gustlog_auth_users');
+    await removeStorageItem('gustlog_auth_session');
+    await removeStorageItem('gustlog_saved_flights');
+    await removeStorageItem('gustlog_home_base');
+    await removeStorageItem('gustlog_profile');
+    await removeStorageItem('gustlog_auto_home_base');
     await authService.init();
   });
 
@@ -153,10 +153,10 @@ describe('Pilot Authentication and Flight Deck Session Workflow', () => {
       });
 
       // Verify storage was populated with pilot defaults
-      expect(getStorageItemSync('windlog_home_base', '')).toBe('LPPT');
-      expect(getStorageItemSync('windlog_auto_home_base', false)).toBe(true);
+      expect(getStorageItemSync('gustlog_home_base', '')).toBe('LPPT');
+      expect(getStorageItemSync('gustlog_auto_home_base', false)).toBe(true);
 
-      const profileStored = getStorageItemSync<any>('windlog_profile', {});
+      const profileStored = getStorageItemSync<any>('gustlog_profile', {});
       expect(profileStored.aircraftModel).toBe('pa28');
       expect(profileStored.cruiseAltitude).toBe(4500);
       expect(profileStored.tas).toBe(110);

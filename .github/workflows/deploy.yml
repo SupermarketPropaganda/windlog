@@ -1,4 +1,4 @@
-name: Build and Test WindLog
+name: Build and Test GustLog
 
 on:
   push:

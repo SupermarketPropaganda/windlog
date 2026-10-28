@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { AVIATION_NOTICE, CURRENT_LEGAL_VERSION } from '../data/legal-terms';
 import { NavLogSummary, AircraftProfile, AlternatePlan, FuelCalculationValues } from '../types';
 import { useAdBreak } from '../context/AdContext';
 import { computeAlternatePlan } from '../engine/navlog-engine';
@@ -112,7 +113,7 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
     triggerAdBreak({
       placement: 'pdf_export',
       title: 'Compiling Official VFR NavLog Document',
-      subtitle: 'Formatting A4 landscape SOP Form 002 for flight dispatch',
+      subtitle: 'Formatting your supplemental A4 navigation log',
       onComplete: () => {
         window.print();
       },
@@ -132,7 +133,7 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
         {/* On-Screen Action Toolbar (Hidden during print) */}
         <div className="kneeboard-toolbar no-print">
           <div className="toolbar-left">
-            <span className="toolbar-title">✈ Standard SOP Form 002 Navigation Log</span>
+            <span className="toolbar-title">Gustlog Supplemental Navigation Log</span>
             <span className="toolbar-sub">
               {profile.aircraftModel?.toUpperCase() || 'AIRCRAFT'} • {profile.tas} KT TAS • {profile.fuelFlow} {profile.fuelUnit.toUpperCase()}
             </span>
@@ -497,7 +498,7 @@ export const KneeboardModal: React.FC<KneeboardModalProps> = ({
 
           {/* Footer SOP Identification */}
           <div className="sop-footer-line">
-            STANDARD OPERATING PROCEDURES (SOP&apos;s) - FORM 002 - E1R0 - HT
+            GUSTLOG — SUPPLEMENTAL NAVIGATION LOG · Terms {CURRENT_LEGAL_VERSION}<br />{AVIATION_NOTICE}
           </div>
         </div>
       </div>

@@ -36,26 +36,26 @@ describe('Local-First Storage Manager', () => {
   });
 
   it('exports all user data as structured JSON backup', async () => {
-    await setStorageItem('windlog_route', 'LPCS COIMB LPCS');
-    await setStorageItem('windlog_profile', { aircraftModel: 'c172', tas: 105 });
+    await setStorageItem('gustlog_route', 'LPCS COIMB LPCS');
+    await setStorageItem('gustlog_profile', { aircraftModel: 'c172', tas: 105 });
 
     const json = await exportAllUserData();
     const parsed = JSON.parse(json);
 
-    expect(parsed.app).toBe('WindLog');
+    expect(parsed.app).toBe('GustLog');
     expect(parsed.data).toBeDefined();
-    expect(parsed.data.windlog_route).toBe('LPCS COIMB LPCS');
-    expect(parsed.data.windlog_profile.aircraftModel).toBe('c172');
+    expect(parsed.data.gustlog_route).toBe('LPCS COIMB LPCS');
+    expect(parsed.data.gustlog_profile.aircraftModel).toBe('c172');
   });
 
   it('imports valid user data from JSON backup', async () => {
     const backupJson = JSON.stringify({
-      app: 'WindLog',
+      app: 'GustLog',
       schemaVersion: 1,
       exportedAt: new Date().toISOString(),
       data: {
-        windlog_route: 'LPPT LPFR LPPT',
-        windlog_custom_wpts: {
+        gustlog_route: 'LPPT LPFR LPPT',
+        gustlog_custom_wpts: {
           CUSTOM1: { identifier: 'CUSTOM1', latitude: 38.5, longitude: -9.1 },
         },
       },
@@ -63,10 +63,10 @@ describe('Local-First Storage Manager', () => {
 
     const result = await importUserData(backupJson);
     expect(result.success).toBe(true);
-    expect(result.importedKeys).toContain('windlog_route');
-    expect(result.importedKeys).toContain('windlog_custom_wpts');
+    expect(result.importedKeys).toContain('gustlog_route');
+    expect(result.importedKeys).toContain('gustlog_custom_wpts');
 
-    expect(getStorageItemSync('windlog_route', '')).toBe('LPPT LPFR LPPT');
+    expect(getStorageItemSync('gustlog_route', '')).toBe('LPPT LPFR LPPT');
   });
 
   it('rejects malformed JSON during import', async () => {

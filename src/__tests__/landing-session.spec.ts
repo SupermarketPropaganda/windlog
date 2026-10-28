@@ -21,7 +21,7 @@ beforeEach(async () => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-const credentials = { email: 'demo.master@windlog.aero', password: 'FlightPassword123!', displayName: 'Test Pilot' };
+const credentials = { email: 'demo.master@gustlog.aero', password: 'FlightPassword123!', displayName: 'Test Pilot' };
 
 describe('Landing and dashboard session handoff', () => {
   it('restores a newly registered account in a fresh page provider without deleting legitimate emails', async () => {
@@ -36,12 +36,12 @@ describe('Landing and dashboard session handoff', () => {
     await authService.signUp(credentials);
     await authService.signOut();
     await authService.signIn(credentials.email, credentials.password, false);
-    expect(localStorage.getItem('windlog_auth_session')).toBeNull();
-    expect(sessionStorage.getItem('windlog_auth_session')).not.toBeNull();
+    expect(localStorage.getItem('gustlog_auth_session')).toBeNull();
+    expect(sessionStorage.getItem('gustlog_auth_session')).not.toBeNull();
     await authService.init();
     expect(authService.isAuthenticated()).toBe(true);
     await authService.updateProfile({ displayName: 'Updated Pilot' });
-    expect(localStorage.getItem('windlog_auth_session')).toBeNull();
+    expect(localStorage.getItem('gustlog_auth_session')).toBeNull();
     expect((await new LocalAuthProviderAdapter().getCurrentSession()).user?.displayName).toBe('Updated Pilot');
     sessionStorage.clear(); // Closing the tab removes its session.
     expect((await new LocalAuthProviderAdapter().getCurrentSession()).isAuthenticated).toBe(false);
@@ -49,22 +49,22 @@ describe('Landing and dashboard session handoff', () => {
 
   it('remembers checked sessions and clears both new and legacy landing state on sign-out', async () => {
     await authService.signUp(credentials);
-    safeStorage.setItem('windlog_active_user', JSON.stringify({ name: 'Stale pilot' }));
-    expect(localStorage.getItem('windlog_auth_session')).not.toBeNull();
+    safeStorage.setItem('gustlog_active_user', JSON.stringify({ name: 'Stale pilot' }));
+    expect(localStorage.getItem('gustlog_auth_session')).not.toBeNull();
     await authService.signOut();
-    expect(localStorage.getItem('windlog_auth_session')).toBeNull();
-    expect(sessionStorage.getItem('windlog_auth_session')).toBeNull();
-    expect(localStorage.getItem('windlog_active_user')).toBeNull();
+    expect(localStorage.getItem('gustlog_auth_session')).toBeNull();
+    expect(sessionStorage.getItem('gustlog_auth_session')).toBeNull();
+    expect(localStorage.getItem('gustlog_active_user')).toBeNull();
     expect((await new LocalAuthProviderAdapter().getCurrentSession()).isAuthenticated).toBe(false);
   });
 
   it.each(['expired', 'missing-user', 'invalid-expiry', 'malformed'])('rejects a %s session', async kind => {
     await authService.signUp(credentials);
-    const session = JSON.parse(localStorage.getItem('windlog_auth_session')!);
+    const session = JSON.parse(localStorage.getItem('gustlog_auth_session')!);
     if (kind === 'expired') session.expiresAt = Date.now() - 1;
-    if (kind === 'missing-user') localStorage.removeItem('windlog_auth_users');
+    if (kind === 'missing-user') localStorage.removeItem('gustlog_auth_users');
     if (kind === 'invalid-expiry') session.expiresAt = 'forever';
-    localStorage.setItem('windlog_auth_session', kind === 'malformed' ? '{broken' : JSON.stringify(session));
+    localStorage.setItem('gustlog_auth_session', kind === 'malformed' ? '{broken' : JSON.stringify(session));
     expect((await new LocalAuthProviderAdapter().getCurrentSession()).isAuthenticated).toBe(false);
   });
 
@@ -72,7 +72,7 @@ describe('Landing and dashboard session handoff', () => {
     const provider = new LocalAuthProviderAdapter();
     const results = await Promise.allSettled([provider.signUp(credentials), provider.signUp(credentials)]);
     expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(1);
-    expect(Object.keys(JSON.parse(localStorage.getItem('windlog_auth_users')!))).toHaveLength(1);
+    expect(Object.keys(JSON.parse(localStorage.getItem('gustlog_auth_users')!))).toHaveLength(1);
   });
 
   it('reports storage failure instead of pretending registration succeeded', async () => {

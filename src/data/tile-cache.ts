@@ -23,7 +23,7 @@ export interface TileDownloadProgress {
   currentTile?: TileCoord;
 }
 
-const DB_NAME = 'windlog_tiles_db';
+const DB_NAME = 'gustlog_tiles_db';
 const DB_VERSION = 1;
 const STORE_NAME = 'tiles';
 

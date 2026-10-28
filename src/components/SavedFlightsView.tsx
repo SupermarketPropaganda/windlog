@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { SavedFlight, ActiveView } from '../types';
 import { getSavedFlightsSync, deleteSavedFlight, saveFlightRecord } from '../data/saved-flights';
 import { useAuth } from '../context/AuthContext';
-import { useAdBreak } from '../context/AdContext';
 import { copyShareableRouteLink } from '../utils/url-route';
 
 export interface SavedFlightsViewProps {
@@ -62,7 +61,6 @@ export const SavedFlightsView: React.FC<SavedFlightsViewProps> = ({
   onNavigate,
 }) => {
   const { user } = useAuth();
-  const { isPro, openProModal } = useAdBreak();
   const [flights, setFlights] = useState<SavedFlight[]>(() => getSavedFlightsSync(user?.id));
   const [searchQuery, setSearchQuery] = useState('');
   const [editingFlightId, setEditingFlightId] = useState<string | null>(null);
@@ -136,14 +134,6 @@ export const SavedFlightsView: React.FC<SavedFlightsViewProps> = ({
         </div>
 
         <div className="saved-flights-top-actions">
-          <button
-            type="button"
-            className={`hangar-pro-badge-btn ${isPro ? 'pro' : ''}`}
-            onClick={openProModal}
-            title="WindLog Flight Deck Pro status"
-          >
-            {isPro ? '👑 Pro Hangar: Unlimited' : '⭐ Free Hangar: 5 Slots • Go Pro'}
-          </button>
           <button
             type="button"
             className="saved-flights-new-btn"

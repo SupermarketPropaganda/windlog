@@ -25,12 +25,12 @@ import { LandingPage } from './components/LandingPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AdProvider, useAdBreak } from './context/AdContext';
 import { AdInterstitialModal } from './components/ads/AdInterstitialModal';
-import { WindLogProModal } from './components/ads/WindLogProModal';
 import { WaypointDB, initWaypointDatabase } from './data/waypoint-db';
 import { searchOsmReportingPoint } from './data/osm-vrp';
 import { fetchWindsAloft, parseManualWind } from './data/winds-aloft';
 import { getSavedFlightsSync, saveFlightRecord } from './data/saved-flights';
-import { CURRENT_LEGAL_VERSION } from './data/legal-terms';
+import { AVIATION_NOTICE } from './data/legal-terms';
+import { hasCurrentLegalAcceptance, recordLegalAcceptance } from './data/legal-acceptance';
 import { computeNavLog, computeAlternatePlan } from './engine/navlog-engine';
 import { getAirportWaypoint } from './data/airport-runways';
 import { parseRouteString } from './utils/route-parser';
@@ -55,7 +55,7 @@ function loadProfile(): AircraftProfile {
     };
   }
 
-  const stored = getStorageItemSync<any>('windlog_profile', null);
+  const stored = getStorageItemSync<any>('gustlog_profile', null);
   if (stored) {
     return {
       aircraftModel: stored.aircraftModel || 'c172',
@@ -76,15 +76,15 @@ function loadProfile(): AircraftProfile {
 }
 
 function saveProfile(p: AircraftProfile) {
-  setStorageItem('windlog_profile', p);
+  setStorageItem('gustlog_profile', p);
 }
 
 function loadCustomWaypoints(): Record<string, Waypoint> {
-  return getStorageItemSync<Record<string, Waypoint>>('windlog_custom_wpts', {});
+  return getStorageItemSync<Record<string, Waypoint>>('gustlog_custom_wpts', {});
 }
 
 function saveCustomWaypoints(wpts: Record<string, Waypoint>) {
-  setStorageItem('windlog_custom_wpts', wpts);
+  setStorageItem('gustlog_custom_wpts', wpts);
 }
 
 function loadRouteInput(): string {
@@ -92,12 +92,12 @@ function loadRouteInput(): string {
   if (shared?.route) {
     return shared.route;
   }
-  const saved = getStorageItemSync<string>('windlog_route', '');
+  const saved = getStorageItemSync<string>('gustlog_route', '');
   if (saved && saved.trim().length > 0) {
     return saved;
   }
-  const autoFillHome = getStorageItemSync<boolean>('windlog_auto_home_base', false);
-  const homeBase = getStorageItemSync<string>('windlog_home_base', '');
+  const autoFillHome = getStorageItemSync<boolean>('gustlog_auto_home_base', false);
+  const homeBase = getStorageItemSync<string>('gustlog_home_base', '');
   if (autoFillHome && homeBase && homeBase.trim()) {
     return `${homeBase.trim().toUpperCase()} `;
   }
@@ -105,15 +105,15 @@ function loadRouteInput(): string {
 }
 
 function saveRouteInput(s: string) {
-  setStorageItem('windlog_route', s);
+  setStorageItem('gustlog_route', s);
 }
 
 function loadWindMode(): WindMode {
-  return getStorageItemSync<WindMode>('windlog_wind_mode', 'auto');
+  return getStorageItemSync<WindMode>('gustlog_wind_mode', 'auto');
 }
 
 function loadManualWind(): string {
-  return getStorageItemSync<string>('windlog_manual_wind', '');
+  return getStorageItemSync<string>('gustlog_manual_wind', '');
 }
 
 // ─── Cockpit Suite (Authenticated Flight Environment) ───
@@ -129,21 +129,14 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
 
   const [profile, setProfile] = useState<AircraftProfile>(loadProfile);
   const [routeInput, setRouteInput] = useState(loadRouteInput);
-  const [showDisclaimer, setShowDisclaimer] = useState<boolean>(() => {
-    try {
-      const acceptedVersion = getStorageItemSync('windlog_legal_version_accepted', '') || localStorage.getItem('windlog_legal_version_accepted');
-      return acceptedVersion !== CURRENT_LEGAL_VERSION;
-    } catch {
-      return true;
-    }
-  });
+  const [acceptedUserId, setAcceptedUserId] = useState<string | null>(null);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState<boolean>(() => {
     if (typeof window !== 'undefined' && window.innerWidth >= 980) {
       return true;
     }
     try {
-      const stored = localStorage.getItem('windlog_sidebar_open');
+      const stored = localStorage.getItem('gustlog_sidebar_open');
       if (stored !== null) return stored === 'true';
       return false;
     } catch {
@@ -156,9 +149,11 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   const [airacReport] = useState(() => checkDatabaseAiracStatus(CURRENT_DATABASE_METADATA.airacCycle));
 
   const { user } = useAuth();
+  const legalUserId = user?.id || 'guest';
+  const showDisclaimer = acceptedUserId !== legalUserId && !hasCurrentLegalAcceptance(legalUserId);
   const { triggerAdBreak } = useAdBreak();
   const [departureTime, setDepartureTime] = useState<string | null>(() =>
-    getStorageItemSync<string | null>('windlog_departure_time', null)
+    getStorageItemSync<string | null>('gustlog_departure_time', null)
   );
   const [savedFlightsCount, setSavedFlightsCount] = useState<number>(() =>
     getSavedFlightsSync(user?.id).length
@@ -170,7 +165,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
 
   const handleDepartureTimeChange = useCallback((time: string | null) => {
     setDepartureTime(time);
-    setStorageItem('windlog_departure_time', time);
+    setStorageItem('gustlog_departure_time', time);
     windCacheRef.current.clear();
   }, []);
 
@@ -184,7 +179,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
     setIsSideMenuOpen((prev) => {
       const next = !prev;
       try {
-        setStorageItem('windlog_sidebar_open', String(next));
+        setStorageItem('gustlog_sidebar_open', String(next));
       } catch { /* ignore */ }
       return next;
     });
@@ -251,8 +246,8 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   }, [routeInput]);
 
   const handleClearRoute = useCallback(() => {
-    const autoFillHome = getStorageItemSync<boolean>('windlog_auto_home_base', false);
-    const homeBase = getStorageItemSync<string>('windlog_home_base', '');
+    const autoFillHome = getStorageItemSync<boolean>('gustlog_auto_home_base', false);
+    const homeBase = getStorageItemSync<string>('gustlog_home_base', '');
     const defaultRoute = autoFillHome && homeBase && homeBase.trim() ? `${homeBase.trim().toUpperCase()} ` : '';
     setRouteInput(defaultRoute);
     saveRouteInput(defaultRoute);
@@ -394,21 +389,21 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
 
   // ─── Alternate Aerodrome & Diversion Plan ───
   const [selectedAlternate, setSelectedAlternate] = useState<Waypoint | null>(() => {
-    const stored = getStorageItemSync<string>('windlog_alternate_icao', '');
+    const stored = getStorageItemSync<string>('gustlog_alternate_icao', '');
     return stored ? getAirportWaypoint(stored) : null;
   });
   const [alternateAltitude, setAlternateAltitude] = useState<number>(() => {
-    return getStorageItemSync<number>('windlog_alternate_alt', 2500);
+    return getStorageItemSync<number>('gustlog_alternate_alt', 2500);
   });
 
   const handleAlternateChange = useCallback((alt: Waypoint | null) => {
     setSelectedAlternate(alt);
-    setStorageItem('windlog_alternate_icao', alt?.identifier || '');
+    setStorageItem('gustlog_alternate_icao', alt?.identifier || '');
   }, []);
 
   const handleAlternateAltitudeChange = useCallback((alt: number) => {
     setAlternateAltitude(alt);
-    setStorageItem('windlog_alternate_alt', alt);
+    setStorageItem('gustlog_alternate_alt', alt);
   }, []);
 
   const alternatePlan: AlternatePlan | null = useMemo(() => {
@@ -534,7 +529,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
     saveProfile(flight.profile);
     setLegAltitudeOverrides(flight.legAltitudeOverrides || {});
     setDepartureTime(flight.departureTime);
-    setStorageItem('windlog_departure_time', flight.departureTime);
+    setStorageItem('gustlog_departure_time', flight.departureTime);
     windCacheRef.current.clear();
     onChangeView('navlog');
     setToastMessage(`Flight "${flight.name}" loaded into cockpit!`);
@@ -558,7 +553,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
 
   // ─── Wind mode handling ───
   const handleWindModeChange = useCallback((mode: WindMode) => {
-    localStorage.setItem('windlog_wind_mode', mode);
+    localStorage.setItem('gustlog_wind_mode', mode);
 
     if (mode === 'manual') {
       const parsed = parseManualWind(manualWindInput);
@@ -581,7 +576,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   const handleWindChange = useCallback((wind: Wind | null) => {
     const windStr = wind ? `${wind.direction}/${wind.speed}` : '';
     setManualWindInput(windStr);
-    localStorage.setItem('windlog_manual_wind', windStr);
+    localStorage.setItem('gustlog_manual_wind', windStr);
     setPerLegWinds([]); // Clear any leftover auto per-leg cache
     setWindState({
       mode: 'manual',
@@ -655,11 +650,12 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
   }, []);
 
   const handleAcceptDisclaimer = useCallback(() => {
-    setStorageItem('windlog_legal_version_accepted', CURRENT_LEGAL_VERSION);
-    setStorageItem('windlog_legal_timestamp', new Date().toISOString());
-    setShowDisclaimer(false);
+    recordLegalAcceptance(legalUserId);
+    setAcceptedUserId(legalUserId);
     setIsLegalModalOpen(false);
-  }, []);
+  }, [legalUserId]);
+
+  if (showDisclaimer) return <DisclaimerModal key={legalUserId} onAccept={handleAcceptDisclaimer} onClose={() => onChangeView('landing')} />;
 
   // ─── Loading state ───
   if (!dbReady) {
@@ -697,6 +693,7 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
 
       {/* Main Content Area (Shifts smoothly with sidebar) */}
       <main className="cockpit-main-content">
+        <aside className="platform-safety-notice"><span>{AVIATION_NOTICE}</span><button type="button" onClick={() => setIsLegalModalOpen(true)}>Terms &amp; privacy</button></aside>
         {activeView === 'auth' && (
           <AuthPage
             onNavigate={onChangeView}
@@ -786,9 +783,8 @@ function CockpitSuite({ activeView, onChangeView }: CockpitSuiteProps) {
         />
       )}
 
-      {/* Duolingo-style Pre-Flight Clearance & Super Pro Modals */}
+      {/* Pre-Flight Clearance Modal */}
       <AdInterstitialModal />
-      <WindLogProModal />
     </div>
   );
 }
@@ -808,7 +804,7 @@ function CockpitApp() {
   }, []);
 
   const navigate = (view: ActiveView) => {
-    if (window.location.pathname.endsWith('/windlog.html') && view !== 'landing') {
+    if ((window.location.pathname.endsWith('/gustlog.html') || window.location.pathname.endsWith('/windlog.html')) && view !== 'landing') {
       const hash = view === 'navlog' && decodeRouteFromUrl() ? window.location.hash : '#' + (view === 'auth' ? 'profile' : view);
       window.location.assign('./index.html' + hash);
       return;
@@ -826,7 +822,7 @@ function CockpitApp() {
     return (
       <div className="pure-black-root">
         <div style={{ color: '#ffffff', fontFamily: 'JetBrains Mono, monospace', fontSize: '13px', letterSpacing: '0.1em' }}>
-          Windlog.
+          Gustlog.
         </div>
       </div>
     );

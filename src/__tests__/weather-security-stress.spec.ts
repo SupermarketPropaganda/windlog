@@ -413,7 +413,7 @@ describe('QA Stress Test & Security Audit Suite', () => {
         'diogo',
         'pilot_diogo_master',
         'DEFAULT_PILOT_RECORD',
-        'diogo@windlog.aero',
+        'diogo@gustlog.aero',
       ];
 
       const violations: { file: string; term: string; line: number; text: string }[] = [];
@@ -460,7 +460,7 @@ describe('QA Stress Test & Security Audit Suite', () => {
       const adapter = new LocalAuthProviderAdapter();
       expect(adapter).toBeDefined();
       // Inspect storage directly: must be empty
-      expect(safeStorage.getItem('windlog_auth_users')).toBeNull();
+      expect(safeStorage.getItem('gustlog_auth_users')).toBeNull();
     });
 
     it('verifies password reset prevents account/user enumeration attacks', async () => {

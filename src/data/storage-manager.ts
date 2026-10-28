@@ -8,7 +8,7 @@
  * and defends against prototype pollution and transaction hangs.
  */
 
-const DB_NAME = 'windlog_user_data_v1';
+const DB_NAME = 'gustlog_user_data_v1';
 const STORE_NAME = 'key_value_store';
 
 // In-memory synchronous cache to allow synchronous access when needed
@@ -94,19 +94,28 @@ export async function initStorage(): Promise<void> {
   if (typeof localStorage !== 'undefined') {
     try {
       const legacyKeys = [
-        'windlog_profile',
-        'windlog_custom_wpts',
-        'windlog_custom_mb_presets',
-        'windlog_route',
-        'windlog_wind_mode',
-        'windlog_manual_wind',
-        'windlog_sidebar_open',
-        'windlog_legal_version_accepted',
-        'windlog_legal_timestamp',
-        'windlog_osm_vrp_cache',
-        'windlog_auth_users',
-        'windlog_auth_session',
+        'gustlog_profile',
+        'gustlog_custom_wpts',
+        'gustlog_custom_mb_presets',
+        'gustlog_route',
+        'gustlog_wind_mode',
+        'gustlog_manual_wind',
+        'gustlog_sidebar_open',
+        'gustlog_legal_version_accepted',
+        'gustlog_legal_timestamp',
+        'gustlog_osm_vrp_cache',
+        'gustlog_auth_users',
+        'gustlog_auth_session',
       ];
+
+      // Backward compatibility: copy legacy windlog_* keys to gustlog_* if not yet set
+      for (const key of legacyKeys) {
+        const oldWindKey = key.replace(/^gustlog_/, 'windlog_');
+        const oldVal = localStorage.getItem(oldWindKey);
+        if (oldVal !== null && localStorage.getItem(key) === null) {
+          localStorage.setItem(key, oldVal);
+        }
+      }
 
       for (const key of legacyKeys) {
         const stored = localStorage.getItem(key);
@@ -269,7 +278,7 @@ export async function removeStorageItem(key: string): Promise<void> {
 export async function exportAllUserData(): Promise<string> {
   await initStorage();
   const backup: Record<string, any> = {
-    app: 'WindLog',
+    app: 'GustLog',
     schemaVersion: 1,
     exportedAt: new Date().toISOString(),
     data: Object.create(null),
@@ -297,7 +306,7 @@ export async function importUserData(jsonString: string): Promise<{ success: boo
     if (
       !backup ||
       typeof backup !== 'object' ||
-      backup.app !== 'WindLog' ||
+      (backup.app !== 'GustLog' && backup.app !== 'WindLog') ||
       !backup.data ||
       typeof backup.data !== 'object' ||
       Array.isArray(backup.data)

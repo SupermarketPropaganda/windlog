@@ -70,68 +70,68 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   // ─── Direct Editable Pilot Identity & Station ───
   const [editDisplayName, setEditDisplayName] = useState<string>(() => {
-    return user?.displayName || getStorageItemSync<string>('windlog_pilot_name', '') || '';
+    return user?.displayName || getStorageItemSync<string>('gustlog_pilot_name', '') || '';
   });
   const [editLicense, setEditLicense] = useState<string>(() => {
-    return user?.pilotLicense || getStorageItemSync<string>('windlog_pilot_license', '') || '';
+    return user?.pilotLicense || getStorageItemSync<string>('gustlog_pilot_license', '') || '';
   });
   const [editHomeBase, setEditHomeBase] = useState<string>(() => {
-    return user?.homeBaseAirport || getStorageItemSync<string>('windlog_home_base', '') || '';
+    return user?.homeBaseAirport || getStorageItemSync<string>('gustlog_home_base', '') || '';
   });
   const [editAutoFillHomeBase, setEditAutoFillHomeBase] = useState<boolean>(() => {
-    return getStorageItemSync<boolean>('windlog_auto_home_base', false);
+    return getStorageItemSync<boolean>('gustlog_auto_home_base', false);
   });
 
   // ─── Direct Editable Flight Planning Defaults ───
   const [editAircraftModel, setEditAircraftModel] = useState<string>(() => {
     return (
       profile?.aircraftModel ||
-      getStorageItemSync<any>('windlog_profile', null)?.aircraftModel ||
+      getStorageItemSync<any>('gustlog_profile', null)?.aircraftModel ||
       'c172'
     );
   });
   const [editCruiseAltitude, setEditCruiseAltitude] = useState<string>(() => {
     const val =
       profile?.cruiseAltitude ??
-      getStorageItemSync<any>('windlog_profile', null)?.cruiseAltitude ??
+      getStorageItemSync<any>('gustlog_profile', null)?.cruiseAltitude ??
       4500;
     return val.toString();
   });
   const [editTas, setEditTas] = useState<string>(() => {
     const val =
-      profile?.tas ?? getStorageItemSync<any>('windlog_profile', null)?.tas ?? 105;
+      profile?.tas ?? getStorageItemSync<any>('gustlog_profile', null)?.tas ?? 105;
     return val.toString();
   });
   const [editFuelFlow, setEditFuelFlow] = useState<string>(() => {
     const val =
       profile?.fuelFlow ??
-      getStorageItemSync<any>('windlog_profile', null)?.fuelFlow ??
+      getStorageItemSync<any>('gustlog_profile', null)?.fuelFlow ??
       8.5;
     return val.toString();
   });
   const [editFuelUnit, setEditFuelUnit] = useState<FuelUnit>(() => {
     return (
       profile?.fuelUnit ||
-      getStorageItemSync<any>('windlog_profile', null)?.fuelUnit ||
+      getStorageItemSync<any>('gustlog_profile', null)?.fuelUnit ||
       'gph'
     );
   });
   const [editReserveFuelMinutes, setEditReserveFuelMinutes] = useState<number>(() => {
-    return getStorageItemSync<number>('windlog_reserve_fuel_mins', 45);
+    return getStorageItemSync<number>('gustlog_reserve_fuel_mins', 45);
   });
 
   // ─── Direct Editable Units & Cockpit Preferences ───
   const [editAltimeterUnit, setEditAltimeterUnit] = useState<'hPa' | 'inHg'>(() => {
-    return getStorageItemSync<'hPa' | 'inHg'>('windlog_altimeter_unit', 'hPa');
+    return getStorageItemSync<'hPa' | 'inHg'>('gustlog_altimeter_unit', 'hPa');
   });
   const [editDistanceUnit, setEditDistanceUnit] = useState<'NM' | 'KM'>(() => {
-    return getStorageItemSync<'NM' | 'KM'>('windlog_distance_unit', 'NM');
+    return getStorageItemSync<'NM' | 'KM'>('gustlog_distance_unit', 'NM');
   });
   const [editSpeedUnit, setEditSpeedUnit] = useState<'KT' | 'MPH'>(() => {
-    return getStorageItemSync<'KT' | 'MPH'>('windlog_speed_unit', 'KT');
+    return getStorageItemSync<'KT' | 'MPH'>('gustlog_speed_unit', 'KT');
   });
   const [editWeightUnit, setEditWeightUnit] = useState<'kg' | 'lbs'>(() => {
-    return getStorageItemSync<'kg' | 'lbs'>('windlog_weight_unit', 'kg');
+    return getStorageItemSync<'kg' | 'lbs'>('gustlog_weight_unit', 'kg');
   });
 
   // Update local states when user changes (e.g. on sign in)
@@ -181,15 +181,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       const flowNum = Math.max(0.5, Math.min(300, parseFloat(editFuelFlow) || 8.5));
 
       // 1. Persist local storage keys
-      setStorageItem('windlog_pilot_name', sanitizedDisplayName);
-      setStorageItem('windlog_pilot_license', sanitizedLicense);
-      setStorageItem('windlog_home_base', sanitizedHomeBase);
-      setStorageItem('windlog_auto_home_base', editAutoFillHomeBase);
-      setStorageItem('windlog_altimeter_unit', editAltimeterUnit);
-      setStorageItem('windlog_distance_unit', editDistanceUnit);
-      setStorageItem('windlog_speed_unit', editSpeedUnit);
-      setStorageItem('windlog_weight_unit', editWeightUnit);
-      setStorageItem('windlog_reserve_fuel_mins', editReserveFuelMinutes);
+      setStorageItem('gustlog_pilot_name', sanitizedDisplayName);
+      setStorageItem('gustlog_pilot_license', sanitizedLicense);
+      setStorageItem('gustlog_home_base', sanitizedHomeBase);
+      setStorageItem('gustlog_auto_home_base', editAutoFillHomeBase);
+      setStorageItem('gustlog_altimeter_unit', editAltimeterUnit);
+      setStorageItem('gustlog_distance_unit', editDistanceUnit);
+      setStorageItem('gustlog_speed_unit', editSpeedUnit);
+      setStorageItem('gustlog_weight_unit', editWeightUnit);
+      setStorageItem('gustlog_reserve_fuel_mins', editReserveFuelMinutes);
 
       const updatedProfile: AircraftProfile = {
         aircraftModel: editAircraftModel,
@@ -198,7 +198,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         fuelFlow: flowNum,
         fuelUnit: editFuelUnit,
       };
-      setStorageItem('windlog_profile', updatedProfile);
+      setStorageItem('gustlog_profile', updatedProfile);
 
       // 2. Propagate to App state
       if (onProfileChange) {
@@ -540,7 +540,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               </button>
 
               <div className="auth-footer-prompt">
-                <span>New to WindLog?</span>{' '}
+                <span>New to GustLog?</span>{' '}
                 <button
                   type="button"
                   className="auth-switch-link"

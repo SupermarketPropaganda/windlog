@@ -15,7 +15,7 @@ import {
 import { setStorageItem, removeStorageItem } from '../data/storage-manager';
 import { AircraftProfile, SavedFlight, Waypoint } from '../types';
 
-const STORAGE_SAVED_FLIGHTS_KEY = 'windlog_saved_flights';
+const STORAGE_SAVED_FLIGHTS_KEY = 'gustlog_saved_flights';
 
 // High-performance In-Memory Mock IndexedDB
 const mockStore = new Map<string, any>();

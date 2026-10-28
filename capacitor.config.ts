@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'aero.windlog.app',
-  appName: 'WindLog',
+  appId: 'aero.gustlog.app',
+  appName: 'GustLog',
   webDir: 'dist',
   server: {
     androidScheme: 'https'

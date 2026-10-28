@@ -45,21 +45,21 @@ describe('Pilot Profile & Flight Planning Defaults Suite', () => {
       fuelUnit: 'gph',
     };
 
-    setStorageItem('windlog_profile', testProfile);
-    setStorageItem('windlog_pilot_name', 'Capt. Sully');
-    setStorageItem('windlog_pilot_license', 'ATPL');
-    setStorageItem('windlog_home_base', 'LPCS');
-    setStorageItem('windlog_auto_home_base', true);
-    setStorageItem('windlog_altimeter_unit', 'hPa');
-    setStorageItem('windlog_reserve_fuel_mins', 45);
+    setStorageItem('gustlog_profile', testProfile);
+    setStorageItem('gustlog_pilot_name', 'Capt. Sully');
+    setStorageItem('gustlog_pilot_license', 'ATPL');
+    setStorageItem('gustlog_home_base', 'LPCS');
+    setStorageItem('gustlog_auto_home_base', true);
+    setStorageItem('gustlog_altimeter_unit', 'hPa');
+    setStorageItem('gustlog_reserve_fuel_mins', 45);
 
-    expect(getStorageItemSync<AircraftProfile | null>('windlog_profile', null)).toEqual(testProfile);
-    expect(getStorageItemSync<string>('windlog_pilot_name', '')).toBe('Capt. Sully');
-    expect(getStorageItemSync<string>('windlog_pilot_license', '')).toBe('ATPL');
-    expect(getStorageItemSync<string>('windlog_home_base', '')).toBe('LPCS');
-    expect(getStorageItemSync<boolean>('windlog_auto_home_base', false)).toBe(true);
-    expect(getStorageItemSync<string>('windlog_altimeter_unit', '')).toBe('hPa');
-    expect(getStorageItemSync<number>('windlog_reserve_fuel_mins', 0)).toBe(45);
+    expect(getStorageItemSync<AircraftProfile | null>('gustlog_profile', null)).toEqual(testProfile);
+    expect(getStorageItemSync<string>('gustlog_pilot_name', '')).toBe('Capt. Sully');
+    expect(getStorageItemSync<string>('gustlog_pilot_license', '')).toBe('ATPL');
+    expect(getStorageItemSync<string>('gustlog_home_base', '')).toBe('LPCS');
+    expect(getStorageItemSync<boolean>('gustlog_auto_home_base', false)).toBe(true);
+    expect(getStorageItemSync<string>('gustlog_altimeter_unit', '')).toBe('hPa');
+    expect(getStorageItemSync<number>('gustlog_reserve_fuel_mins', 0)).toBe(45);
   });
 
   it('updates authenticated user profile with cockpit preferences', async () => {
@@ -121,11 +121,11 @@ describe('Pilot Profile & Flight Planning Defaults Suite', () => {
   });
 
   it('auto-fills departure airport when autoFillHomeBase is enabled', () => {
-    setStorageItem('windlog_auto_home_base', true);
-    setStorageItem('windlog_home_base', 'LPCS');
+    setStorageItem('gustlog_auto_home_base', true);
+    setStorageItem('gustlog_home_base', 'LPCS');
 
-    const autoFillHome = getStorageItemSync<boolean>('windlog_auto_home_base', false);
-    const homeBase = getStorageItemSync<string>('windlog_home_base', '');
+    const autoFillHome = getStorageItemSync<boolean>('gustlog_auto_home_base', false);
+    const homeBase = getStorageItemSync<string>('gustlog_home_base', '');
 
     const initialRoute = autoFillHome && homeBase.trim() ? `${homeBase.trim().toUpperCase()} ` : '';
     expect(initialRoute).toBe('LPCS ');
